@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Y3-1 命运星轨：申请时间线</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
+        
+        body { 
+            background: radial-gradient(circle at top, #11091a 0%, #05020a 100%);
+            display: flex; justify-content: center; align-items: center; 
+            min-height: 100vh; margin: 0; padding: 20px; color: #e2e8f0;
+            overflow-x: hidden;
+        }
+
+        .timeline-room {
+            width: 100%; max-width: 1100px; background: rgba(17, 9, 26, 0.7);
+            border: 2px solid #8b5cf6; border-radius: 24px; padding: 35px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 0 30px rgba(139, 92, 246, 0.2);
+            backdrop-filter: blur(10px); display: flex; flex-direction: column; align-items: center;
+        }
+
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h2 { margin: 0 0 10px 0; font-size: 2.5rem; color: #c4b5fd; text-shadow: 0 0 15px rgba(196, 181, 253, 0.5); letter-spacing: 2px; }
+        .header p { color: #94a3b8; font-size: 1.05rem; margin: 0; line-height: 1.6;}
+        .highlight { color: #fde047; font-weight: bold; }
+
+        /* 散落的符文（任务卡片池） */
+        .rune-pool {
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 15px;
+            background: rgba(0, 0, 0, 0.4); border: 1px dashed #6d28d9; border-radius: 16px;
+            padding: 25px; width: 100%; margin-bottom: 40px; min-height: 140px;
+        }
+
+        .rune-stone {
+            background: linear-gradient(135deg, #2e1065, #1e1b4b); border: 2px solid #8b5cf6;
+            border-radius: 12px; padding: 12px 18px; cursor: grab; text-align: center;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.5); transition: 0.2s; position: relative; z-index: 10;
+            display: flex; flex-direction: column; align-items: center; width: 110px;
+        }
+        .rune-stone:hover { transform: translateY(-5px); border-color: #fde047; box-shadow: 0 10px 20px rgba(253, 224, 71, 0.3); }
+        .rune-stone:active { cursor: grabbing; transform: scale(0.95); }
+        
+        .rune-icon { font-size: 1.8rem; margin-bottom: 8px; color: #c4b5fd; filter: drop-shadow(0 0 5px rgba(196, 181, 253, 0.5)); }
+        .rune-name { font-size: 0.85rem; font-weight: bold; color: #f8fafc; }
+
+        /* 命运星轨（时间线容器） */
+        .star-track {
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; width: 100%;
+            position: relative; margin-bottom: 30px;
+        }
+
+        /* 连线特效 */
+        .star-track::before {
+            content: ''; position: absolute; top: 50px; left: 50px; right: 50px; height: 4px;
+            background: rgba(139, 92, 246, 0.3); z-index: 1; border-radius: 2px;
+        }
+
+        .track-node {
+            width: 110px; height: 110px; background: rgba(0,0,0,0.5); border: 2px dashed #4c1d95;
+            border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            position: relative; z-index: 2; transition: 0.3s;
+        }
+        .node-number {
+            position: absolute; top: -15px; background: #0f172a; border: 2px solid #8b5cf6; color: #c4b5fd;
+            width: 30px; height: 30px; border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            font-weight: 900; font-size: 0.9rem; box-shadow: 0 0 10px rgba(139, 92, 246, 0.5); z-index: 3;
+        }
+        .node-hint { font-size: 0.8rem; color: #64748b; text-align: center; margin-top: 15px;}
+
+        .track-node.drag-over { background: rgba(139, 92, 246, 0.2); border-color: #c4b5fd; box-shadow: 0 0 30px rgba(139, 92, 246, 0.4); transform: scale(1.05); }
+
+        /* 放入节点后的符文样式调整 */
+        .track-node .rune-stone { width: 100%; height: 100%; border-radius: 50%; border-width: 3px; box-shadow: 0 0 20px rgba(139, 92, 246, 0.6); justify-content: center;}
+        .track-node .rune-icon { font-size: 1.5rem; margin-bottom: 2px; }
+        .track-node .rune-name { font-size: 0.75rem; }
+        .track-node .node-hint { display: none; } /* 放入后隐藏提示词 */
+
+        /* 控制按钮 */
+        .controls { margin-top: 20px; display: flex; gap: 20px; }
+        .btn {
+            border: none; padding: 12px 35px; border-radius: 30px; font-size: 1.1rem;
+            font-weight: bold; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 8px;
+        }
+        .btn-activate { background: linear-gradient(135deg, #8b5cf6, #3b82f6); color: white; box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4); }
+        .btn-activate:hover { transform: translateY(-3px); box-shadow: 0 12px 25px rgba(139, 92, 246, 0.6); }
+        .btn-reset { background: transparent; color: #c4b5fd; border: 2px solid #6d28d9; }
+        .btn-reset:hover { background: rgba(109, 40, 217, 0.2); color: #fff; }
+
+        /* 反馈面板 */
+        .feedback-panel {
+            margin-top: 25px; background: rgba(15, 23, 42, 0.9); border-left: 5px solid;
+            border-radius: 12px; padding: 20px; width: 100%; max-width: 800px; display: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .fb-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; }
+        .fb-desc { color: #cbd5e1; font-size: 0.95rem; line-height: 1.6; }
+        
+        .status-error { border-color: #ef4444; } .status-error .fb-title { color: #fca5a5; }
+        .status-success { border-color: #10b981; } .status-success .fb-title { color: #6ee7b7; }
+        
+        /* 成功特效 */
+        .gears-turning .star-track::before { background: #fde047; box-shadow: 0 0 20px #fde047; transition: 1s;}
+        .gears-turning .track-node { border-color: #fde047; }
+    </style>
+</head>
+<body>
+
+<div class="timeline-room">
+    <div class="header">
+        <h2><i class="fas fa-hourglass-half"></i> 命运星轨：拨正时间的齿轮</h2>
+        <p>申请是一场精密的排兵布阵。底层的星象符文已经散落，<br>请将它们拖入上方的 <span class="highlight">8 个时间节点</span>，还原正确的申请全流程顺序！</p>
+    </div>
+
+    <div class="star-track" id="starTrack">
+        <div class="track-node" id="slot-1" data-pos="1"><div class="node-number">1</div><div class="node-hint">起跑线</div></div>
+        <div class="track-node" id="slot-2" data-pos="2"><div class="node-number">2</div></div>
+        <div class="track-node" id="slot-3" data-pos="3"><div class="node-number">3</div></div>
+        <div class="track-node" id="slot-4" data-pos="4"><div class="node-number">4</div></div>
+        <div class="track-node" id="slot-5" data-pos="5"><div class="node-number">5</div></div>
+        <div class="track-node" id="slot-6" data-pos="6"><div class="node-number">6</div></div>
+        <div class="track-node" id="slot-7" data-pos="7"><div class="node-number">7</div></div>
+        <div class="track-node" id="slot-8" data-pos="8"><div class="node-number">8</div><div class="node-hint">终点站</div></div>
+    </div>
+
+    <div class="rune-pool" id="runePool">
+        <div class="rune-stone" draggable="true" id="rune-ps" data-id="ps">
+            <i class="fas fa-feather-alt rune-icon"></i><div class="rune-name">撰写 PS</div>
+        </div>
+        <div class="rune-stone" draggable="true" id="rune-submit" data-id="submit">
+            <i class="fas fa-paper-plane rune-icon"></i><div class="rune-name">递交网申</div>
+        </div>
+        <div class="rune-stone" draggable="true" id="rune-research" data-id="research">
+            <i class="fas fa-globe rune-icon"></i><div class="rune-name">了解查项目</div>
+        </div>
+        <div class="rune-stone" draggable="true" id="rune-interview" data-id="interview">
+            <i class="fas fa-user-tie rune-icon"></i><div class="rune-name">面试准备</div>
+        </div>
+        <div class="rune-stone" draggable="true" id="rune-lang" data-id="lang">
+            <i class="fas fa-language rune-icon"></i><div class="rune-name">考语言(雅思)</div>
+        </div>
+        <div class="rune-stone" draggable="true" id="rune-followup" data-id="followup">
+            <i class="fas fa-envelope-open-text rune-icon"></i><div class="rune-name">跟进补充材料</div>
+        </div>
+        <div class="rune-stone" draggable="true" id="rune-cv" data-id="cv">
+            <i class="fas fa-file-alt rune-icon"></i><div class="rune-name">准备 CV</div>
+        </div>
+        <div class="rune-stone" draggable="true" id="rune-ref" data-id="ref">
+            <i class="fas fa-handshake rune-icon"></i><div class="rune-name">联系推荐人</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-reset" onclick="resetRunes()"><i class="fas fa-undo"></i> 重置星盘</button>
+        <button class="btn btn-activate" onclick="activateTimeline()"><i class="fas fa-magic"></i> 激活时间线</button>
+    </div>
+
+    <div class="feedback-panel" id="feedbackBox">
+        <div class="fb-title" id="fbTitle"></div>
+        <div class="fb-desc" id="fbDesc"></div>
+    </div>
+</div>
+
+<script>
+    // --- 拖拽交互核心逻辑 ---
+    const runes = document.querySelectorAll('.rune-stone');
+    const slots = document.querySelectorAll('.track-node, .rune-pool');
+
+    runes.forEach(rune => {
+        rune.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', e.target.id);
+            setTimeout(() => e.target.style.opacity = '0.5', 0);
+        });
+        rune.addEventListener('dragend', (e) => e.target.style.opacity = '1');
+    });
+
+    slots.forEach(slot => {
+        slot.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (slot.classList.contains('track-node')) slot.classList.add('drag-over');
+        });
+        slot.addEventListener('dragleave', () => slot.classList.remove('drag-over'));
+        slot.addEventListener('drop', (e) => {
+            e.preventDefault();
+            slot.classList.remove('drag-over');
+            const runeId = e.dataTransfer.getData('text/plain');
+            
+            // 节点只能放一个符文
+            if (slot.classList.contains('track-node') && slot.querySelectorAll('.rune-stone').length > 0) {
+                // 如果里面有东西，把原来的东西挤回池子里
+                const existingRune = slot.querySelector('.rune-stone');
+                document.getElementById('runePool').appendChild(existingRune);
+            }
+            slot.appendChild(document.getElementById(runeId));
+        });
+    });
+
+    function resetRunes() {
+        const pool = document.getElementById('runePool');
+        document.querySelectorAll('.rune-stone').forEach(rune => pool.appendChild(rune));
+        document.getElementById('feedbackBox').style.display = 'none';
+        document.querySelector('.timeline-room').classList.remove('gears-turning');
+    }
+
+    // --- 核心：教务时间线判卷逻辑 ---
+    // 标准时间线：1查项目 -> 2考语言 -> 3写CV -> 4联系推荐人 -> 5写PS -> 6递交网申 -> 7跟进材料 -> 8面试准备
+    // 容错度：CV、考语言、推荐人 可以在中期稍微互换，但大的因果关系不能错。
+    
+    function activateTimeline() {
+        const poolCount = document.getElementById('runePool').children.length;
+        if (poolCount > 0) {
+            return showMsg('error', '⚠️ 星轨残缺', '所有的符文都必须归位！请将下方剩余的符文放入时间轴的空缺处。');
+        }
+
+        // 获取当前1-8节点的排列顺序
+        let currentOrder = [];
+        for (let i = 1; i <= 8; i++) {
+            const slot = document.getElementById(`slot-${i}`);
+            currentOrder.push(slot.querySelector('.rune-stone').dataset.id);
+        }
+
+        // 获取任务的当前索引位置 (0-7)
+        const getIndex = (id) => currentOrder.indexOf(id);
+        const research = getIndex('research');
+        const lang = getIndex('lang');
+        const cv = getIndex('cv');
+        const ref = getIndex('ref');
+        const ps = getIndex('ps');
+        const submit = getIndex('submit');
+        const followup = getIndex('followup');
+        const interview = getIndex('interview');
+
+        // ==== 开始揪出逻辑硬伤 (Bug检测) ====
+
+        // 致命错误 1：没查项目就开始写文书/网申
+        if (research > cv || research > ps || research > submit) {
+            return showMsg('error', '💥 星轨断裂：本末倒置', '你连要申请什么学校、专业要求是什么（了解项目）都不知道，就开始写 CV 和 PS 甚至递交了？这是典型的闭门造车！第一步永远是 Research。');
+        }
+
+        // 致命错误 2：网申顺序错乱
+        if (submit < ps || submit < ref) {
+            return showMsg('error', '💥 星轨断裂：仓促上阵', '网申是按发送键的那一刻。你的 PS 还没写完，推荐人还没联系好，你怎么可能递交网申？网申必须在文书准备之后。');
+        }
+
+        // 致命错误 3：跟进和面试太早
+        if (followup < submit || interview < submit) {
+            return showMsg('error', '💥 星轨断裂：时空错乱', '申请材料都还没递交，你去跟进什么材料？又准备什么面试？【跟进】和【面试】永远发生在递交网申之后。');
+        }
+
+        // 逻辑细节 1：推荐人必须尽早联系，并且要在递交前
+        if (ref > submit) {
+            return showMsg('error', '⚠️ 齿轮卡顿：怠慢导师', '教授们都很忙！你必须在递交网申前就联系好推荐人，给他们留出写推荐信的时间。');
+        }
+
+        // 逻辑细节 2：写 PS 需要基于 CV 的梳理
+        if (ps < cv) {
+            return showMsg('error', '🤔 齿轮运转不畅：地基不稳', '虽然不绝对，但在教务逻辑中，【准备 CV】是梳理你人生经历的地基。地基打好了，再去【撰写 PS】提炼故事主线，会事半功倍。建议把 CV 放在 PS 前面。');
+        }
+
+        // 完美通关判定
+        // 只要 research在前面，中间是 lang, cv, ref, ps 的组合，然后是 submit，最后是 followup/interview
+        document.querySelector('.timeline-room').classList.add('gears-turning');
+        showMsg('success', '✨ 命运齿轮开始转动！', '完美的规划！你已经看透了申请的底层逻辑。<br><b>标准解法：</b>前期了解项目和搞定语言 -> 中期打磨 CV 并联系推荐人 -> 集中精力写 PS -> 递交网申 -> 跟进状态与面试。<br>恭喜你，你的申请季不会是一团乱麻了！(+40 金币)');
+    }
+
+    function showMsg(type, title, text) {
+        const fb = document.getElementById('feedbackBox');
+        const fbTitle = document.getElementById('fbTitle');
+        fb.className = `feedback-panel status-${type}`;
+        fbTitle.innerHTML = type === 'error' ? `<i class="fas fa-exclamation-circle"></i> ${title}` : `<i class="fas fa-check-circle"></i> ${title}`;
+        document.getElementById('fbDesc').innerHTML = text;
+        fb.style.display = 'block';
+    }
+</script>
+</body>
+</html>

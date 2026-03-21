@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Y2-5 命运星盘：行动点分配</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
+        
+        body { 
+            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+            display: flex; justify-content: center; align-items: center; 
+            min-height: 100vh; margin: 0; padding: 20px; color: #e2e8f0;
+        }
+
+        .astrolabe-room {
+            width: 100%; max-width: 900px; background: rgba(30, 41, 59, 0.6);
+            border: 2px solid #38bdf8; border-radius: 30px; padding: 35px;
+            box-shadow: 0 0 50px rgba(56, 189, 248, 0.2), inset 0 0 20px rgba(0,0,0,0.8);
+            backdrop-filter: blur(12px); position: relative; overflow: hidden;
+        }
+
+        /* 顶部装饰线 */
+        .astrolabe-room::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, transparent, #38bdf8, transparent);
+        }
+
+        .header { text-align: center; margin-bottom: 25px; }
+        .header h2 { margin: 0 0 10px 0; font-size: 2.2rem; color: #e0f2fe; text-shadow: 0 0 15px rgba(56, 189, 248, 0.6); }
+        .header p { color: #94a3b8; font-size: 1rem; margin: 0; line-height: 1.5;}
+
+        /* 星尘能量条 (AP 显示) */
+        .energy-panel {
+            display: flex; justify-content: center; align-items: center; gap: 15px;
+            background: rgba(15, 23, 42, 0.8); padding: 15px 30px; border-radius: 50px;
+            margin: 0 auto 30px auto; width: fit-content; border: 1px solid #0ea5e9;
+            box-shadow: 0 0 20px rgba(14, 165, 233, 0.4);
+        }
+        .energy-icon { font-size: 2rem; color: #fde047; filter: drop-shadow(0 0 10px #fde047); animation: pulse 2s infinite; }
+        .energy-text { font-size: 1.2rem; font-weight: bold; color: #bae6fd; }
+        .energy-count { font-size: 1.8rem; color: #fde047; font-weight: 900; font-family: monospace; }
+        
+        @keyframes pulse { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px #fde047); } 50% { transform: scale(1.1); filter: drop-shadow(0 0 20px #fde047); } }
+
+        /* 分配网格 */
+        .allocation-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px;
+        }
+
+        .task-card {
+            background: linear-gradient(145deg, #1e293b, #0f172a); border: 2px solid #475569;
+            border-radius: 16px; padding: 15px 10px; text-align: center;
+            transition: 0.3s; position: relative;
+        }
+        .task-card:hover { border-color: #38bdf8; box-shadow: 0 5px 15px rgba(56, 189, 248, 0.2); }
+        .task-card.active { border-color: #fde047; box-shadow: 0 0 15px rgba(253, 224, 71, 0.3); background: linear-gradient(145deg, #334155, #1e293b);}
+
+        .task-icon { font-size: 1.8rem; margin-bottom: 8px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.2)); }
+        .task-name { font-size: 0.85rem; font-weight: bold; color: #f8fafc; margin-bottom: 3px; }
+        .task-desc { font-size: 0.7rem; color: #64748b; margin-bottom: 12px; }
+
+        /* 加减控制器 */
+        .controls-group { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 4px; }
+        .btn-ap { 
+            background: #334155; border: none; color: #fff; width: 28px; height: 28px; 
+            border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .btn-ap:hover { background: #0ea5e9; }
+        .btn-ap:active { transform: scale(0.9); }
+        .btn-ap:disabled { background: #1e293b; color: #475569; cursor: not-allowed; }
+        .ap-value { font-weight: 900; font-size: 1.1rem; color: #fde047; width: 20px; }
+
+        /* 底部操作区 */
+        .action-area { text-align: center; }
+        .btn-predict {
+            background: linear-gradient(135deg, #0ea5e9, #3b82f6); border: none;
+            padding: 15px 45px; border-radius: 30px; color: white; font-size: 1.2rem;
+            font-weight: bold; cursor: pointer; transition: 0.3s;
+            box-shadow: 0 10px 20px rgba(14, 165, 233, 0.4);
+        }
+        .btn-predict:hover { transform: translateY(-3px); box-shadow: 0 15px 25px rgba(14, 165, 233, 0.6); }
+
+        /* 先知预言面板 (结果) */
+        .prophecy-panel {
+            margin-top: 30px; background: rgba(15, 23, 42, 0.9); border: 2px solid #fde047;
+            border-radius: 20px; padding: 25px; display: none;
+            box-shadow: 0 0 40px rgba(253, 224, 71, 0.2); animation: reveal 0.5s ease-out;
+        }
+        @keyframes reveal { from { opacity: 0; transform: scale(0.95) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
+        .prophecy-title { color: #fde047; font-size: 1.4rem; font-weight: bold; border-bottom: 1px dashed #ca8a04; padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;}
+        
+        .top-3-list { display: flex; gap: 15px; margin-bottom: 20px; }
+        .top-item { flex: 1; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; text-align: center; border: 1px solid #475569;}
+        .top-item i { font-size: 1.5rem; color: #38bdf8; margin-bottom: 5px; display: block;}
+        .top-item span { font-weight: bold; color: #e2e8f0; font-size: 0.9rem;}
+
+        .analysis-text { color: #cbd5e1; font-size: 1rem; line-height: 1.6; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px;}
+        .analysis-text strong { color: #38bdf8; }
+        .highlight-roi { color: #fde047; font-weight: bold;}
+    </style>
+</head>
+<body>
+
+<div class="astrolabe-room">
+    <div class="header">
+        <h2><i class="fas fa-atom"></i> 命运星盘：精力分配法则</h2>
+        <p>你拥有 <b>10 滴星尘 (行动点)</b>。要想在核心科技与商界巅峰立足，不能盲目努力。<br>请将星尘注入你认为当前“投入产出比(ROI)最高”的星轨中。</p>
+    </div>
+
+    <div class="energy-panel">
+        <i class="fas fa-star energy-icon"></i>
+        <span class="energy-text">可用星尘：</span>
+        <span class="energy-count" id="apCount">10</span>
+    </div>
+
+    <div class="allocation-grid">
+        <div class="task-card" id="card-gpa">
+            <div class="task-icon">📜</div><div class="task-name">研读魔典</div><div class="task-desc">刷高 GPA</div>
+            <div class="controls-group">
+                <button class="btn-ap btn-minus" onclick="updateAP('gpa', -1)">-</button>
+                <span class="ap-value" id="val-gpa">0</span>
+                <button class="btn-ap btn-plus" onclick="updateAP('gpa', 1)">+</button>
+            </div>
+        </div>
+        <div class="task-card" id="card-lang">
+            <div class="task-icon">🗣️</div><div class="task-name">海妖之歌</div><div class="task-desc">考出高分雅思</div>
+            <div class="controls-group">
+                <button class="btn-ap btn-minus" onclick="updateAP('lang', -1)">-</button>
+                <span class="ap-value" id="val-lang">0</span>
+                <button class="btn-ap btn-plus" onclick="updateAP('lang', 1)">+</button>
+            </div>
+        </div>
+        <div class="task-card" id="card-proj">
+            <div class="task-icon">⚙️</div><div class="task-name">炼金造物</div><div class="task-desc">做个人/课程项目</div>
+            <div class="controls-group">
+                <button class="btn-ap btn-minus" onclick="updateAP('proj', -1)">-</button>
+                <span class="ap-value" id="val-proj">0</span>
+                <button class="btn-ap btn-plus" onclick="updateAP('proj', 1)">+</button>
+            </div>
+        </div>
+        <div class="task-card" id="card-res">
+            <div class="task-icon">🔬</div><div class="task-name">协助大魔法师</div><div class="task-desc">进组做科研论文</div>
+            <div class="controls-group">
+                <button class="btn-ap btn-minus" onclick="updateAP('res', -1)">-</button>
+                <span class="ap-value" id="val-res">0</span>
+                <button class="btn-ap btn-plus" onclick="updateAP('res', 1)">+</button>
+            </div>
+        </div>
+        <div class="task-card" id="card-int">
+            <div class="task-icon">💼</div><div class="task-name">勇者公会委派</div><div class="task-desc">名企大厂实习</div>
+            <div class="controls-group">
+                <button class="btn-ap btn-minus" onclick="updateAP('int', -1)">-</button>
+                <span class="ap-value" id="val-int">0</span>
+                <button class="btn-ap btn-plus" onclick="updateAP('int', 1)">+</button>
+            </div>
+        </div>
+        <div class="task-card" id="card-comp">
+            <div class="task-icon">⚔️</div><div class="task-name">皇家角斗场</div><div class="task-desc">打ACM等专业比赛</div>
+            <div class="controls-group">
+                <button class="btn-ap btn-minus" onclick="updateAP('comp', -1)">-</button>
+                <span class="ap-value" id="val-comp">0</span>
+                <button class="btn-ap btn-plus" onclick="updateAP('comp', 1)">+</button>
+            </div>
+        </div>
+        <div class="task-card" id="card-info">
+            <div class="task-icon">🔮</div><div class="task-name">凝视真理水晶</div><div class="task-desc">查选校查专业</div>
+            <div class="controls-group">
+                <button class="btn-ap btn-minus" onclick="updateAP('info', -1)">-</button>
+                <span class="ap-value" id="val-info">0</span>
+                <button class="btn-ap btn-plus" onclick="updateAP('info', 1)">+</button>
+            </div>
+        </div>
+        <div class="task-card" id="card-net">
+            <div class="task-icon">🦉</div><div class="task-name">寻访先知幽灵</div><div class="task-desc">联系学长/套磁</div>
+            <div class="controls-group">
+                <button class="btn-ap btn-minus" onclick="updateAP('net', -1)">-</button>
+                <span class="ap-value" id="val-net">0</span>
+                <button class="btn-ap btn-plus" onclick="updateAP('net', 1)">+</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="action-area">
+        <button class="btn-predict" onclick="generateProphecy()"><i class="fas fa-eye"></i> 凝视星盘，推演未来</button>
+    </div>
+
+    <div class="prophecy-panel" id="prophecyBox">
+        <div class="prophecy-title"><i class="fas fa-scroll"></i> 星盘预言：个性化行动指南</div>
+        <p style="color:#94a3b8; font-size:0.9rem; margin-top:-10px;">基于你的分配，系统提取了你当前最优先的 3 件事：</p>
+        
+        <div class="top-3-list" id="top3List">
+            </div>
+
+        <div class="analysis-text" id="analysisText">
+            </div>
+    </div>
+</div>
+
+<script>
+    const MAX_AP = 10;
+    let currentAP = MAX_AP;
+    
+    // 存储任务状态与属性
+    const tasks = {
+        'gpa': { val: 0, name: '刷高 GPA', icon: 'fa-book' },
+        'lang': { val: 0, name: '备考雅思', icon: 'fa-language' },
+        'proj': { val: 0, name: '硬核项目开发', icon: 'fa-cogs' },
+        'res': { val: 0, name: '进组科研', icon: 'fa-microscope' },
+        'int': { val: 0, name: '名企大厂实习', icon: 'fa-briefcase' },
+        'comp': { val: 0, name: '专业高阶比赛', icon: 'fa-trophy' },
+        'info': { val: 0, name: '查院校资料', icon: 'fa-globe' },
+        'net': { val: 0, name: '联系学长学姐', icon: 'fa-comments' }
+    };
+
+    function updateAP(taskId, delta) {
+        if (delta > 0 && currentAP <= 0) return; // 没点数了
+        if (delta < 0 && tasks[taskId].val <= 0) return; // 不能扣成负数
+        
+        // 每个任务最多投 5 点，防止单吊
+        if (delta > 0 && tasks[taskId].val >= 5) {
+            alert("⚠️ 魔法师，单一维度的过度沉迷会导致走火入魔！单项最高投入 5 点星尘。");
+            return;
+        }
+
+        tasks[taskId].val += delta;
+        currentAP -= delta;
+
+        // 更新 UI
+        document.getElementById(`val-${taskId}`).innerText = tasks[taskId].val;
+        document.getElementById('apCount').innerText = currentAP;
+        
+        // 样式高亮
+        const card = document.getElementById(`card-${taskId}`);
+        if (tasks[taskId].val > 0) {
+            card.classList.add('active');
+        } else {
+            card.classList.remove('active');
+        }
+
+        // 按钮状态更新
+        document.querySelectorAll('.btn-plus').forEach(btn => btn.disabled = (currentAP === 0));
+    }
+
+    function generateProphecy() {
+        if (currentAP > 0) {
+            alert(`🔮 你的星盘中还有 ${currentAP} 滴星尘未分配。请毫无保留地倾注你的全部精力！`);
+            return;
+        }
+
+        // 1. 找出排名前三的任务
+        const sortedTasks = Object.entries(tasks)
+            .sort(([, a], [, b]) => b.val - a.val)
+            .slice(0, 3); // 取前三
+
+        // 渲染前三名 UI
+        const top3HTML = sortedTasks.map(([id, data]) => `
+            <div class="top-item">
+                <i class="fas ${data.icon}"></i>
+                <span>${data.name} (${data.val}点)</span>
+            </div>
+        `).join('');
+        document.getElementById('top3List').innerHTML = top3HTML;
+
+        // 2. 生成深度分析 (这里预设偏向计算机/软件类背景的逻辑判定)
+        let analysis = "";
+        const pointsObj = {};
+        for (let [k, v] of Object.entries(tasks)) pointsObj[k] = v.val;
+
+        const hardSkills = pointsObj.gpa + pointsObj.proj + pointsObj.res + pointsObj.int;
+        const softInfo = pointsObj.info + pointsObj.net;
+
+        // 判定 A：无效努力警告 (在查资料和套磁上花了太多时间)
+        if (softInfo >= 4) {
+            analysis = `⚠️ <b>先知警告：这是一种“看起来很努力”的内耗陷阱。</b><br>
+            你在【查资料】或【套磁】上消耗了过多星尘。对于竞争激烈的信息科学与软件开发领域，这些是<span class="highlight-roi">低 ROI（投入产出比）的边缘行为</span>。学长学姐无法帮你写代码，中介的话术也不能代替你的 GPA。请立即缩减这里的精力，转移到硬核技能的打磨上！`;
+        } 
+        // 判定 B：完美的代码/软件工程向求职与升学路线 (重实习、项目和GPA)
+        else if (pointsObj.int >= 3 && pointsObj.proj >= 2 && pointsObj.gpa >= 2) {
+            analysis = `✨ <b>星象极其璀璨！这是通往顶级科技公会（如 SAP 等名企）的最佳路线。</b><br>
+            你精准地抓住了计算机类专业的最强护城河：<span class="highlight-roi">硬核项目 + 名企实习背书 + 扎实的绩点底色</span>。在代码的世界里，一份高质量的系统开发项目（比如全栈平台）和一段核心研发实习的 ROI 是无与伦比的。继续保持这种极度务实的节奏！`;
+        }
+        // 判定 C：偏科警告 (全点科研不管语言/GPA)
+        else if (pointsObj.res >= 4 && pointsObj.lang === 0) {
+            analysis = `🤔 <b>星光略显黯淡：瘸腿的学术怪人。</b><br>
+            你极度沉迷于实验室的魔法演算，却完全忽视了与外界沟通的【海妖之歌(雅思)】。要知道，哪怕你做出了跨时代的科研成果，如果语言成绩达不到申请的红线要求，所有的名校传送门都会对你紧闭。`;
+        }
+        // 兜底判定：平衡但平庸
+        else {
+            analysis = `⚖️ <b>平稳的修行之路。</b><br>
+            你的精力分配相对均衡。虽然没有犯大错，但也缺乏能够让你在千军万马中脱颖而出的“爆点”。建议在保证 GPA 不崩盘的前提下，集中火力攻克一段<b>高含金量的核心实习</b>或<b>重量级专业项目</b>，这会成为你日后申请文书里的杀手锏。`;
+        }
+
+        document.getElementById('analysisText').innerHTML = analysis;
+        document.getElementById('prophecyBox').style.display = 'block';
+    }
+</script>
+</body>
+</html>

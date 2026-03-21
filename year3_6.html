@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Y3-6 九宫格多线打怪</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { 
+            background: #1a1a2e; color: #fff; display: flex; 
+            justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px;
+        }
+        
+        .tactical-board {
+            background: #16213e; border: 2px solid #0f3460; border-radius: 20px;
+            padding: 30px; width: 100%; max-width: 900px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        }
+
+        .header { text-align: center; margin-bottom: 25px; }
+        .header h2 { color: #e94560; margin: 0 0 10px 0; font-size: 2rem; }
+
+        /* 兵工厂（武器库） */
+        .arsenal {
+            display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;
+            background: #0f3460; padding: 20px; border-radius: 15px; margin-bottom: 30px;
+        }
+
+        .weapon-card {
+            background: linear-gradient(135deg, #2a2a72, #009ffd);
+            border: 2px solid #fff; border-radius: 10px; width: 120px; padding: 10px;
+            cursor: grab; text-align: center; font-size: 0.85rem; font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.2s; z-index: 10;
+        }
+        .weapon-card:hover { transform: scale(1.05); border-color: #f9a826; }
+        .weapon-card i { display: block; font-size: 1.5rem; margin-bottom: 5px; color: #f9a826; }
+        
+        /* 特定武器颜色分类 */
+        .w-lang { background: linear-gradient(135deg, #4b6cb7, #182848); }
+        .w-doc { background: linear-gradient(135deg, #834d9b, #d04ed6); }
+        .w-sys { background: linear-gradient(135deg, #cb2d3e, #ef473a); }
+
+        /* 九宫格战场 */
+        .grid-battlefield {
+            display: grid;
+            grid-template-columns: 80px 1fr 1fr 1fr 80px; /* 左侧标签 + 3个月份 + 右侧怪物 */
+            grid-template-rows: auto 120px 120px 120px; /* 顶部月份栏 + 3条战线 */
+            gap: 15px; align-items: center;
+        }
+
+        /* 标签与抬头 */
+        .col-header { text-align: center; font-weight: bold; color: #a0aec0; }
+        .row-header { text-align: center; font-weight: bold; font-size: 0.9rem; color: #e94560; writing-mode: vertical-rl; transform: rotate(180deg); margin: 0 auto;}
+        
+        /* 阵地插槽 */
+        .grid-slot {
+            background: rgba(255, 255, 255, 0.05); border: 2px dashed #4a5568;
+            border-radius: 12px; height: 100%; display: flex; justify-content: center;
+            align-items: center; transition: 0.2s; padding: 5px;
+        }
+        .grid-slot.drag-over { background: rgba(233, 69, 96, 0.2); border-color: #e94560; transform: scale(1.02); }
+        
+        /* 怪物 */
+        .monster { font-size: 2.5rem; text-align: center; animation: float 2s infinite ease-in-out; filter: drop-shadow(0 0 10px red); }
+        .m-lang { animation-delay: 0s; }
+        .m-doc { animation-delay: 0.5s; }
+        .m-sys { animation-delay: 1s; }
+        
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+        /* 放入插槽后的武器微调 */
+        .grid-slot .weapon-card { width: 100%; height: 100%; margin: 0; box-shadow: none; display: flex; flex-direction: column; justify-content: center; }
+
+        /* 控制区 */
+        .controls { text-align: center; margin-top: 30px; }
+        .btn-simulate {
+            background: #e94560; color: white; border: none; padding: 15px 40px;
+            font-size: 1.2rem; font-weight: bold; border-radius: 30px; cursor: pointer;
+            transition: 0.2s; box-shadow: 0 5px 15px rgba(233, 69, 96, 0.4);
+        }
+        .btn-simulate:hover { background: #ff2e55; transform: translateY(-2px); }
+
+        .feedback-panel { margin-top: 20px; padding: 15px; border-radius: 10px; font-weight: bold; display: none; text-align: center;}
+    </style>
+</head>
+<body>
+
+<div class="tactical-board">
+    <div class="header">
+        <h2><i class="fas fa-chess-board"></i> 多线作战： Offer 阵地防御</h2>
+        <p style="color:#a0aec0;">拖拽武器卡牌布置防线。请注意：武器必须放在对应的战线上，且逻辑顺序不能颠倒！</p>
+    </div>
+
+    <div class="arsenal" id="arsenalPanel">
+        <div class="weapon-card w-lang" draggable="true" id="w-vocab" data-type="vocab" data-lane="lang">
+            <i class="fas fa-book"></i>刷机经/词汇
+        </div>
+        <div class="weapon-card w-lang" draggable="true" id="w-mock" data-type="mock" data-lane="lang">
+            <i class="fas fa-headset"></i>全真模考冲刺
+        </div>
+        <div class="weapon-card w-doc" draggable="true" id="w-draft" data-type="draft" data-lane="doc">
+            <i class="fas fa-pencil-alt"></i>梳理经历大纲
+        </div>
+        <div class="weapon-card w-doc" draggable="true" id="w-polish" data-type="polish" data-lane="doc">
+            <i class="fas fa-magic"></i>外籍导师精修
+        </div>
+        <div class="weapon-card w-sys" draggable="true" id="w-list" data-type="list" data-lane="sys">
+            <i class="fas fa-list-ol"></i>定校梯队表
+        </div>
+        <div class="weapon-card w-sys" draggable="true" id="w-submit" data-type="submit" data-lane="sys">
+            <i class="fas fa-paper-plane"></i>一键缴费递交
+        </div>
+    </div>
+
+    <div class="grid-battlefield">
+        <div></div>
+        <div class="col-header">9月 (储备期)</div>
+        <div class="col-header">10月 (攻坚期)</div>
+        <div class="col-header">11月 (决战期)</div>
+        <div class="col-header">Boss</div>
+
+        <div class="row-header"><i class="fas fa-language"></i> 语言防线</div>
+        <div class="grid-slot" id="slot-lang-9" data-lane="lang"></div>
+        <div class="grid-slot" id="slot-lang-10" data-lane="lang"></div>
+        <div class="grid-slot" id="slot-lang-11" data-lane="lang"></div>
+        <div class="monster m-lang">🐉<div style="font-size:0.8rem;color:#e94560;">雅思恶龙</div></div>
+
+        <div class="row-header"><i class="fas fa-file-alt"></i> 文书防线</div>
+        <div class="grid-slot" id="slot-doc-9" data-lane="doc"></div>
+        <div class="grid-slot" id="slot-doc-10" data-lane="doc"></div>
+        <div class="grid-slot" id="slot-doc-11" data-lane="doc"></div>
+        <div class="monster m-doc">🧟<div style="font-size:0.8rem;color:#e94560;">难产僵尸</div></div>
+
+        <div class="row-header"><i class="fas fa-laptop"></i> 网申防线</div>
+        <div class="grid-slot" id="slot-sys-9" data-lane="sys"></div>
+        <div class="grid-slot" id="slot-sys-10" data-lane="sys"></div>
+        <div class="grid-slot" id="slot-sys-11" data-lane="sys"></div>
+        <div class="monster m-sys">💀<div style="font-size:0.8rem;color:#e94560;">DDL死神</div></div>
+    </div>
+
+    <div class="controls">
+        <button class="btn-simulate" onclick="simulateBattle()"><i class="fas fa-fire"></i> 炮火覆盖 (校验逻辑)</button>
+        <div id="gameFeedback" class="feedback-panel"></div>
+    </div>
+</div>
+
+<script>
+    const weapons = document.querySelectorAll('.weapon-card');
+    const slots = document.querySelectorAll('.grid-slot, .arsenal');
+
+    weapons.forEach(weapon => {
+        weapon.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', e.target.id);
+            setTimeout(() => e.target.style.opacity = '0.5', 0);
+        });
+        weapon.addEventListener('dragend', (e) => e.target.style.opacity = '1');
+    });
+
+    slots.forEach(slot => {
+        slot.addEventListener('dragover', (e) => {
+            e.preventDefault(); 
+            if(slot.classList.contains('grid-slot')) slot.classList.add('drag-over');
+        });
+        slot.addEventListener('dragleave', () => slot.classList.remove('drag-over'));
+        
+        slot.addEventListener('drop', (e) => {
+            e.preventDefault();
+            slot.classList.remove('drag-over');
+            const weaponId = e.dataTransfer.getData('text/plain');
+            const weaponEl = document.getElementById(weaponId);
+            
+            // 规则 1：一个格子只能放一个武器
+            if(slot.classList.contains('grid-slot') && slot.children.length > 0) return;
+            
+            // 规则 2：武器必须放在对应的战线上！(比如语言武器不能放文书防线)
+            if(slot.classList.contains('grid-slot') && slot.dataset.lane !== weaponEl.dataset.lane) {
+                alert("指挥官！跨战线部署无效！请把武器放在对应的防线上。");
+                return;
+            }
+            slot.appendChild(weaponEl);
+        });
+    });
+
+    function simulateBattle() {
+        const feedback = document.getElementById('gameFeedback');
+        
+        // 校验是否全部部署
+        if (document.getElementById('arsenalPanel').children.length > 0) {
+            return showMsg('error', '⚠️ 兵力未完全部署！请将所有武器投入战场！');
+        }
+
+        // 提取每条战线的情况
+        const checkLane = (lane) => {
+            return [9, 10, 11].map(m => {
+                const item = document.getElementById(`slot-${lane}-${m}`).firstElementChild;
+                return item ? item.dataset.type : null;
+            });
+        };
+
+        const langLane = checkLane('lang');
+        const docLane = checkLane('doc');
+        const sysLane = checkLane('sys');
+
+        // === 开始趣味判定逻辑 ===
+
+        // 1. 语言战线判定：不能先模考再背词
+        if (langLane.indexOf('mock') < langLane.indexOf('vocab')) {
+            return showMsg('error', '💥 语言战线崩溃！你还没背单词就直接去全真模考？雅思恶龙一口把你吞了！');
+        }
+
+        // 2. 文书战线判定：不能先精修再列大纲
+        if (docLane.indexOf('polish') < docLane.indexOf('draft')) {
+            return showMsg('error', '💥 文书战线崩溃！大纲都没写就找导师精修？难产僵尸把你的文书撕碎了！');
+        }
+
+        // 3. 网申战线判定：不能先递交再选校，且递交不能太早
+        if (sysLane.indexOf('submit') < sysLane.indexOf('list')) {
+            return showMsg('error', '💥 网申战线崩溃！学校都没选好你就按了一键递交？送人头给 DDL 死神！');
+        }
+
+        // 4. 交叉逻辑判定：不能在文书精修(polish)之前递交网申(submit)
+        const polishMonth = [9, 10, 11][docLane.indexOf('polish')];
+        const submitMonth = [9, 10, 11][sysLane.indexOf('submit')];
+        if (submitMonth <= polishMonth) {
+            return showMsg('error', '😱 致命失误！你的文书还没最终精修完，你就把网申交了？');
+        }
+
+        // 全对
+        showMsg('success', '🎉 防线稳如泰山！逻辑极其严密，三大怪物被你全歼！拿下大满贯 Offer！');
+    }
+
+    function showMsg(type, msg) {
+        const fb = document.getElementById('gameFeedback');
+        fb.style.display = 'block';
+        fb.innerHTML = msg;
+        fb.style.background = type === 'error' ? 'rgba(233, 69, 96, 0.2)' : 'rgba(76, 175, 80, 0.2)';
+        fb.style.color = type === 'error' ? '#ff4d4d' : '#4caf50';
+        fb.style.border = `2px solid ${type === 'error' ? '#e94560' : '#4caf50'}`;
+    }
+</script>
+</body>
+</html>

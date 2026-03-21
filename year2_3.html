@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Y2-3 命运天平：学校梯度</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        body { 
+            background: radial-gradient(circle at top, #1c2331 0%, #0b0f19 100%);
+            display: flex; justify-content: center; align-items: center; 
+            min-height: 100vh; margin: 0; padding: 20px; color: #e2e8f0;
+        }
+
+        .balance-room {
+            width: 100%; max-width: 1000px; background: rgba(15, 23, 42, 0.7);
+            border: 2px solid #3b82f6; border-radius: 24px; padding: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 0 20px rgba(59, 130, 246, 0.2);
+            backdrop-filter: blur(10px); display: flex; flex-direction: column; align-items: center;
+        }
+
+        /* 顶部信息面板 */
+        .header { text-align: center; margin-bottom: 25px; width: 100%; }
+        .header h2 { margin: 0; font-size: 2.2rem; color: #60a5fa; text-shadow: 0 0 15px rgba(96, 165, 250, 0.5); }
+        .header p { color: #94a3b8; font-size: 1.05rem; margin-top: 10px; }
+        
+        .user-profile {
+            background: linear-gradient(90deg, rgba(30,58,138,0.5), rgba(17,24,39,0.5));
+            border-left: 4px solid #f59e0b; padding: 10px 20px; border-radius: 8px;
+            display: inline-block; margin-top: 15px; font-weight: bold; color: #fbbf24;
+        }
+
+        /* 选校卡片牌库 */
+        .card-deck {
+            display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;
+            background: rgba(0,0,0,0.4); padding: 20px; border-radius: 16px; margin-bottom: 30px; width: 100%;
+            border: 1px dashed #475569; min-height: 120px;
+        }
+
+        .school-card {
+            background: linear-gradient(145deg, #1e293b, #0f172a); border: 2px solid #64748b;
+            border-radius: 12px; width: 140px; padding: 15px 10px; text-align: center;
+            cursor: grab; box-shadow: 0 8px 15px rgba(0,0,0,0.4); transition: 0.2s; position: relative;
+        }
+        .school-card:hover { transform: translateY(-5px); border-color: #fbbf24; box-shadow: 0 10px 20px rgba(251, 191, 36, 0.3); }
+        .school-card:active { cursor: grabbing; transform: scale(0.95); }
+        
+        .school-icon { font-size: 2rem; margin-bottom: 8px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.2)); }
+        .school-name { font-size: 0.95rem; font-weight: bold; color: #f8fafc; margin-bottom: 5px; }
+        .school-tag { font-size: 0.7rem; background: #334155; padding: 2px 6px; border-radius: 8px; color: #cbd5e1; }
+
+        /* 梯度放置区 (冲刺、主申、保底) */
+        .tiers-container {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%;
+        }
+
+        .tier-zone {
+            background: rgba(15, 23, 42, 0.6); border: 2px dashed #475569;
+            border-radius: 16px; min-height: 250px; padding: 15px;
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            transition: 0.3s; position: relative; overflow: hidden;
+        }
+        
+        .tier-header { font-size: 1.2rem; font-weight: 900; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; z-index: 2;}
+        .tier-icon { font-size: 3rem; position: absolute; opacity: 0.1; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1;}
+
+        /* 各梯度的魔法色彩 */
+        #zone-reach { border-color: #ef4444; } /* 冲刺：红色火焰 */
+        #zone-reach .tier-header { color: #fca5a5; text-shadow: 0 0 10px #ef4444; }
+        #zone-reach.drag-over { background: rgba(239, 68, 68, 0.15); box-shadow: inset 0 0 30px rgba(239, 68, 68, 0.3); transform: scale(1.02);}
+
+        #zone-match { border-color: #3b82f6; } /* 主申：蓝色星光 */
+        #zone-match .tier-header { color: #93c5fd; text-shadow: 0 0 10px #3b82f6; }
+        #zone-match.drag-over { background: rgba(59, 130, 246, 0.15); box-shadow: inset 0 0 30px rgba(59, 130, 246, 0.3); transform: scale(1.02);}
+
+        #zone-safety { border-color: #10b981; } /* 保底：绿色大地 */
+        #zone-safety .tier-header { color: #6ee7b7; text-shadow: 0 0 10px #10b981; }
+        #zone-safety.drag-over { background: rgba(16, 185, 129, 0.15); box-shadow: inset 0 0 30px rgba(16, 185, 129, 0.3); transform: scale(1.02);}
+
+        /* 放入梯队后的卡片样式 */
+        .tier-zone .school-card { width: 90%; padding: 8px; display: flex; align-items: center; justify-content: space-between; z-index: 2; box-shadow: 0 4px 6px rgba(0,0,0,0.5);}
+        .tier-zone .school-icon { font-size: 1.5rem; margin: 0; }
+        .tier-zone .school-name { margin: 0; font-size: 0.85rem;}
+
+        /* 操作区 */
+        .controls { margin-top: 30px; text-align: center; }
+        .btn-predict {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6); border: none;
+            padding: 15px 40px; border-radius: 30px; color: white; font-size: 1.2rem;
+            font-weight: bold; cursor: pointer; transition: 0.3s;
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.4);
+        }
+        .btn-predict:hover { transform: translateY(-3px); box-shadow: 0 12px 25px rgba(99, 102, 241, 0.6); }
+
+        /* 诊断结果面板 */
+        .feedback-panel {
+            margin-top: 25px; background: rgba(15, 23, 42, 0.9); border: 2px solid #8b5cf6;
+            border-radius: 16px; padding: 25px; width: 100%; display: none;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.5); animation: slideUp 0.4s ease-out;
+        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .fb-title { color: #c4b5fd; font-size: 1.4rem; font-weight: bold; border-bottom: 1px dashed #6d28d9; padding-bottom: 10px; margin-bottom: 15px; display: flex; justify-content: space-between;}
+        .fb-score { color: #f59e0b; }
+        
+        .fb-item { margin-bottom: 15px; padding: 12px; border-radius: 8px; background: rgba(255,255,255,0.05); display: flex; align-items: flex-start; gap: 12px;}
+        .fb-icon { font-size: 1.5rem; }
+        .fb-text h4 { margin: 0 0 5px 0; color: #f1f5f9; }
+        .fb-text p { margin: 0; color: #94a3b8; font-size: 0.9rem; line-height: 1.5;}
+        
+        .status-danger { border-left: 4px solid #ef4444; } .status-danger .fb-icon { color: #ef4444; }
+        .status-perfect { border-left: 4px solid #10b981; } .status-perfect .fb-icon { color: #10b981; }
+        .status-waste { border-left: 4px solid #f59e0b; } .status-waste .fb-icon { color: #f59e0b; }
+
+    </style>
+</head>
+<body>
+
+<div class="balance-room">
+    <div class="header">
+        <h2><i class="fas fa-balance-scale-right"></i> 命运天平：分拣你的梦校</h2>
+        <p>评估隐形未来，将你的焦虑具象化。请将下方的魔法学院拖入你认为合适的梯队中！</p>
+        <div class="user-profile">
+            <i class="fas fa-user-graduate"></i> 当前画像档案：均分 82/100 | 理工/计算机方向 | 有一段普通实习
+        </div>
+    </div>
+
+    <div class="card-deck" id="deck">
+        <div class="school-card" draggable="true" id="sch-ic" data-id="ic">
+            <div class="school-icon">👑</div>
+            <div class="school-name">皇家理工学院</div>
+            <div class="school-tag">QS Top 10</div>
+        </div>
+        <div class="school-card" draggable="true" id="sch-ucl" data-id="ucl">
+            <div class="school-icon">🏛️</div>
+            <div class="school-name">伦敦大学学院</div>
+            <div class="school-tag">QS Top 10</div>
+        </div>
+        <div class="school-card" draggable="true" id="sch-kcl" data-id="kcl">
+            <div class="school-icon">🦁</div>
+            <div class="school-name">国王学院</div>
+            <div class="school-tag">QS Top 40</div>
+        </div>
+        <div class="school-card" draggable="true" id="sch-soton" data-id="soton">
+            <div class="school-icon">⚓</div>
+            <div class="school-name">南安普顿大学</div>
+            <div class="school-tag">QS Top 80</div>
+        </div>
+        <div class="school-card" draggable="true" id="sch-cardiff" data-id="cardiff">
+            <div class="school-icon">🐉</div>
+            <div class="school-name">卡迪夫大学</div>
+            <div class="school-tag">QS 150+</div>
+        </div>
+    </div>
+
+    <div class="tiers-container">
+        <div class="tier-zone" id="zone-reach" data-tier="reach">
+            <i class="fas fa-fire tier-icon"></i>
+            <div class="tier-header">冲刺区 (Reach)</div>
+        </div>
+        
+        <div class="tier-zone" id="zone-match" data-tier="match">
+            <i class="fas fa-bullseye tier-icon"></i>
+            <div class="tier-header">主申区 (Match)</div>
+        </div>
+
+        <div class="tier-zone" id="zone-safety" data-tier="safety">
+            <i class="fas fa-shield-alt tier-icon"></i>
+            <div class="tier-header">保底区 (Safety)</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn-predict" onclick="evaluateTiers()"><i class="fas fa-crystal-ball"></i> 鉴定天平预测</button>
+    </div>
+
+    <div class="feedback-panel" id="feedbackBox">
+        <div class="fb-title">
+            <span><i class="fas fa-chart-pie"></i> 分层诊断报告</span>
+            <span class="fb-score" id="scoreReward"></span>
+        </div>
+        <div id="feedbackList">
+            </div>
+    </div>
+
+</div>
+
+<script>
+    // --- 原生拖拽逻辑 ---
+    const cards = document.querySelectorAll('.school-card');
+    const zones = document.querySelectorAll('.tier-zone, .card-deck');
+
+    cards.forEach(card => {
+        card.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', e.target.id);
+            setTimeout(() => e.target.style.opacity = '0.5', 0);
+        });
+        card.addEventListener('dragend', (e) => e.target.style.opacity = '1');
+    });
+
+    zones.forEach(zone => {
+        zone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (zone.classList.contains('tier-zone')) zone.classList.add('drag-over');
+        });
+        zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+        zone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            zone.classList.remove('drag-over');
+            const cardId = e.dataTransfer.getData('text/plain');
+            zone.appendChild(document.getElementById(cardId));
+        });
+    });
+
+    // --- 核心：基于“均分 82，理工科”的真实验证逻辑 ---
+    // 真实情况：IC绝对录不上，UCL可以买彩票(冲刺)，KCL/Soton是主申，Cardiff是妥妥保底。
+    const logicDB = {
+        'ic': { realTier: 'unrealistic', name: '皇家理工 (IC)' },
+        'ucl': { realTier: 'reach', name: 'UCL' },
+        'kcl': { realTier: 'match', name: '国王学院 (KCL)' },
+        'soton': { realTier: 'match', name: '南安普顿' },
+        'cardiff': { realTier: 'safety', name: '卡迪夫' }
+    };
+
+    function evaluateTiers() {
+        // 确保牌库空了
+        if (document.getElementById('deck').children.length > 0) {
+            alert("🔮 先知提醒：请将所有学校分配完毕后再进行预测！");
+            return;
+        }
+
+        const fbList = document.getElementById('feedbackList');
+        fbList.innerHTML = '';
+        let points = 50; // 基础分
+        let allPerfect = true;
+
+        // 获取每个区里的学校
+        const getSchoolsInTier = (tierId) => {
+            return Array.from(document.getElementById(tierId).querySelectorAll('.school-card')).map(card => card.dataset.id);
+        };
+
+        const reaches = getSchoolsInTier('zone-reach');
+        const matches = getSchoolsInTier('zone-match');
+        const safeties = getSchoolsInTier('zone-safety');
+
+        // 诊断 1：好高骛远陷阱 (把 IC 放在主申或保底)
+        if (matches.includes('ic') || safeties.includes('ic')) {
+            addFeedback('status-danger', 'fa-skull-crossbones', '极度高估：IC 居然是保底？', 
+                'GPA 82 想要申请理工科神校帝国理工，甚至把它放在主申/保底区，这是极度危险的“彩票行为”，大概率会全军覆没！IC 应属于【超冲刺】甚至放弃区。');
+            allPerfect = false; points -= 10;
+        }
+
+        // 诊断 2：UCL 摆放正确性 (应在冲刺)
+        if (matches.includes('ucl') || safeties.includes('ucl')) {
+            addFeedback('status-danger', 'fa-exclamation-triangle', '盲目乐观：UCL 定位过低', 
+                'UCL 的泛计算机和工程类竞争极度激烈，82分对它来说属于纯纯的【冲刺区】。把它放主申会让你浪费一个稳妥的名额！');
+            allPerfect = false; points -= 10;
+        } else if (reaches.includes('ucl')) {
+            addFeedback('status-perfect', 'fa-check-circle', '完美定位：UCL 冲刺', 
+                '非常清醒！UCL 对 82 分来说是有机会触碰的天花板，放在冲刺区摸奖是非常科学的策略。');
+        }
+
+        // 诊断 3：核心主申区的稳妥度 (KCL / Soton)
+        if (reaches.includes('kcl') || reaches.includes('soton')) {
+            addFeedback('status-waste', 'fa-arrow-down', '过度自卑：浪费了冲刺名额', 
+                'KCL 和南安普顿对于 82 分的理工科来说是恰好匹配的【主申区】。你把它们放在冲刺，意味着你本来可以去更好的学校！你太保守了！');
+            allPerfect = false; points -= 10;
+        } else if (safeties.includes('kcl')) {
+            addFeedback('status-danger', 'fa-exclamation', '主申当保底：防线脆弱', 
+                'KCL 虽好，但绝不是 82 分的“稳妥保底”。如果今年卷起来，你的保底防线会被直接击穿。');
+            allPerfect = false;
+        }
+
+        // 诊断 4：真·保底的确认 (Cardiff)
+        if (reaches.includes('cardiff') || matches.includes('cardiff')) {
+            addFeedback('status-waste', 'fa-arrow-down', '严重低估自我', 
+                '卡迪夫大学对你的背景来说是妥妥的【保底区】。把它放在主申甚至冲刺，说明你对自己的背景极其缺乏自信。');
+            allPerfect = false; points -= 10;
+        } else if (safeties.includes('cardiff')) {
+            addFeedback('status-perfect', 'fa-shield-alt', '稳固的后防线：卡迪夫', 
+                '干得漂亮！这才是真正的保底线。无论前面的神仙打架多激烈，这张卡片能保证你明年绝对有书读。');
+        }
+
+        // 如果胡乱排导致没有任何具体反馈，给个兜底
+        if (fbList.innerHTML === '') {
+            addFeedback('status-waste', 'fa-question-circle', '阵型混沌', '你的分层缺乏明显的梯队感，建议再好好研究一下各个院校的平均录取门槛。');
+        }
+
+        document.getElementById('scoreReward').innerHTML = `+${Math.max(10, points)} <i class="fas fa-coins"></i>`;
+        document.getElementById('feedbackBox').style.display = 'block';
+    }
+
+    function addFeedback(statusClass, iconClass, title, text) {
+        const html = `
+            <div class="fb-item ${statusClass}">
+                <div class="fb-icon"><i class="fas ${iconClass}"></i></div>
+                <div class="fb-text">
+                    <h4>${title}</h4>
+                    <p>${text}</p>
+                </div>
+            </div>
+        `;
+        document.getElementById('feedbackList').insertAdjacentHTML('beforeend', html);
+    }
+</script>
+</body>
+</html>

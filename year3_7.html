@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Y3-7 DIY 沼泽排雷战</title>
+    <style>
+        body { background: #0f171c; color: #fff; font-family: sans-serif; display: flex; justify-content: center; padding: 40px;}
+        .room { width: 100%; max-width: 900px; text-align: center;}
+        .pool { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 30px;}
+        .mine { background: #1e293b; padding: 10px; border-radius: 8px; cursor: grab; border: 1px solid #475569;}
+        .altars { display: flex; gap: 20px; }
+        .altar { flex: 1; border: 2px dashed #475569; min-height: 200px; padding: 15px; border-radius: 10px; transition: 0.2s;}
+        .altar.drag-over { background: rgba(255,255,255,0.1); }
+        .title { padding: 5px; border-radius: 10px; font-weight: bold; margin-bottom: 10px;}
+        #a-high { border-color: #ef4444; } #a-high .title { background: #b91c1c;}
+        #a-med { border-color: #f59e0b; } #a-med .title { background: #b45309;}
+        #a-low { border-color: #3b82f6; } #a-low .title { background: #1d4ed8;}
+    </style>
+</head>
+<body>
+<div class="room">
+    <h2 style="color:#38bdf8;">DIY 沼泽：排雷生存战</h2>
+    <p>将失误符文拖入对应的风险祭坛中。</p>
+    
+    <div class="pool" id="pool">
+        <div class="mine" draggable="true" id="m1" data-r="high">错过截止时间</div>
+        <div class="mine" draggable="true" id="m2" data-r="high">上传草稿版CV</div>
+        <div class="mine" draggable="true" id="m3" data-r="med">语言小分不够</div>
+        <div class="mine" draggable="true" id="m4" data-r="low">材料命名"1.pdf"</div>
+    </div>
+
+    <div class="altars">
+        <div class="altar" id="a-high" data-t="high"><div class="title">🔴 致命诅咒 (直接被拒)</div></div>
+        <div class="altar" id="a-med" data-t="med"><div class="title">🟡 麻烦泥潭 (严重减分)</div></div>
+        <div class="altar" id="a-low" data-t="low"><div class="title">🟢 擦伤荆棘 (扣印象分)</div></div>
+    </div>
+</div>
+<script>
+    let correct = 0;
+    document.querySelectorAll('.mine').forEach(m => {
+        m.addEventListener('dragstart', e => e.dataTransfer.setData('id', e.target.id));
+    });
+    document.querySelectorAll('.altar').forEach(a => {
+        a.addEventListener('dragover', e => { e.preventDefault(); a.classList.add('drag-over'); });
+        a.addEventListener('dragleave', () => a.classList.remove('drag-over'));
+        a.addEventListener('drop', e => {
+            e.preventDefault(); a.classList.remove('drag-over');
+            const m = document.getElementById(e.dataTransfer.getData('id'));
+            if(m.dataset.r === a.dataset.t) {
+                a.appendChild(m); correct++;
+                if(correct === 4) {
+                    setTimeout(() => alert("✅ 排雷成功！获得《DIY避坑手册》。\n请返回地图，开启 Y3-8 最终加冕大殿！"), 500);
+                }
+            } else { alert("⚠️ 判断失误！这不是正确的风险等级。"); }
+        });
+    });
+</script>
+</body>
+</html>

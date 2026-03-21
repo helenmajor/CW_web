@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Y3-2 三相魔法阵：材料分拣</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
+        
+        body { 
+            background: radial-gradient(circle at top, #130b1c 0%, #05020a 100%);
+            display: flex; justify-content: center; align-items: center; 
+            min-height: 100vh; margin: 0; padding: 20px; color: #e2e8f0;
+        }
+
+        .sorting-room {
+            width: 100%; max-width: 1000px; background: rgba(19, 11, 28, 0.8);
+            border: 2px solid #a855f7; border-radius: 24px; padding: 40px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 0 30px rgba(168, 85, 247, 0.2);
+            backdrop-filter: blur(10px); position: relative; overflow: hidden;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h2 { margin: 0 0 10px 0; font-size: 2.5rem; color: #d8b4fe; text-shadow: 0 0 15px rgba(216, 180, 254, 0.5); letter-spacing: 2px; }
+        .header p { color: #94a3b8; font-size: 1.1rem; margin: 0; line-height: 1.6;}
+        .highlight { color: #fde047; font-weight: bold; }
+
+        /* ================= 魔法石碎片池 ================= */
+        .stones-pool {
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 15px;
+            background: rgba(0, 0, 0, 0.4); border: 1px dashed #7e22ce; border-radius: 16px;
+            padding: 25px; width: 100%; margin-bottom: 40px; min-height: 150px;
+        }
+
+        .magic-stone {
+            background: linear-gradient(135deg, #2e1065, #1e1b4b); border: 2px solid #8b5cf6;
+            border-radius: 12px; padding: 15px; width: 260px; cursor: grab; text-align: left;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.5); transition: 0.2s; position: relative; z-index: 10;
+        }
+        .magic-stone:hover { transform: translateY(-5px); border-color: #fde047; box-shadow: 0 10px 20px rgba(253, 224, 71, 0.3); }
+        .magic-stone:active { cursor: grabbing; transform: scale(0.95); }
+        
+        .stone-icon { font-size: 1.5rem; margin-bottom: 8px; color: #c4b5fd; display: inline-block; margin-right: 10px;}
+        .stone-text { font-size: 0.9rem; font-weight: bold; color: #f8fafc; line-height: 1.4; display: inline-block; width: 80%; vertical-align: top;}
+
+        /* ================= 三大熔炉区 ================= */
+        .cauldrons-container {
+            display: flex; gap: 30px; width: 100%; justify-content: center;
+        }
+
+        .cauldron-zone {
+            flex: 1; max-width: 280px; min-height: 250px; background: rgba(0,0,0,0.5);
+            border: 3px dashed; border-radius: 20px; padding: 20px;
+            display: flex; flex-direction: column; align-items: center; position: relative; transition: 0.3s;
+        }
+        
+        .c-title { font-size: 1.8rem; font-weight: 900; margin-bottom: 5px; letter-spacing: 2px;}
+        .c-desc { font-size: 0.85rem; color: #94a3b8; text-align: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;}
+        
+        /* CV 履历之炉：理智蓝 */
+        #zone-cv { border-color: #0ea5e9; }
+        #zone-cv .c-title { color: #38bdf8; text-shadow: 0 0 15px rgba(56, 189, 248, 0.5); }
+        #zone-cv.drag-over { background: rgba(14, 165, 233, 0.15); box-shadow: inset 0 0 40px rgba(14, 165, 233, 0.3); transform: scale(1.03); border-style: solid;}
+
+        /* PS 灵魂之炉：热情金 */
+        #zone-ps { border-color: #f59e0b; }
+        #zone-ps .c-title { color: #fde047; text-shadow: 0 0 15px rgba(253, 224, 71, 0.5); }
+        #zone-ps.drag-over { background: rgba(245, 158, 11, 0.15); box-shadow: inset 0 0 40px rgba(245, 158, 11, 0.3); transform: scale(1.03); border-style: solid;}
+
+        /* RL 先知之炉：神秘紫 */
+        #zone-rl { border-color: #a855f7; }
+        #zone-rl .c-title { color: #d8b4fe; text-shadow: 0 0 15px rgba(216, 180, 254, 0.5); }
+        #zone-rl.drag-over { background: rgba(168, 85, 247, 0.15); box-shadow: inset 0 0 40px rgba(168, 85, 247, 0.3); transform: scale(1.03); border-style: solid;}
+
+        /* 吸收进熔炉的石块 */
+        .cauldron-zone .magic-stone { width: 100%; padding: 10px; margin-bottom: 10px; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.5); cursor: default; }
+        .cauldron-zone .magic-stone:hover { transform: none; }
+        .cauldron-zone .stone-icon { font-size: 1rem; margin-right: 5px; }
+        .cauldron-zone .stone-text { font-size: 0.75rem; width: 85%; }
+
+        /* ================= 报错与通关弹窗 ================= */
+        .feedback-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 90;
+            display: none; justify-content: center; align-items: center;
+        }
+
+        .alert-box {
+            background: linear-gradient(135deg, #2e1065, #11091a); border: 2px solid #ef4444;
+            padding: 30px; border-radius: 15px; text-align: center; max-width: 500px;
+            box-shadow: 0 0 40px rgba(239, 68, 68, 0.4); animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .alert-box.success { border-color: #2ecc71; box-shadow: 0 0 40px rgba(46, 204, 113, 0.4); }
+        @keyframes pop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .alert-icon { font-size: 3rem; margin-bottom: 15px; }
+        .alert-box.error .alert-icon { color: #ef4444; }
+        .alert-box.success .alert-icon { color: #2ecc71; }
+        
+        .alert-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 10px; color: #fff;}
+        .alert-desc { color: #cbd5e1; line-height: 1.6; margin-bottom: 25px;}
+
+        .btn-close {
+            background: #475569; color: #fff; border: none; padding: 10px 30px;
+            border-radius: 20px; font-weight: bold; cursor: pointer; transition: 0.2s;
+        }
+        .alert-box.success .btn-close { background: #2ecc71; color: #000; font-size: 1.2rem; padding: 12px 40px;}
+        .btn-close:hover { background: #94a3b8; }
+        
+        /* 熔炉震动特效 */
+        .shake-error { animation: shake 0.5s; }
+        @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-10px);} 75%{transform:translateX(10px);} }
+
+    </style>
+</head>
+<body>
+
+<div class="sorting-room">
+    <div class="header">
+        <h2><i class="fas fa-cubes"></i> 三相魔法阵：材料分拣</h2>
+        <p>CV、PS 和 推荐信(RL) 承载着截然不同的申请使命，切忌混为一谈。<br>请将下方的 6 块【经历碎片】，投入最适合展现它的魔法熔炉中！</p>
+    </div>
+
+    <div class="stones-pool" id="pool">
+        <div class="magic-stone" draggable="true" id="s1" data-target="cv">
+            <i class="fas fa-chart-line stone-icon"></i>
+            <span class="stone-text">我在 SAP 实习期间，通过重构后端代码使系统响应速度提升了 25%。</span>
+        </div>
+        <div class="magic-stone" draggable="true" id="s2" data-target="cv">
+            <i class="fas fa-code stone-icon"></i>
+            <span class="stone-text">精通 Python, Java, C++ 等编程语言；熟练掌握数据库管理。</span>
+        </div>
+
+        <div class="magic-stone" draggable="true" id="s3" data-target="ps">
+            <i class="fas fa-seedling stone-icon"></i>
+            <span class="stone-text">一次大厂实习的挫折，让我深刻意识到自己在分布式系统底层架构上的知识瓶颈，从而萌生了深造的想法。</span>
+        </div>
+        <div class="magic-stone" draggable="true" id="s4" data-target="ps">
+            <i class="fas fa-flag-checkered stone-icon"></i>
+            <span class="stone-text">我的长远愿景是成为一名能够独立主导企业级信计架构的顶尖高级软件工程师。</span>
+        </div>
+
+        <div class="magic-stone" draggable="true" id="s5" data-target="rl">
+            <i class="fas fa-users stone-icon"></i>
+            <span class="stone-text">“该生在《高阶算法》小组项目中展现了卓越的领导力，总能在团队卡壳时指出核心 Bug 所在。”</span>
+        </div>
+        <div class="magic-stone" draggable="true" id="s6" data-target="rl">
+            <i class="fas fa-shield-alt stone-icon"></i>
+            <span class="stone-text">“令我印象最深的是她面对极限 DDL 时的抗压能力，情绪极其稳定且产出高效。”</span>
+        </div>
+    </div>
+
+    <div class="cauldrons-container">
+        <div class="cauldron-zone" id="zone-cv" data-type="cv">
+            <div class="c-title">C V</div>
+            <div class="c-desc">客观事实 | 量化数据 | 技能列表</div>
+        </div>
+        <div class="cauldron-zone" id="zone-ps" data-type="ps">
+            <div class="c-title">P S</div>
+            <div class="c-desc">主观动机 | 情感转折 | 未来愿景</div>
+        </div>
+        <div class="cauldron-zone" id="zone-rl" data-type="rl">
+            <div class="c-title">R L</div>
+            <div class="c-desc">第三方背书 | 软实力 | 细节观察</div>
+        </div>
+    </div>
+</div>
+
+<div class="feedback-overlay" id="fbOverlay">
+    <div class="alert-box error" id="errorBox" style="display: none;">
+        <i class="fas fa-times-circle alert-icon"></i>
+        <div class="alert-title">材料排斥反应！</div>
+        <div class="alert-desc" id="errorMsg">错误原因解释...</div>
+        <button class="btn-close" onclick="closeModal()">我明白了</button>
+    </div>
+    
+    <div class="alert-box success" id="successBox" style="display: none;">
+        <i class="fas fa-check-circle alert-icon"></i>
+        <div class="alert-title">三相魔法阵激活！</div>
+        <div class="alert-desc">
+            你已经完美掌握了申请材料的“三位一体”法则！<br><br>
+            <b>CV</b> 负责冷酷地展示你的硬核实力下限；<br>
+            <b>PS</b> 负责用热血的故事拔高你的潜力上限；<br>
+            <b>RL</b> 则是大牛导师从旁观者角度为你打下的定海神针。
+        </div>
+        <button class="btn-close" onclick="finishNode()">领取【文书解构者】徽章 (+30金币)</button>
+    </div>
+</div>
+
+<script>
+    const stones = document.querySelectorAll('.magic-stone');
+    const cauldrons = document.querySelectorAll('.cauldron-zone');
+    let correctlySorted = 0;
+    const totalStones = 6;
+
+    // 拖拽启动
+    stones.forEach(stone => {
+        stone.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', e.target.id);
+            setTimeout(() => e.target.style.opacity = '0.5', 0);
+        });
+        stone.addEventListener('dragend', (e) => e.target.style.opacity = '1');
+    });
+
+    // 拖拽经过与释放
+    cauldrons.forEach(cauldron => {
+        cauldron.addEventListener('dragover', (e) => { e.preventDefault(); cauldron.classList.add('drag-over'); });
+        cauldron.addEventListener('dragleave', () => cauldron.classList.remove('drag-over'));
+        
+        cauldron.addEventListener('drop', (e) => {
+            e.preventDefault();
+            cauldron.classList.remove('drag-over');
+            
+            const stoneId = e.dataTransfer.getData('text/plain');
+            const stoneEl = document.getElementById(stoneId);
+            const targetType = stoneEl.dataset.target;
+            const dropType = cauldron.dataset.type;
+
+            if (targetType === dropType) {
+                // 正确分类：吸入熔炉
+                cauldron.appendChild(stoneEl);
+                stoneEl.setAttribute('draggable', 'false'); // 放进去就不能动了
+                correctlySorted++;
+                
+                // 检查是否全部完成
+                if (correctlySorted === totalStones) {
+                    setTimeout(() => showSuccess(), 400);
+                }
+            } else {
+                // 错误分类：熔炉震动，弹出解析
+                cauldron.classList.add('shake-error');
+                setTimeout(() => cauldron.classList.remove('shake-error'), 500);
+                showError(dropType, targetType);
+            }
+        });
+    });
+
+    function showError(wrongDrop, actualTarget) {
+        let explanation = "";
+        
+        // 生成极具教务干货的错误解析
+        if (wrongDrop === 'cv') {
+            explanation = "<b>CV 履历石碑极其排斥主观长句！</b><br>简历是用来快速扫描你客观硬件（分数、量化产出、技能词）的地方。长篇大论的动机故事、或者别人对你的主观评价，放在 CV 里不仅占地方，还会显得很不专业。";
+        } else if (wrongDrop === 'ps') {
+            explanation = "<b>PS 灵魂卷轴不能变成干瘪的清单！</b><br>如果你把『精通哪几种编程语言』或者『毫无感情的 KPI 数据』罗列在 PS 里，那 PS 就变成了扩写版的 CV。招生官想在这里看到的是你的<b>思考、动机和职业规划</b>。";
+        } else if (wrongDrop === 'rl') {
+            explanation = "<b>不要在推荐信里自卖自夸！</b><br>这块碎片明明是你的第一人称动机（或客观数据），如果放在 RL 里，会一眼假！RL 需要的是导师从<b>第三人称视角</b>，通过具体的小细节（如抗压能力、领导力）来验证你的软实力。";
+        }
+
+        document.getElementById('errorMsg').innerHTML = explanation;
+        document.getElementById('errorBox').style.display = 'block';
+        document.getElementById('successBox').style.display = 'none';
+        document.getElementById('fbOverlay').style.display = 'flex';
+    }
+
+    function showSuccess() {
+        document.getElementById('errorBox').style.display = 'none';
+        document.getElementById('successBox').style.display = 'block';
+        document.getElementById('fbOverlay').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('fbOverlay').style.display = 'none';
+    }
+
+    function finishNode() {
+        closeModal();
+        alert("向导：太棒了！你已经理清了这三种材料的本质区别。\n接下来，我们将进入 Y3-3 节点，用【真理放大镜】亲自去给一份错漏百出的 CV 做一次外科手术！");
+        // 这里对接外部地图或下一个网页的跳转逻辑
+    }
+</script>
+</body>
+</html>
