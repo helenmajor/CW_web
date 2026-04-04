@@ -3,14 +3,17 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, defineAsyncComponent } from 'vue'
 import { useRoute } from 'vue-router'
+import { useGameStore } from '@/stores/game'
 
 const route = useRoute()
+const store = useGameStore()
 const levelId = computed(() => parseInt(route.params.id))
 
 const currentGame = computed(() => {
-  // 动态导入组件
-  return defineAsyncComponent(() => import(`./games/Year2_${levelId.value}.vue`))
+  const year = store.year  // 'y2' 或 'y3'
+  const prefix = year === 'y2' ? 'Year2' : 'Year3'
+  return defineAsyncComponent(() => import(`./games/${prefix}_${levelId.value}.vue`))
 })
 </script>

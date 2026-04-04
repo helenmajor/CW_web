@@ -1,10 +1,15 @@
 <template>
   <div class="game-board">
     <div class="header">
-      <h1><i class="fas fa-route"></i> Year 2 · 冲刺期路线图</h1>
+      <h1><i class="fas fa-route"></i> {{ store.year === 'y2' ? 'Year 2 · 冲刺期路线图' : 'Year 3 · 八角星申请地图' }}</h1>
       <div class="coin-panel">
-        <i class="fas fa-coins"></i> {{ store.coins }}
+        <i class="fas fa-coins"></i> {{ store.currentCoins }}
       </div>
+    </div>
+    <!-- 添加年份切换按钮 -->
+    <div class="year-switch" style="display: flex; gap: 10px; margin: 10px; justify-content: center;">
+      <button @click="store.switchYear('y2')" :class="{ active: store.year === 'y2' }">Year 2</button>
+      <button @click="store.switchYear('y3')" :class="{ active: store.year === 'y3' }">Year 3</button>
     </div>
 
     <div class="map-area">
@@ -20,7 +25,7 @@
 
       <!-- 节点列表 -->
       <div
-        v-for="level in store.levels"
+        v-for="level in store.currentLevels"
         :key="level.id"
         :class="['node', `n${level.id}`, store.nodeClass(level)]"
         @click="goToGame(level.id)"
@@ -40,7 +45,7 @@ const store = useGameStore()
 const router = useRouter()
 
 function goToGame(levelId) {
-  const level = store.levels.find(l => l.id === levelId)
+  const level = store.currentLevels.find(l => l.id === levelId)
   if (!level.unlocked) {
     alert('此节点尚未解锁，请先完成前面的挑战！')
     return
