@@ -1,67 +1,145 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Y2-6 绝密档案馆</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Y2-6 The Forbidden Archives</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* 保持原有的暗黑解密风格 */
-        body { background: radial-gradient(circle at center, #1e2022 0%, #000 100%); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: #e8e6e3; font-family: 'Segoe UI', sans-serif;}
-        .room { width: 100%; max-width: 900px; background: rgba(20, 22, 24, 0.85); border: 2px solid #c8a165; border-radius: 20px; padding: 40px; text-align: center; }
-        .header h2 { color: #f9d976; margin-bottom: 30px; font-size: 2rem;}
-        .archives { display: flex; gap: 20px; justify-content: center; }
-        .case-file { background: linear-gradient(135deg, #2a2d34, #1b1c20); border: 1px solid #4a4d55; border-radius: 12px; width: 320px; padding: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); position: relative; }
+        /* Dark and mysterious decryption style */
+        body {
+            background: radial-gradient(circle at center, #1e2022 0%, #000 100%);
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; margin: 0; color: #e8e6e3;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .room {
+            width: 100%; max-width: 900px; background: rgba(20, 22, 24, 0.85);
+            border: 2px solid #c8a165; border-radius: 20px; padding: 40px; text-align: center;
+        }
+
+        .header h2 {
+            color: #f9d976; margin-bottom: 10px; font-size: 2.2rem;
+            font-family: "Georgia", serif; letter-spacing: 1px;
+        }
+        .header p {
+            color: #8b9bb4; font-size: 1.05rem; margin-bottom: 30px;
+            font-family: "Georgia", serif; font-style: italic;
+        }
+
+        .archives { display: flex; gap: 25px; justify-content: center; flex-wrap: wrap;}
+
+        .case-file {
+            background: linear-gradient(135deg, #2a2d34, #1b1c20);
+            border: 1px solid #4a4d55; border-radius: 12px; width: 340px;
+            padding: 25px 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            position: relative; transition: 0.3s;
+        }
+        .case-file:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.7); }
         .case-file.revealed { border-color: #2ecc71; background: linear-gradient(135deg, #1b2a22, #101a15); }
-        .profile-data { text-align: left; border-top: 1px dashed #4a4d55; padding-top: 15px; margin: 15px 0; font-size: 0.9rem;}
-        .btn-guess { background: #c8a165; border: none; padding: 8px; width: 100%; margin-bottom: 8px; border-radius: 5px; font-weight: bold; cursor: pointer; }
-        .btn-guess:hover { background: #f9d976; }
-        .truth { display: none; color: #a8e6cf; text-align: left; font-size: 0.9rem; border-top: 1px solid #2ecc71; padding-top: 10px;}
-        .btn-complete { margin-top: 30px; padding: 12px 30px; background: #2ecc71; color: #000; border: none; border-radius: 20px; font-weight: bold; cursor: pointer; display: none; }
+
+        .profile-data {
+            text-align: left; border-top: 1px dashed #4a4d55; padding-top: 15px;
+            margin: 15px 0; font-size: 0.95rem; line-height: 1.6;
+        }
+
+        .btn-guess {
+            background: #c8a165; color: #1e2022; border: none; padding: 10px;
+            width: 100%; margin-bottom: 10px; border-radius: 8px; font-weight: bold;
+            cursor: pointer; transition: 0.2s; font-size: 0.95rem;
+        }
+        .btn-guess:hover { background: #f9d976; transform: scale(1.02); }
+
+        .truth {
+            display: none; color: #a8e6cf; text-align: left; font-size: 0.95rem;
+            border-top: 1px solid #2ecc71; padding-top: 15px; line-height: 1.5;
+            font-family: "Georgia", serif; animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .btn-complete {
+            margin-top: 35px; padding: 15px 35px; background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: #000; border: none; border-radius: 30px; font-weight: bold; cursor: pointer;
+            display: none; font-size: 1.1rem; box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);
+            transition: 0.2s;
+        }
+        .btn-complete:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(46, 204, 113, 0.6); }
     </style>
 </head>
 <body>
 <div class="room">
-    <div class="header"><h2><i class="fas fa-folder-open"></i> 绝密档案馆：命运重演</h2><p>翻开前人的档案，猜测他们的结局，寻找破局的关键。</p></div>
+    <div class="header">
+        <h2><i class="fas fa-scroll"></i> The Forbidden Archives: Echoes of Destiny</h2>
+        <p>Unseal the dossiers of your predecessors, divine their fates, and uncover the key to breaking the curse.</p>
+    </div>
+
     <div class="archives">
         <div class="case-file" id="case1">
-            <div style="font-size:3rem; margin-bottom:10px;">🧑‍💻</div>
+            <div style="font-size:3.5rem; margin-bottom:10px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2));">🧑‍💻</div>
             <div class="profile-data">
-                <div>专业：信计 (ICS)</div>
-                <div>GPA：<span style="color:#e74c3c;">80/100 (危险)</span></div>
-                <div>核心：<span style="color:#f9d976;">SAP研发实习 + Github高星</span></div>
+                <div><b>Class:</b> Info & Comp Sci (ICS)</div>
+                <div><b>GPA:</b> <span style="color:#e74c3c; font-weight:bold;">80/100 (Perilous)</span></div>
+                <div><b>Core Artifacts:</b> <span style="color:#f9d976; font-weight:bold;">SAP R&D Internship + High-Tier GitHub</span></div>
             </div>
             <div id="guess1">
-                <button class="btn-guess" onclick="reveal(1)">A. 全聚德</button>
-                <button class="btn-guess" onclick="reveal(1)">B. 逆袭 Top 50</button>
+                <button class="btn-guess" onclick="reveal(1)">A. The Abyss of Rejection</button>
+                <button class="btn-guess" onclick="reveal(1)">B. Miracle Ascension (Top 50)</button>
             </div>
-            <div class="truth" id="truth1"><b>真相：逆袭 Top 50！</b><br>顶级名企研发实习和实战代码能力，弥补了 GPA 的不足。</div>
+            <div class="truth" id="truth1">
+                <b style="color:#2ecc71;">The Truth: Miracle Ascension to Top 50!</b><br>
+                Top-tier guild (enterprise) internships and hardcore combat (coding) capabilities completely overshadowed the perilous GPA.
+            </div>
         </div>
+
         <div class="case-file" id="case2">
-            <div style="font-size:3rem; margin-bottom:10px;">👩‍🎓</div>
+            <div style="font-size:3.5rem; margin-bottom:10px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2));">👩‍🎓</div>
             <div class="profile-data">
-                <div>专业：数据科学 (DS)</div>
-                <div>GPA：<span style="color:#f9d976;">91/100 (极高)</span></div>
-                <div>核心：<span style="color:#e74c3c;">零实习、零科研</span></div>
+                <div><b>Class:</b> Data Science (DS)</div>
+                <div><b>GPA:</b> <span style="color:#f9d976; font-weight:bold;">91/100 (Supreme)</span></div>
+                <div><b>Core Artifacts:</b> <span style="color:#e74c3c; font-weight:bold;">Zero Internships, Zero Research</span></div>
             </div>
             <div id="guess2">
-                <button class="btn-guess" onclick="reveal(2)">A. 乱杀 Top 30</button>
-                <button class="btn-guess" onclick="reveal(2)">B. 申请严重受挫</button>
+                <button class="btn-guess" onclick="reveal(2)">A. Slaughter the Top 30 Realms</button>
+                <button class="btn-guess" onclick="reveal(2)">B. Severe Crushing Defeat</button>
             </div>
-            <div class="truth" id="truth2"><b>真相：申请受挫！</b><br>“空心学霸”陷阱。理工科/商科没有实战经历，高分也难救主。</div>
+            <div class="truth" id="truth2">
+                <b style="color:#e74c3c;">The Truth: Severe Crushing Defeat!</b><br>
+                The "Hollow Scholar" trap. In STEM and Business realms, pure academic scores without real-world combat experience cannot save you.
+            </div>
         </div>
     </div>
-    <button class="btn-complete" id="btnEnd" onclick="finishNode()">吸收经验，返回地图 (+30金币)</button>
+
+    <button class="btn-complete" id="btnEnd" onclick="finishNode()"><i class="fas fa-gem"></i> Absorb Wisdom & Return (+30 Coins)</button>
 </div>
+
 <script>
     let count = 0;
+
     function reveal(id) {
+        // Show truth and style the card
         document.getElementById(`case${id}`).classList.add('revealed');
         document.getElementById(`guess${id}`).style.display = 'none';
         document.getElementById(`truth${id}`).style.display = 'block';
+
         count++;
-        if(count === 2) document.getElementById('btnEnd').style.display = 'inline-block';
+
+        // Unlock next step if both cases are reviewed
+        if(count === 2) {
+            document.getElementById('btnEnd').style.display = 'inline-block';
+        }
     }
-    function finishNode() { alert("已返回地图！请前往 Y2-7 节点进行最终测试。"); }
+
+    function finishNode() {
+        if (window.parent && window.parent !== window) {
+            window.parent.postMessage({
+                type: "gradquest:node-complete",
+                payload: { year: "y2", nodeId: 6, rewardCoins: 30 }
+            }, "*");
+        }
+        alert("Map Guide: You have absorbed the wisdom of the ancients! Proceed to node Y2-7 for your Ultimate Trial.");
+        // Logic to return to the main map and unlock Y2-7 will be handled by the parent iframe
+    }
 </script>
 </body>
 </html>

@@ -1,31 +1,31 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Y3-3 魔法文书急诊室 - 十大炸锅陷阱版</title>
+    <title>Y3-3 Clinic of Truth: 10 Fatal CV Traps</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        
-        body { 
+
+        body {
             background: radial-gradient(circle at center, #2e1a10 0%, #0d0905 100%);
-            display: flex; justify-content: center; align-items: center; 
+            display: flex; justify-content: center; align-items: center;
             min-height: 100vh; margin: 0; padding: 20px; color: #e0d8ee;
         }
 
         .clinic-room { width: 100%; max-width: 1000px; display: flex; flex-direction: column; align-items: center; }
 
         .header { text-align: center; margin-bottom: 25px; }
-        .header h2 { 
-            margin: 0; font-size: 2.5rem; color: #f9d976; 
-            text-shadow: 0 5px 15px rgba(249, 217, 118, 0.4); font-family: "Georgia", serif;
+        .header h2 {
+            margin: 0; font-size: 2.3rem; color: #f9d976;
+            text-shadow: 0 5px 15px rgba(249, 217, 118, 0.4); font-family: "Georgia", serif; letter-spacing: 1px;
         }
-        .header p { color: #a99bbd; font-size: 1.1rem; margin-top: 5px; }
+        .header p { color: #a99bbd; font-size: 1.05rem; margin-top: 10px; font-family: "Georgia", serif; font-style: italic;}
 
         .workspace { display: flex; gap: 30px; width: 100%; align-items: flex-start; }
 
-        /* 左侧：精美羊皮纸 CV */
+        /* Left Side: Exquisite Parchment CV */
         .parchment-cv {
             background: linear-gradient(135deg, #fdf5e6, #ebd5ab);
             width: 60%; padding: 40px; border-radius: 5px;
@@ -33,43 +33,43 @@
             color: #2c1e16; position: relative; cursor: crosshair;
             border: 2px solid #c8a165;
         }
-        
-        /* 文件名提示 (Bug 1) */
+
+        /* Filename Trap (Bug 1) */
         .cv-filename {
-            position: absolute; top: 8px; left: 8px; font-size: 0.75rem;
-            background: rgba(0,0,0,0.7); color: #82b1ff; padding: 2px 8px; border-radius: 4px;
+            position: absolute; top: 8px; left: 8px; font-size: 0.75rem; font-family: monospace;
+            background: rgba(0,0,0,0.7); color: #82b1ff; padding: 4px 8px; border-radius: 4px;
         }
 
-        /* CV 排版字体 (Bug 2) */
-        .cv-body { font-family: "Papyrus", "Courier New", serif; /* 极其魔幻不正式的字体 */ }
+        /* CV Typography (Bug 2 - Magical Font) */
+        .cv-body { font-family: "Papyrus", "Courier New", serif; /* Highly unprofessional magical font */ }
 
         .cv-header { text-align: center; border-bottom: 2px solid #5d4037; padding-bottom: 10px; margin-bottom: 20px; }
         .cv-header h1 { margin: 0; font-size: 1.8rem; text-transform: uppercase; }
         .cv-section { margin-bottom: 20px; }
-        .cv-section h3 { font-size: 1.1rem; color: #5d4037; border-bottom: 1px dashed #a1887f; padding-bottom: 5px; margin-bottom: 10px;}
-        .cv-item { margin-bottom: 12px; font-size: 0.9rem; line-height: 1.5; }
+        .cv-section h3 { font-size: 1.1rem; color: #5d4037; border-bottom: 1px dashed #a1887f; padding-bottom: 5px; margin-bottom: 10px; font-family: "Georgia", serif;}
+        .cv-item { margin-bottom: 12px; font-size: 0.95rem; line-height: 1.5; }
         .cv-bullet { list-style-type: square; margin-left: 18px; margin-top: 5px;}
 
-        /* 🔎 找茬互动元素 */
+        /* 🔎 Interactive Bug Elements */
         .bug-text {
-            cursor: pointer; position: relative; transition: 0.2s; 
+            cursor: pointer; position: relative; transition: 0.2s;
             border-bottom: 1px dotted rgba(200, 0, 0, 0.5);
         }
         .bug-text:hover { background: rgba(249, 217, 118, 0.6); border-radius: 3px; }
-        
-        /* 被选中的错误 (打上 REJECTED 印章) */
+
+        /* Fixed Bug (Stamped with REJECTED) */
         .bug-text.fixed {
             color: #c0392b; text-decoration: line-through; border: none; background: rgba(231, 76, 60, 0.1);
             pointer-events: none;
         }
         .bug-text.fixed::after {
-            content: 'REJECTED'; position: absolute; top: -10px; right: -25px;
-            color: #c0392b; font-weight: 900; font-size: 0.7rem; border: 2px solid #c0392b;
+            content: 'REJECTED'; position: absolute; top: -12px; right: -30px;
+            color: #c0392b; font-weight: 900; font-size: 0.65rem; border: 2px solid #c0392b;
             padding: 2px 4px; border-radius: 4px; transform: rotate(-15deg);
-            background: rgba(255,255,255,0.8); z-index: 5;
+            background: rgba(255,255,255,0.9); z-index: 5; font-family: sans-serif;
         }
 
-        /* 右侧：诊断面板 */
+        /* Right Side: Diagnostic Panel */
         .diagnostic-panel {
             width: 40%; background: rgba(30, 20, 25, 0.85);
             border: 2px solid #8d6e63; border-radius: 15px; padding: 25px;
@@ -78,12 +78,12 @@
         }
 
         .panel-title {
-            color: #f9d976; font-size: 1.3rem; font-weight: bold;
+            color: #f9d976; font-size: 1.25rem; font-weight: bold; font-family: "Georgia", serif;
             margin-bottom: 15px; display: flex; align-items: center; gap: 10px;
             border-bottom: 2px dashed #5d4037; padding-bottom: 10px;
         }
 
-        /* 任务清单升级：两列排版以容纳更多任务 */
+        /* Checklist */
         .checklist {
             list-style: none; padding: 0; margin: 0 0 20px 0;
             display: grid; grid-template-columns: 1fr; gap: 8px;
@@ -91,7 +91,7 @@
         .check-item {
             background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px;
             display: flex; align-items: center; gap: 10px;
-            color: #a0aec0; transition: 0.3s; border: 1px solid #4e342e; font-size: 0.85rem;
+            color: #a0aec0; transition: 0.3s; border: 1px solid #4e342e; font-size: 0.85rem; font-weight: bold;
         }
         .check-item i { font-size: 1.1rem; color: #5d4037; }
         .check-item.completed { background: rgba(72, 187, 120, 0.15); border-color: #2ecc71; color: #fff; }
@@ -101,11 +101,11 @@
             background: #2c1e16; border-left: 4px solid #f9d976; padding: 15px;
             border-radius: 4px; display: none; animation: fadeIn 0.3s ease;
         }
-        .feedback-title { font-weight: bold; color: #e74c3c; margin-bottom: 5px; font-size: 1rem;}
-        .feedback-desc { color: #d7ccc8; font-size: 0.9rem; line-height: 1.5; }
+        .feedback-title { font-weight: bold; color: #e74c3c; margin-bottom: 8px; font-size: 1.05rem; font-family: "Georgia", serif;}
+        .feedback-desc { color: #d7ccc8; font-size: 0.95rem; line-height: 1.5; font-family: "Georgia", serif;}
         @keyframes fadeIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
 
-        /* 成功弹窗 */
+        /* Success Modal */
         .success-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 100;
@@ -114,7 +114,7 @@
             background: linear-gradient(135deg, #2e1a10, #3e2723); border: 3px solid #f9d976;
             padding: 40px; border-radius: 20px; text-align: center; max-width: 500px;
         }
-        .modal-card h2 { color: #2ecc71; margin-bottom: 15px; }
+        .modal-card h2 { color: #2ecc71; margin-bottom: 15px; font-family: "Georgia", serif;}
         .btn-claim {
             margin-top: 25px; background: #f9d976; color: #3e2723; border: none; padding: 12px 35px;
             border-radius: 30px; font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: 0.2s;
@@ -127,26 +127,26 @@
 
 <div class="clinic-room">
     <div class="header">
-        <h2><i class="fas fa-microscope" style="color:#f9d976;"></i> 真理鉴定局：文书急诊室 (10防版)</h2>
-        <p>新生递交了一份充满“炸锅陷阱”的简历卷轴。拿起【真理放大镜】，揪出所有 6 处致命主线 Bug！</p>
+        <h2><i class="fas fa-microscope" style="color:#f9d976;"></i> Clinic of Truth: CV Surgery</h2>
+        <p>A novice submitted a scroll riddled with "Fatal Spell Traps". Wield the Magnifying Glass of Truth to purge all 6 core bugs!</p>
     </div>
 
     <div class="workspace">
         <div class="parchment-cv">
-            <div class="cv-filename bug-text" onclick="findBug(this, 'filename')">📄 简历_最终版_真的很最终了.pdf</div>
-            
+            <div class="cv-filename bug-text" onclick="findBug(this, 'filename')">📄 Resume_Final_Actually_Final_v3.pdf</div>
+
             <div class="cv-body">
                 <div class="cv-header">
-                    <h1>张三 (San Zhang)</h1>
-                    <p>邮箱: <span class="bug-text" onclick="findBug(this, 'email')">dark_dragon_99@qq.com</span> | 电话: +86-138xxxx</p>
+                    <h1 class="bug-text" style="display:inline-block; border:none;" onclick="findBug(this, 'font')">Zhang San</h1>
+                    <p>Email: <span class="bug-text" onclick="findBug(this, 'email')">dark_dragon_99@qq.com</span> | Tel: +86-138xxxx</p>
                 </div>
 
                 <div class="cv-section">
                     <h3><i class="fas fa-graduation-cap"></i> Education</h3>
                     <div class="cv-item">
                         <strong>XX University</strong> | B.S. in Computer Science <span style="float:right;">2023 - 2027</span><br>
-                        GPA: <span class="bug-text" onclick="findBug(this, 'gpa')">班级前三，成绩优异</span>
-                        <div style="font-size:0.8rem; margin-top:5px;"><span class="bug-text" onclick="findBug(this, 'hs')">曾获 XX 中学乒乓球赛亚军</span></div>
+                        GPA: <span class="bug-text" onclick="findBug(this, 'gpa')">Top 3 in class, excellent grades</span>
+                        <div style="font-size:0.8rem; margin-top:5px;"><span class="bug-text" onclick="findBug(this, 'hs')">Runner-up in XX Middle School Ping-Pong Tournament</span></div>
                     </div>
                 </div>
 
@@ -155,40 +155,40 @@
                     <div class="cv-item">
                         <strong>Research Intern</strong> | Magical Lab <span style="float:right;">Summer 2025</span>
                         <ul class="cv-bullet">
-                            <li><span class="bug-text" onclick="findBug(this, 'vague')">协助导师完成了数据分析工作，修复了一些Bug，得到了表扬，学到了很多新知识。</span></li>
+                            <li><span class="bug-text" onclick="findBug(this, 'vague')">Assisted the mentor with data analysis, fixed some bugs, was praised, and learned a lot.</span></li>
                             <li><span class="bug-text" onclick="findBug(this, 'passive')">Learned how to use Python and scikit-learn for modeling.</span></li>
                         </ul>
                     </div>
                     <div class="cv-item bug-text" onclick="findBug(this, 'order')" style="opacity:0.6">
-                        <strong>Voluntary Work</strong> | 2023 - 2024 (更老的经历)
+                        <strong>Voluntary Work</strong> | 2023 - 2024 (Older Experience)
                     </div>
                 </div>
 
                 <div class="cv-section">
                     <h3><i class="fas fa-tools"></i> Additional</h3>
                     <ul class="cv-bullet">
-                        <li>Python: <span class="bug-text" onclick="findBug(this, 'score')">⭐⭐⭐⭐⭐ (精通)</span></li>
-                        <li><span class="bug-text" onclick="findBug(this, 'hobby')">Hobbies: 精通《英雄联盟》，最强王者段位，善于团队指挥。</span></li>
+                        <li>Python: <span class="bug-text" onclick="findBug(this, 'score')">⭐⭐⭐⭐⭐ (Master)</span></li>
+                        <li><span class="bug-text" onclick="findBug(this, 'hobby')">Hobbies: Master tier in League of Legends, excellent team shotcaller.</span></li>
                     </ul>
                 </div>
             </div>
         </div>
 
         <div class="diagnostic-panel">
-            <div class="panel-title"><i class="fas fa-clipboard-list"></i> 主线 6 味核心药材</div>
-            
+            <div class="panel-title"><i class="fas fa-clipboard-list"></i> Core Surgery Checklist</div>
+
             <ul class="checklist">
-                <li class="check-item" id="check-filename"><i class="far fa-square"></i> <span>找出“Chaos 的文件命名”</span></li>
-                <li class="check-item" id="check-email"><i class="far fa-square"></i> <span>找出“非主流不专业邮箱”</span></li>
-                <li class="check-item" id="check-gpa"><i class="far fa-square"></i> <span>找出“模糊的学术指标描述”</span></li>
-                <li class="check-item" id="check-vague"><i class="far fa-square"></i> <span>找出“无数据的口水话描述”</span></li>
-                <li class="check-item" id="check-hobby"><i class="far fa-square"></i> <span>找出“无关联的冗余爱好”</span></li>
-                <li class="check-item" id="check-font"><i class="far fa-square"></i> <span>(点击反馈框) 诊断“致命的魔幻字体设计”</span></li>
+                <li class="check-item" id="check-filename"><i class="far fa-square"></i> <span>Purge "Chaotic Filename"</span></li>
+                <li class="check-item" id="check-email"><i class="far fa-square"></i> <span>Purge "Edgy Unprofessional Email"</span></li>
+                <li class="check-item" id="check-gpa"><i class="far fa-square"></i> <span>Purge "Vague Subjective Metrics"</span></li>
+                <li class="check-item" id="check-vague"><i class="far fa-square"></i> <span>Purge "Empty Fluff without Data"</span></li>
+                <li class="check-item" id="check-hobby"><i class="far fa-square"></i> <span>Purge "Irrelevant Hobbies"</span></li>
+                <li class="check-item" id="check-font"><i class="far fa-square"></i> <span>Diagnose "Blasphemous Typography"</span></li>
             </ul>
 
             <div class="feedback-box" id="feedbackBox">
-                <div class="feedback-title" id="fbTitle">错误类型</div>
-                <div class="feedback-desc" id="fbDesc">错误分析...</div>
+                <div class="feedback-title" id="fbTitle">Error Type</div>
+                <div class="feedback-desc" id="fbDesc">Analysis...</div>
             </div>
         </div>
     </div>
@@ -196,28 +196,28 @@
 
 <div class="success-modal" id="successModal">
     <div class="modal-card">
-        <h2><i class="fas fa-check-circle"></i> 诊断大满贯！</h2>
-        <p style="color:#bcaaa4; margin-bottom: 20px;">专业的邮箱、量化的 DDL、切题的背景、整洁的字体、正确的文件命名，才是拿下魔导师 Offer 的通途！</p>
-        <div style="font-size: 3rem; margin: 10px 0;">📜✨</div>
-        <button class="btn-claim" onclick="closeModal()">领取【履历魔术师】徽章 (+60金币)</button>
+        <h2><i class="fas fa-check-circle"></i> Diagnosis Complete!</h2>
+        <p style="color:#bcaaa4; margin-bottom: 20px; font-family: 'Georgia', serif; line-height:1.5;">Professional emails, quantified outputs, relevant backgrounds, clean typography, and correct filenames are the true paths to securing an Archmage's Offer!</p>
+        <div style="font-size: 3.5rem; margin: 15px 0; filter: drop-shadow(0 0 10px rgba(249, 217, 118, 0.5));">📜✨</div>
+        <button class="btn-claim" onclick="closeModal()">Claim [Scroll Surgeon] Badge (+60 Coins)</button>
     </div>
 </div>
 
 <script>
     const bugDatabase = {
-        // --- 主线 6 个任务 ---
-        'filename': { checkId: 'check-filename', title: "❌ Chaos 的文件命名", desc: "导师可能同时收到几百封邮件！这种乱七八糟的文件名会被直接视为垃圾。完美模板：<b>[姓名]_[项目名]_CV.pdf</b>" },
-        'email': { checkId: 'check-email', title: "❌ 非主流邮箱 (暗黑狂龙)", desc: "学术圈极其看重礼仪。使用包含QQ数字、火星文的非主流邮箱，会让教授直接质疑你的专业度。建议注册 <b>姓名拼音@gmail/edu</b> 邮箱。" },
-        'gpa': { checkId: 'check-gpa', title: "❌ 模糊的主观学术描述", desc: "升学战场讲究数据。GPA 必须写明具体数字和总分（如：3.8/4.0）。“成绩优异”只是主观词汇，毫无说服力！" },
-        'vague': { checkId: 'check-vague', title: "❌ 毫无数据的口水话 (无 STAR 法则)", desc: "这写的是“流水账”。应该改成：<b>使用 [某种技术] 修复了 [X] 个Bug，使性能提升了 [Y]%</b>。没有数据支撑的经历，等同于没做过！" },
-        'hobby': { checkId: 'check-hobby', title: "❌ 无关联的冗余爱好", desc: "你是去申请计算机项目，不是去参加电子竞技。游戏段位高并不能代表你的学术和项目能力。除非是跟专业强相关的特长。" },
-        'font': { checkId: 'check-font', title: "💀 致命的魔幻字体设计", desc: "教授的眼睛也是雪亮的！使用“Papyrus”这种非正式、魔幻风的字体写严肃的简历，是一种亵渎。务必使用 <b>Times New Roman / Arial / Garamond</b> 这种标准字体。字体大小要统一，行距要适中！" },
+        // --- Core 6 Quests ---
+        'filename': { checkId: 'check-filename', title: "❌ Chaotic Filename", desc: "Mentors receive hundreds of emails! Such a messy filename will be sent straight to the abyss of the spam folder. Perfect Template: <b>[Name]_[Program]_CV.pdf</b>" },
+        'email': { checkId: 'check-email', title: "❌ Edgy Email (Dark Dragon)", desc: "Academia highly values etiquette. Using an edgy email like 'dark_dragon_99' makes professors question your professionalism. Register a clean <b>Name.Surname@gmail.com</b>." },
+        'gpa': { checkId: 'check-gpa', title: "❌ Vague Subjective Metrics", desc: "The battlefield of admissions relies on hard data. GPA must state the exact number and scale (e.g., 3.8/4.0). 'Excellent grades' is merely a subjective illusion with zero persuasive power!" },
+        'vague': { checkId: 'check-vague', title: "❌ Empty Fluff (No STAR Method)", desc: "This reads like a diary. It should be: <b>Used [Technology] to fix [X] bugs, improving performance by [Y]%</b>. An experience without data backing is equivalent to an illusion!" },
+        'hobby': { checkId: 'check-hobby', title: "❌ Irrelevant Hobbies", desc: "You are applying for an academic program, not an esports guild. Your gaming rank does not represent your academic prowess, unless it strictly relates to your major." },
+        'font': { checkId: 'check-font', title: "💀 Blasphemous Typography", desc: "The professors' eyes are sharp! Using an informal, fantasy font like 'Papyrus' for a serious CV is blasphemy. Always use standard fonts like <b>Times New Roman, Arial, or Garamond</b>. Maintain consistent sizing and spacing!" },
 
-        // --- 隐藏彩蛋 (给提示，不加进度) ---
-        'passive': { title: "❌ 被动式句式 (Learned)", desc: "在英文 CV 里，要用主动动词（如: Implemented, Optimized）。“Learned how to use”显得你的工作极其被动。这是个隐藏陷阱，注意甄别哦！" },
-        'order': { title: "❌ 时间顺序颠倒", desc: "CV 必须严格按照时间倒序 (Newest to Oldest) 排列经历。请把 2023 年的老经历移到下面去！" },
-        'score': { title: "❌ 主观打分技能", desc: "“精通（5星）”是你的主观判断，毫无标准。请使用“熟练掌握（Proficient）”或明确的项目描述来体现你的技能等级。" },
-        'hs': { title: "❌ 冗余的中学经历", desc: "除了 GPA 满分或国际大奖，申请研究生时请尽量把篇幅留给大学的经历。中学拿亚军这种老黄历就不要写了。" }
+        // --- Hidden Easter Eggs (Provides tips, no progress added) ---
+        'passive': { title: "❌ Passive Phrasing (Learned)", desc: "In English CVs, use strong active verbs (e.g., Implemented, Optimized). 'Learned how to use' makes your contribution seem extremely passive. This is a hidden trap, beware!" },
+        'order': { title: "❌ Reversed Chronology", desc: "A CV must strictly follow Reverse Chronological Order (Newest to Oldest). Move this 2023 experience below the 2025 one!" },
+        'score': { title: "❌ Subjective Skill Rating", desc: "'Master (5 Stars)' is your own subjective judgment and lacks a standard. Use terms like 'Proficient' or demonstrate your proficiency through concrete project descriptions." },
+        'hs': { title: "❌ Redundant High School Lore", desc: "Unless you achieved a flawless score or an international gold medal, reserve your CV space for university-level achievements. Ancient history like middle school ping-pong is irrelevant." }
     };
 
     let bugsFound = 0;
@@ -230,13 +230,13 @@
 
         element.classList.add('fixed');
 
-        // 显示反馈
+        // Show feedback
         const fbBox = document.getElementById('feedbackBox');
-        document.getElementById('fbTitle').innerText = bugData.title;
+        document.getElementById('fbTitle').innerHTML = bugData.title;
         document.getElementById('fbDesc').innerHTML = bugData.desc;
         fbBox.style.display = 'block';
 
-        // 更新进度
+        // Update progress
         if (bugData.checkId) {
             const checkItem = document.getElementById(bugData.checkId);
             if (!checkItem.classList.contains('completed')) {
@@ -246,24 +246,22 @@
             }
 
             if (bugsFound === totalBugsToFind) {
-                // 通关结局
+                // Trigger success ending
                 setTimeout(() => { document.getElementById('successModal').style.display = 'flex'; }, 800);
             }
         }
     }
 
-    // 针对“字体错”的特殊逻辑 (用户无法点击“整个字体”，我做成一个触发点在标题下或者其他地方)
-    // 简单起见，我修改了主线任务：把“字体设计”作为最后一个任务，需要玩家查看反馈框里的提示
-    // 在实际开发中，可以让教授猫咪在开场时提示字体问题。
-    // 为了让代码闭环，我暂时让玩家只要点任何主线Bug，就会在反馈框里提到字体错，最后一个任务玩家可以手动勾选？
-    // 重新修改逻辑：字体设计Bug单独设置一个触发点，放在学历部分之前
-    // 我已经添加了一个隐藏的主线 Bug 6（check-font），需要玩家在完成前 5 个后手动勾选这个？不，这太不智能了。
-    // 这里采用一个技巧：玩家只要完成前5个主线Bug，自动认为学会了诊断字体，自动勾选？不行。
-    // 方案：把字体错作为隐藏的主线，放在学历前面
-
     function closeModal() {
         document.getElementById('successModal').style.display = 'none';
-        alert("地图向导：诊断完成！你的 CV 已经去除了大部分炸锅杂质。接下来，我们要去【Y3-4故事拼接】节点，把这些正确的材料拼装成动人的 PS 故事！");
+        if (window.parent && window.parent !== window) {
+            window.parent.postMessage({
+                type: "gradquest:node-complete",
+                payload: { year: "y3", nodeId: 3, rewardCoins: 60 }
+            }, "*");
+        }
+        alert("Map Guide: Diagnosis complete! Your CV is purged of the most fatal traps. Next, we journey to [Y3-4 Memory Constellation] to weave these purified artifacts into a moving PS story!");
+        // The parent map interface handles unlocking the next node
     }
 </script>
 </body>

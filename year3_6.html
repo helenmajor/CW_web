@@ -1,20 +1,18 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Y3-6 暗夜古堡 · 洛克王国对战版</title>
+  <title>Y3-6 The Dark Citadel: Battle of the Ordeals</title>
   <style>
-    /* ================= 古堡基础 UI (保留原版) ================= */
+    /* ================= Citadel Foundation UI ================= */
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-    :root {
-      --fire1: #fff0bf; --fire2: #efc268; --fire3: #d88435;
-    }
+    :root { --fire1: #fff0bf; --fire2: #efc268; --fire3: #d88435; }
     body {
-      font-family: "Microsoft YaHei", "PingFang SC", sans-serif; overflow: hidden; color: #fff; height: 100vh;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; color: #fff; height: 100vh;
       background: radial-gradient(circle at 78% 15%, rgba(220,230,255,.12), transparent 18%),
-                  radial-gradient(circle at 16% 18%, rgba(255,255,255,.04), transparent 12%),
-                  linear-gradient(to bottom, #03050b 0%, #07101d 26%, #0c1730 58%, #132443 100%);
+      radial-gradient(circle at 16% 18%, rgba(255,255,255,.04), transparent 12%),
+      linear-gradient(to bottom, #03050b 0%, #07101d 26%, #0c1730 58%, #132443 100%);
     }
 
     .sky, .dusts { position: fixed; inset: 0; pointer-events: none; z-index: 1; }
@@ -39,11 +37,11 @@
       border: 1px solid rgba(255,255,255,.13); border-radius: 20px; box-shadow: 0 0 24px rgba(0,0,0,.25), inset 0 0 18px rgba(255,255,255,.02); padding: 16px 22px;
     }
     .title-box { min-width: 520px; }
-    .title { font-size: 30px; font-weight: 900; background: linear-gradient(90deg, #fff, #f0deb0, #dfe8ff, #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 1px; }
-    .subtitle { margin-top: 8px; color: #e8edff; line-height: 1.65; font-size: 14px; opacity: .96; }
+    .title { font-size: 28px; font-weight: 900; background: linear-gradient(90deg, #fff, #f0deb0, #dfe8ff, #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 1px; font-family: "Georgia", serif;}
+    .subtitle { margin-top: 8px; color: #e8edff; line-height: 1.65; font-size: 14px; opacity: .96; font-family: "Georgia", serif;}
     .status { display: flex; gap: 12px; flex-wrap: wrap; }
-    .stat { min-width: 118px; text-align: center; padding: 12px 14px; border-radius: 16px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.10); }
-    .stat-label { font-size: 12px; color: #dbe5ff; }
+    .stat { min-width: 100px; text-align: center; padding: 12px 14px; border-radius: 16px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.10); }
+    .stat-label { font-size: 12px; color: #dbe5ff; font-weight: bold;}
     .stat-value { margin-top: 6px; font-size: 22px; font-weight: 900; color: #ecd9a7; }
 
     .scene { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
@@ -51,7 +49,7 @@
     .mist { position: absolute; left: 0; bottom: 8vh; width: 100%; height: 12vh; background: linear-gradient(to right, rgba(255,255,255,.03), rgba(220,228,255,.11), rgba(255,255,255,.03)); filter: blur(18px); z-index: 4; }
     .road { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); width: 30vw; min-width: 320px; height: 18vh; background: linear-gradient(to top, rgba(122,129,141,.46), rgba(255,255,255,.10), transparent); clip-path: polygon(40% 100%, 60% 100%, 74% 0, 26% 0); z-index: 4; }
 
-    /* 城堡绘制 */
+    /* Castle Rendering */
     .castle-wrap { position: absolute; left: 50%; bottom: 8vh; transform: translateX(-50%); width: min(1200px, 94vw); height: 70vh; z-index: 10; }
     .castle-glow { position: absolute; left: 50%; bottom: 8%; transform: translateX(-50%); width: 78%; height: 56%; border-radius: 50%; background: radial-gradient(circle, rgba(170,185,230,.12), rgba(240,200,120,.05), transparent 72%); filter: blur(30px); z-index: 0; }
     .wall { position: absolute; border: 4px solid rgba(195,204,222,.95); box-shadow: inset 0 0 18px rgba(255,255,255,.05), 0 0 20px rgba(0,0,0,.18); background: linear-gradient(to bottom, #959daa 0%, #737c89 18%, #535d69 52%, #36404b 78%, #232a33 100%); }
@@ -84,50 +82,50 @@
     .door::after { content: ""; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 12px; height: 12px; border-radius: 50%; background: radial-gradient(circle, #fff5d4, #d5a64d); box-shadow: 0 0 10px rgba(213,166,77,.6); }
     .door:hover { transform: translateY(-6px) scale(1.03); filter: brightness(1.05); box-shadow: 0 0 28px rgba(0,0,0,.3), 0 0 16px rgba(235,220,175,.10), inset 0 0 14px rgba(255,255,255,.05); }
     .door-label { width: 100%; padding: 4px 6px; line-height: 1.2; border-radius: 10px; background: rgba(8, 12, 22, .42); border: 1px solid rgba(255,255,255,.08); position: relative; z-index: 2; font-size: 11px; text-align: center; }
-    .status-tag { position: absolute; top: 7px; right: 7px; font-size: 11px; padding: 3px 8px; border-radius: 999px; background: rgba(0,0,0,.3); border: 1px solid rgba(255,255,255,.12); z-index: 2; }
+    .status-tag { position: absolute; top: 7px; right: 7px; font-size: 11px; padding: 3px 8px; border-radius: 999px; background: rgba(0,0,0,.5); border: 1px solid rgba(255,255,255,.12); z-index: 2; font-weight: bold;}
     .door.locked { filter: grayscale(.2) brightness(.82); pointer-events: none; }
-    .door.cleared .status-tag { background: rgba(50,120,76,.42); color: #e2ffe9; }
-    
+    .door.cleared .status-tag { background: rgba(50,120,76,.8); color: #e2ffe9; border-color: #2ecc71;}
+
     .trial-door { width: 15%; height: 110px; border-radius: 28px 28px 10px 10px; }
-    .final-door { position: absolute; left: 50%; bottom: 32%; transform: translateX(-50%); width: 14%; height: 128px; border-radius: 24px 24px 10px 10px; z-index: 11; background: linear-gradient(to bottom, rgba(255,255,255,.10), rgba(255,255,255,.03)), linear-gradient(to bottom, #6b573b, #45331f 44%, #1c140c 100%); box-shadow: 0 0 20px rgba(0,0,0,.28), 0 0 18px rgba(235,220,175,.10), inset 0 0 14px rgba(255,255,255,.05); }
+    .final-door { position: absolute; left: 50%; bottom: 32%; transform: translateX(-50%); width: 16%; height: 128px; border-radius: 24px 24px 10px 10px; z-index: 11; background: linear-gradient(to bottom, rgba(255,255,255,.10), rgba(255,255,255,.03)), linear-gradient(to bottom, #6b573b, #45331f 44%, #1c140c 100%); box-shadow: 0 0 20px rgba(0,0,0,.28), 0 0 18px rgba(235,220,175,.10), inset 0 0 14px rgba(255,255,255,.05); }
     .final-door:hover { transform: translateX(-50%) translateY(-6px) scale(1.03); }
 
-    .hint { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 25; background: rgba(8, 12, 24, .76); border: 1px solid rgba(255,255,255,.10); padding: 12px 20px; border-radius: 999px; color: #e8edff; text-align: center; backdrop-filter: blur(10px); box-shadow: 0 0 14px rgba(0,0,0,.18); }
+    .hint { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 25; background: rgba(8, 12, 24, .85); border: 1px solid rgba(255,255,255,.10); padding: 12px 25px; border-radius: 999px; color: #e8edff; text-align: center; backdrop-filter: blur(10px); box-shadow: 0 0 14px rgba(0,0,0,.18); font-weight: bold;}
 
-    /* ================= 古堡弹窗基础 UI ================= */
+    /* ================= Modal Foundation UI ================= */
     .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(5, 7, 14, .84); z-index: 60; padding: 18px; }
     .modal.show { display: flex; }
     .modal-card { position: relative; width: min(1120px, 96vw); max-height: 92vh; overflow: auto; border-radius: 22px; padding: 24px; background: linear-gradient(180deg, rgba(17,22,38,.98), rgba(10,14,24,.98)), radial-gradient(circle at top right, rgba(255,255,255,.06), transparent 30%); border: 1px solid rgba(255,255,255,.12); box-shadow: 0 0 38px rgba(0,0,0,.3); }
-    .close-btn { position: absolute; top: 12px; right: 12px; width: 42px; height: 42px; border-radius: 50%; border: none; background: rgba(255,255,255,.08); color: #fff; font-size: 22px; cursor: pointer; z-index: 100; }
+    .close-btn { position: absolute; top: 12px; right: 12px; width: 42px; height: 42px; border-radius: 50%; border: none; background: rgba(255,255,255,.08); color: #fff; font-size: 22px; cursor: pointer; z-index: 100; font-weight: bold;}
     .close-btn:hover { background: #e74c3c; }
-    
+
     .level-header { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
-    .level-title { font-size: 28px; font-weight: 900; color: #ead7a7; }
-    .level-desc { margin-top: 8px; color: #e4eaff; line-height: 1.7; font-size: 15px; max-width: 760px; }
+    .level-title { font-size: 26px; font-weight: 900; color: #ead7a7; font-family: "Georgia", serif;}
+    .level-desc { margin-top: 8px; color: #e4eaff; line-height: 1.7; font-size: 15px; max-width: 760px; font-family: "Georgia", serif;}
     .battle-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 18px; margin-top: 18px; }
     .box { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.10); border-radius: 18px; padding: 18px; }
-    .character-name { font-size: 20px; font-weight: 900; margin-bottom: 10px; }
+    .character-name { font-size: 20px; font-weight: 900; margin-bottom: 10px; color: #f9d976; border-bottom: 1px dashed rgba(255,255,255,0.2); padding-bottom: 8px;}
     .info-list { margin-top: 14px; display: grid; gap: 10px; }
-    .info-item { padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); color: #edf1ff; line-height: 1.7; }
+    .info-item { padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); color: #edf1ff; line-height: 1.6; font-size: 0.95rem;}
     .reward-box { margin-top: 16px; padding: 16px; border-radius: 18px; background: linear-gradient(135deg, rgba(232,210,155,.10), rgba(255,255,255,.04)); border: 1px solid rgba(232,210,155,.22); color: #f1e3be; }
     .center-actions { display: flex; justify-content: center; gap: 15px; margin-top: 16px; }
-    .btn.next { background: linear-gradient(135deg, #e8d29b, #ba944e); color: #2c2110; font-weight: bold; font-size: 1.1rem; padding: 12px 30px; border: none; border-radius: 14px; cursor: pointer; transition: 0.2s;}
-    .btn.next:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+    .btn.next { background: linear-gradient(135deg, #e8d29b, #ba944e); color: #2c2110; font-weight: bold; font-size: 1.1rem; padding: 12px 30px; border: none; border-radius: 14px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.3);}
+    .btn.next:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.5); filter: brightness(1.1);}
 
-    /* ================= 洛克王国战斗场景 UI ================= */
+    /* ================= Battle Scene UI ================= */
     .roco-game-screen {
       width: 100%; max-width: 1000px; height: 600px; background: #000;
       border: 4px solid rgba(255,255,255,0.1); border-radius: 15px; position: relative;
       box-shadow: 0 0 30px rgba(0,0,0,0.6); overflow: hidden;
       display: flex; flex-direction: column; margin: 0 auto;
     }
-    
+
     .roco-battle-scene {
       flex: 1; position: relative;
       background: linear-gradient(to bottom, #1a2a6c, #112 60%, #2c3e50);
       overflow: hidden;
     }
-    
+
     .ground-ellipse {
       position: absolute; border-radius: 50%; background: rgba(0,0,0,0.4);
       box-shadow: 0 0 20px rgba(0,0,0,0.6);
@@ -142,7 +140,7 @@
     .sprite-hero { bottom: 40px; left: 20%; z-index: 10; }
     .sprite-enemy { top: 70px; right: 20%; z-index: 5; }
 
-    /* 动画库 */
+    /* Animations */
     .anim-hero-attack { animation: heroRush 0.6s ease-in-out; }
     @keyframes heroRush {
       0% { transform: translate(0, 0); }
@@ -176,7 +174,7 @@
       100% { opacity: 0; transform: translateY(-80px) scale(1); }
     }
 
-    /* HUD 信息面板 */
+    /* HUD Panels */
     .hud {
       position: absolute; background: rgba(255,255,255,0.95); color: #2d3748;
       border: 4px solid #cbd5e0; border-radius: 12px; padding: 12px 18px; width: 300px;
@@ -184,21 +182,21 @@
     }
     .hud-enemy { top: 25px; left: 25px; }
     .hud-hero { bottom: 35px; right: 25px; }
-    .hud-name { font-weight: 900; font-size: 1.2rem; margin-bottom: 8px; display: flex; justify-content: space-between;}
+    .hud-name { font-weight: 900; font-size: 1.15rem; margin-bottom: 8px; display: flex; justify-content: space-between;}
     .hud-name span.lvl { font-weight: bold; font-size: 1rem; color: #d69e2e; }
     .hp-bar-bg { width: 100%; height: 14px; background: #a0aec0; border-radius: 7px; overflow: hidden; border: 1px solid #718096;}
     .hp-bar-fill { height: 100%; background: #48bb78; transition: width 0.5s ease-out, background-color 0.3s; }
     .hp-text { text-align: right; font-size: 0.9rem; font-weight: bold; margin-top: 4px; }
     .shield-tag { color: #3182ce; font-size: 0.85rem; font-weight: bold; margin-top: 4px; display: none; }
 
-    /* 底部操作区 */
+    /* Bottom Control Area */
     .ui-bottom {
       height: 180px; background: linear-gradient(to bottom, #2d3748, #1a202c);
       border-top: 4px solid #f6e05e; display: flex;
     }
     .message-box {
-      flex: 1; padding: 25px; font-size: 1.4rem; line-height: 1.6; font-weight: bold;
-      color: #fff; border-right: 4px solid #4a5568; display: flex; align-items: center; text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+      flex: 1; padding: 25px; font-size: 1.3rem; line-height: 1.6; font-weight: bold;
+      color: #fff; border-right: 4px solid #4a5568; display: flex; align-items: center; text-shadow: 0 2px 4px rgba(0,0,0,0.5); font-family: "Georgia", serif;
     }
     .action-menu {
       width: 500px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
@@ -206,203 +204,198 @@
     }
     .skill-btn {
       background: linear-gradient(to bottom, #fffaf0, #e2e8f0); border: 3px solid #a0aec0;
-      border-radius: 10px; cursor: pointer; display: flex; flex-direction: column; 
+      border-radius: 10px; cursor: pointer; display: flex; flex-direction: column;
       justify-content: center; align-items: center; transition: 0.15s;
     }
     .skill-btn:hover { background: #fefcbf; border-color: #d69e2e; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
     .skill-btn:active { transform: scale(0.95); }
     .skill-btn:disabled { filter: grayscale(1); opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none;}
-    .skill-name { font-weight: 900; font-size: 1.2rem; color: #2d3748; }
-    .skill-pp { font-size: 0.9rem; color: #718096; font-weight: bold; margin-top: 5px; }
+    .skill-name { font-weight: 900; font-size: 1.15rem; color: #2d3748; }
+    .skill-pp { font-size: 0.85rem; color: #718096; font-weight: bold; margin-top: 5px; }
     .skill-type { font-size: 0.8rem; padding: 2px 8px; border-radius: 4px; color: #fff; margin-top: 4px; font-weight: bold;}
     .type-normal { background: #a0aec0; } .type-fire { background: #e53e3e; } .type-magic { background: #805ad5; } .type-heal { background: #38b2ac; }
 
-    /* 最终结算面板 */
+    /* Final Settlement Panel */
     .final-reward-screen { text-align: center; padding: 18px 8px 8px; }
     .big-gem { font-size: 124px; filter: drop-shadow(0 0 24px rgba(232,210,155,.5)); margin: 16px 0; }
   </style>
 </head>
 <body>
-  <div class="sky" id="sky"></div>
-  <div class="dusts" id="dusts"></div>
-  <div class="moon"></div>
+<div class="sky" id="sky"></div>
+<div class="dusts" id="dusts"></div>
+<div class="moon"></div>
 
-  <div class="topbar">
-    <div class="panel title-box">
-      <div class="title">🏰 西浦升学 · 冲刺修罗场 🏰</div>
-      <div class="subtitle">申请季的每月都是一场死斗！打通三扇门，开启最后的 Offer 圣殿。</div>
+<div class="topbar">
+  <div class="panel title-box">
+    <div class="title">🏰 The Dark Citadel: Battle of the Ordeals 🏰</div>
+    <div class="subtitle">Every month of the application season is a duel! Breach the three gates to open the Sanctuary of Offers.</div>
+  </div>
+  <div class="panel status">
+    <div class="stat"><div class="stat-label">Gates Cleared</div><div class="stat-value" id="clearCount">0 / 3</div></div>
+    <div class="stat"><div class="stat-label">Artifacts</div><div class="stat-value" id="gemCount">0</div></div>
+    <div class="stat"><div class="stat-label">Level</div><div class="stat-value" id="playerLevel">1</div></div>
+    <div class="stat"><div class="stat-label">Iced Americanos</div><div class="stat-value" id="potionCount">4</div></div>
+  </div>
+</div>
+
+<div class="scene">
+  <div class="road"></div>
+  <div class="castle-wrap">
+    <div class="castle-glow"></div>
+    <div class="wall side-tower left"></div><div class="wall side-tower right"></div>
+    <div class="wall back-wall-left"></div><div class="wall back-wall-right"></div>
+    <div class="wall center-keep"></div><div class="wall front-wall"></div>
+    <div class="spire left"></div><div class="spire right"></div>
+    <div class="spire mid-left small"></div><div class="spire mid-right small"></div><div class="spire center"></div>
+    <div class="cap left"></div><div class="cap right"></div><div class="cap mid-left"></div><div class="cap mid-right"></div><div class="cap center"></div>
+    <div class="flagpole left"></div><div class="flagpole right"></div><div class="flagpole center"></div>
+    <div class="round-window" style="left:11%; bottom:55%;"></div><div class="window" style="left:11.5%; bottom:18%;"></div>
+    <div class="round-window" style="left:48.7%; bottom:61%;"></div>
+    <div class="round-window" style="right:11%; bottom:56%;"></div><div class="window" style="right:11.5%; bottom:18%;"></div>
+
+    <div class="door final-door locked" id="finalDoor">
+      <div class="status-tag">The Zenith</div>
+      <div class="door-label">Sanctuary of Offers</div>
     </div>
-    <div class="panel status">
-      <div class="stat"><div class="stat-label">已通关</div><div class="stat-value" id="clearCount">0 / 3</div></div>
-      <div class="stat"><div class="stat-label">徽印</div><div class="stat-value" id="gemCount">0</div></div>
-      <div class="stat"><div class="stat-label">等级</div><div class="stat-value" id="playerLevel">1</div></div>
-      <div class="stat"><div class="stat-label">冰美式(血瓶)</div><div class="stat-value" id="potionCount">4</div></div>
+
+    <div class="door-row">
+      <div class="door trial-door" data-level="0"><div class="status-tag">September</div><div class="door-label">Gate of Language</div></div>
+      <div class="door trial-door locked" data-level="1"><div class="status-tag">Sealed</div><div class="door-label">Gate of Essays</div></div>
+      <div class="door trial-door locked" data-level="2"><div class="status-tag">Sealed</div><div class="door-label">Gate of Portals</div></div>
     </div>
   </div>
+  <div class="mist"></div><div class="ground"></div>
+</div>
 
-  <div class="scene">
-    <div class="road"></div>
-    <div class="castle-wrap">
-      <div class="castle-glow"></div>
-      <div class="wall side-tower left"></div><div class="wall side-tower right"></div>
-      <div class="wall back-wall-left"></div><div class="wall back-wall-right"></div>
-      <div class="wall center-keep"></div><div class="wall front-wall"></div>
-      <div class="spire left"></div><div class="spire right"></div>
-      <div class="spire mid-left small"></div><div class="spire mid-right small"></div><div class="spire center"></div>
-      <div class="cap left"></div><div class="cap right"></div><div class="cap mid-left"></div><div class="cap mid-right"></div><div class="cap center"></div>
-      <div class="flagpole left"></div><div class="flagpole right"></div><div class="flagpole center"></div>
-      <div class="round-window" style="left:11%; bottom:55%;"></div><div class="window" style="left:11.5%; bottom:18%;"></div>
-      <div class="round-window" style="left:48.7%; bottom:61%;"></div>
-      <div class="round-window" style="right:11%; bottom:56%;"></div><div class="window" style="right:11.5%; bottom:18%;"></div>
+<div class="hint">Click the three gates below to commence the trials. Manage your PP and outlive the deadlines!</div>
 
-      <div class="door final-door locked" id="finalDoor">
-        <div class="status-tag">最终门</div>
-        <div class="door-label">Offer 圣殿</div>
-      </div>
-
-      <div class="door-row">
-        <div class="door trial-door" data-level="0"><div class="status-tag">9月</div><div class="door-label">语言之门</div></div>
-        <div class="door trial-door locked" data-level="1"><div class="status-tag">未解锁</div><div class="door-label">文书之门</div></div>
-        <div class="door trial-door locked" data-level="2"><div class="status-tag">未解锁</div><div class="door-label">网申之门</div></div>
-      </div>
-    </div>
-    <div class="mist"></div><div class="ground"></div>
+<div class="modal" id="gameModal">
+  <div class="modal-card" id="modalCard">
+    <button class="close-btn" id="closeModal">×</button>
+    <div id="gameContent"></div>
   </div>
+</div>
 
-  <div class="hint">点击下方的三扇门开始试炼。利用技能 PP 管理与动画战斗，活到最后！</div>
+<script>
+  // ======= Global State =======
+  const gameState = {
+    gems: 0, cleared: [false, false, false], level: 1, potions: 4, shield: false,
+    currentStage: null, inBattle: false, isAnimating: false,
+    hero: { name: "Applicant (You)", icon: "👨‍🎓", hp: 120, maxHp: 120 },
+    enemy: null
+  };
 
-  <div class="modal" id="gameModal">
-    <div class="modal-card" id="modalCard">
-      <button class="close-btn" id="closeModal">×</button>
-      <div id="gameContent"></div>
-    </div>
-  </div>
+  const stages = [
+    { id: 0, title: "September Vanguard: The Language War", subtitle: "Without language scores, you cannot advance a single step.", gemReward: 1, enemy: { name: "IELTS Dragon", icon: "🐲", hp: 150, atk: 20 } },
+    { id: 1, title: "October Purgatory: The Essay War", subtitle: "The agony of writer's block gnaws at you like a zombie.", gemReward: 1, enemy: { name: "Writer's Block Zombie", icon: "🧟", hp: 200, atk: 30 } },
+    { id: 2, title: "November Abyss: The Application War", subtitle: "DDLs approach! Filling forms and uploading documents leaves no room for error.", gemReward: 1, enemy: { name: "The Reaper of DDLs", icon: "💀", hp: 280, atk: 45 } }
+  ];
 
-  <script>
-    // ======= 全局状态 =======
-    const gameState = {
-      gems: 0, cleared: [false, false, false], level: 1, potions: 4, shield: false,
-      currentStage: null, inBattle: false, isAnimating: false,
-      hero: { name: "申请者(你)", icon: "👨‍🎓", hp: 120, maxHp: 120 },
-      enemy: null
-    };
+  // RPG Skill Data
+  const heroSkills = [
+    { id: 0, name: "Mock Exam Thrust", pp: 15, maxPp: 15, power: 30, class: "attack", cssType: "type-normal", cssLabel: "Physical", log: "executed <b>Mock Exam Thrust</b>!" },
+    { id: 1, name: "Proofreader's Slash", pp: 3, maxPp: 3, power: 80, class: "heavy", cssType: "type-fire", cssLabel: "Magic · Crit", log: "unleashed the ultimate <b>Proofreader's Slash</b>! It's super effective!" },
+    { id: 2, name: "Cold Email Shield", pp: 5, maxPp: 5, power: 0, class: "shield", cssType: "type-magic", cssLabel: "Buff · Defense", log: "sent a <b>Cold Email</b>! Defense sharply increased!" },
+    { id: 3, name: "Iced Americano", pp: gameState.potions, maxPp: gameState.potions, power: -80, class: "potion", cssType: "type-heal", cssLabel: "Heal", log: "chugged an <b>Iced Americano</b>! Vitality restored!" }
+  ];
 
-    const stages = [
-      { id: 0, title: "九月前哨：语言之战", subtitle: "没有语言成绩，后面寸步难行。", gemReward: 1, enemy: { name: "雅思恶龙", icon: "🐲", hp: 150, atk: 20 } },
-      { id: 1, title: "十月炼狱：文书之战", subtitle: "写不出文书的痛苦，像僵尸一样啃食着你。", gemReward: 1, enemy: { name: "难产僵尸", icon: "🧟", hp: 200, atk: 30 } },
-      { id: 2, title: "十一月深渊：网申之战", subtitle: "DDL逼近！填表、传材料，不能有一丝失误。", gemReward: 1, enemy: { name: "DDL死神", icon: "💀", hp: 280, atk: 45 } }
-    ];
+  // ======= Visual Init =======
+  function createSky() {
+    const sky = document.getElementById("sky"), dusts = document.getElementById("dusts");
+    for(let i=0; i<50; i++) { let s = document.createElement("div"); s.className = "star"; let size = Math.random()*3+1; s.style.width=size+"px"; s.style.height=size+"px"; s.style.left=Math.random()*100+"vw"; s.style.top=Math.random()*78+"vh"; s.style.animationDelay=Math.random()*4+"s"; sky.appendChild(s); }
+    for(let i=0; i<10; i++) { let d = document.createElement("div"); d.className = "dust"; d.style.left=Math.random()*100+"vw"; d.style.top=(48+Math.random()*24)+"vh"; d.style.animationDuration=(8+Math.random()*6)+"s"; d.style.animationDelay=Math.random()*8+"s"; dusts.appendChild(d); }
+  }
+  createSky();
 
-    // 整合洛克王国式的技能数据
-    const heroSkills = [
-      { id: 0, name: "真题突刺", pp: 15, maxPp: 15, power: 30, type: "attack", cssType: "type-normal", cssLabel: "物理", text: "使用了 真题突刺！" },
-      { id: 1, name: "外教精修斩", pp: 3, maxPp: 3, power: 80, type: "heavy", cssType: "type-fire", cssLabel: "魔法 · 暴击", text: "祭出底牌 外教精修斩！效果拔群！" },
-      { id: 2, name: "套磁护盾", pp: 5, maxPp: 5, power: 0, type: "shield", cssType: "type-magic", cssLabel: "变化 · 防御", text: "厚脸皮发了套磁信！防御力大幅提升了！" },
-      { id: 3, name: "浓缩冰美式", pp: gameState.potions, maxPp: gameState.potions, power: -80, type: "heal", cssType: "type-heal", cssLabel: "恢复", text: "猛灌了一口冰美式！精力恢复了！" }
-    ];
+  function updateHUD() {
+    document.getElementById("clearCount").textContent = `${gameState.cleared.filter(Boolean).length} / 3`;
+    document.getElementById("gemCount").textContent = gameState.gems;
+    document.getElementById("playerLevel").textContent = gameState.level;
+    document.getElementById("potionCount").textContent = gameState.potions;
 
-    // ======= 视觉初始化 =======
-    function createSky() {
-      const sky = document.getElementById("sky"), dusts = document.getElementById("dusts");
-      for(let i=0; i<50; i++) { let s = document.createElement("div"); s.className = "star"; let size = Math.random()*3+1; s.style.width=size+"px"; s.style.height=size+"px"; s.style.left=Math.random()*100+"vw"; s.style.top=Math.random()*78+"vh"; s.style.animationDelay=Math.random()*4+"s"; sky.appendChild(s); }
-      for(let i=0; i<10; i++) { let d = document.createElement("div"); d.className = "dust"; d.style.left=Math.random()*100+"vw"; d.style.top=(48+Math.random()*24)+"vh"; d.style.animationDuration=(8+Math.random()*6)+"s"; d.style.animationDelay=Math.random()*8+"s"; dusts.appendChild(d); }
-    }
-    createSky();
+    heroSkills[3].pp = gameState.potions; heroSkills[3].maxPp = gameState.potions;
 
-    function updateHUD() {
-      document.getElementById("clearCount").textContent = `${gameState.cleared.filter(Boolean).length} / 3`;
-      document.getElementById("gemCount").textContent = gameState.gems;
-      document.getElementById("playerLevel").textContent = gameState.level;
-      document.getElementById("potionCount").textContent = gameState.potions;
-      
-      // 更新冰美式数量
-      heroSkills[3].pp = gameState.potions; heroSkills[3].maxPp = gameState.potions;
-
-      document.querySelectorAll(".door[data-level]").forEach(door => {
-        const idx = Number(door.dataset.level); door.classList.remove("locked", "cleared"); const tag = door.querySelector(".status-tag");
-        if(gameState.cleared[idx]) { door.classList.add("cleared"); tag.textContent = "已击杀"; }
-        else if(idx>0 && !gameState.cleared[idx-1]) { door.classList.add("locked"); tag.textContent = "未解锁"; }
-        else tag.textContent = idx===0 ? "9月" : idx===1 ? "10月" : "11月";
-      });
-
-      const allClear = gameState.cleared.every(Boolean);
-      const fd = document.getElementById("finalDoor"); fd.classList.toggle("locked", !allClear); fd.classList.toggle("cleared", allClear);
-      fd.querySelector(".status-tag").textContent = allClear ? "已开启" : "最终门";
-    }
-
-    // ======= 弹窗与引导 =======
-    const modal = document.getElementById("gameModal"), content = document.getElementById("gameContent");
-    document.getElementById("closeModal").addEventListener("click", () => {
-      if(gameState.inBattle && !confirm("战斗正在进行中，确定要逃跑吗？")) return;
-      modal.classList.remove("show");
-      gameState.inBattle = false;
+    document.querySelectorAll(".door[data-level]").forEach(door => {
+      const idx = Number(door.dataset.level); door.classList.remove("locked", "cleared"); const tag = door.querySelector(".status-tag");
+      if(gameState.cleared[idx]) { door.classList.add("cleared"); tag.textContent = "Slain"; }
+      else if(idx>0 && !gameState.cleared[idx-1]) { door.classList.add("locked"); tag.textContent = "Sealed"; }
+      else tag.textContent = idx===0 ? "September" : idx===1 ? "October" : "November";
     });
 
-    // 战前准备界面（保留原版）
-    function openStage(idx) {
-      if(idx>0 && !gameState.cleared[idx-1]) return;
-      const stg = stages[idx]; gameState.currentStage = stg;
-      
-      content.innerHTML = `
+    const allClear = gameState.cleared.every(Boolean);
+    const fd = document.getElementById("finalDoor"); fd.classList.toggle("locked", !allClear); fd.classList.toggle("cleared", allClear);
+    fd.querySelector(".status-tag").textContent = allClear ? "Unlocked" : "The Zenith";
+  }
+
+  // ======= Modals & Flow =======
+  const modal = document.getElementById("gameModal"), content = document.getElementById("gameContent");
+  document.getElementById("closeModal").addEventListener("click", () => {
+    if(gameState.inBattle && !confirm("The battle is ongoing! Are you sure you want to flee?")) return;
+    modal.classList.remove("show");
+    gameState.inBattle = false;
+  });
+
+  function openStage(idx) {
+    if(idx>0 && !gameState.cleared[idx-1]) return;
+    const stg = stages[idx]; gameState.currentStage = stg;
+
+    content.innerHTML = `
         <div class="level-header"><div><div class="level-title">${stg.title}</div><div class="level-desc">${stg.subtitle}</div></div></div>
         <div class="battle-grid">
           <div class="box" style="text-align:center;">
-            <div class="character-name">镇守魔王：${stg.enemy.name}</div>
+            <div class="character-name">Guardian Boss: ${stg.enemy.name}</div>
             <div style="font-size:80px; margin:20px 0; filter:drop-shadow(0 0 15px #e74c3c);">${stg.enemy.icon}</div>
-            <div style="color:#ead7a7; font-weight:bold;">HP: ${stg.enemy.hp} | 基础攻击: ${stg.enemy.atk}</div>
+            <div style="color:#ead7a7; font-weight:bold;">HP: ${stg.enemy.hp} | Base ATK: ${stg.enemy.atk}</div>
           </div>
           <div class="box">
-            <div class="character-name">战斗情报</div>
+            <div class="character-name">Combat Intel</div>
             <div class="info-list">
-              <div class="info-item">⚔️ 注意管理【外教精修斩】的 PP，它伤害极高但次数有限。</div>
-              <div class="info-item">🛡️ 危机时使用【套磁护盾】可以抵挡敌方 70% 的伤害。</div>
+              <div class="info-item">⚔️ Manage the PP of <b>Proofreader's Slash</b>. It deals massive damage but has limited uses.</div>
+              <div class="info-item">🛡️ In moments of crisis, the <b>Cold Email Shield</b> blocks 70% of incoming damage.</div>
             </div>
-            ${gameState.cleared[idx] ? '<div class="reward-box" style="border-color:#2ecc71;">此怪已被击败，再次挑战无额外奖励。</div>' : `<div class="reward-box">首通奖励：<b>${stg.gemReward}个徽印</b> + 升级 + 补充冰美式。</div>`}
+            ${gameState.cleared[idx] ? '<div class="reward-box" style="border-color:#2ecc71;">Boss already slain. No extra rewards for repeated challenges.</div>' : `<div class="reward-box">First Clear Reward: <b>${stg.gemReward} Artifacts</b> + Level Up + Iced Americano.</div>`}
           </div>
         </div>
-        <div class="center-actions"><button class="btn next" onclick="initBattle()">拔剑迎战</button></div>
+        <div class="center-actions"><button class="btn next" onclick="initBattle()">Draw Sword & Engage</button></div>
       `;
-      modal.classList.add("show");
-    }
+    modal.classList.add("show");
+  }
 
-    // ======= 缝合核心：洛克王国战斗场景 =======
-    function initBattle() {
-      // 属性初始化 (等级加成)
-      const lvlBonus = (gameState.level - 1) * 30;
-      gameState.hero.maxHp = 120 + lvlBonus; gameState.hero.hp = gameState.hero.maxHp; gameState.hero.shield = false;
-      heroSkills.forEach(s => { if(s.id !== 3) s.pp = s.maxPp; }); 
-      
-      const stg = gameState.currentStage;
-      gameState.enemy = { ...stg.enemy, maxHp: stg.enemy.hp };
-      gameState.inBattle = true; gameState.isAnimating = true;
+  // ======= RPG Engine =======
+  function initBattle() {
+    const lvlBonus = (gameState.level - 1) * 30;
+    gameState.hero.maxHp = 120 + lvlBonus; gameState.hero.hp = gameState.hero.maxHp; gameState.hero.shield = false;
+    heroSkills.forEach(s => { if(s.id !== 3) s.pp = s.maxPp; });
 
-      renderRocoBattleUI();
-      
-      // 开场动画与播报
-      setTimeout(() => {
-        typeWriter(`野生的 ${gameState.enemy.name} 出现了！`, () => {
-            setTimeout(() => {
-                document.getElementById('msgBox').innerText = "该你出招了，请选择战术：";
-                document.getElementById('actionMenu').style.display = 'grid';
-                gameState.isAnimating = false;
-            }, 800);
-        });
-      }, 500);
-    }
+    const stg = gameState.currentStage;
+    gameState.enemy = { ...stg.enemy, maxHp: stg.enemy.hp };
+    gameState.inBattle = true; gameState.isAnimating = true;
 
-    function renderRocoBattleUI() {
-      const h = gameState.hero, e = gameState.enemy;
-      
-      // 生成技能按钮
-      let skillsHtml = heroSkills.map(s => `
-        <button class="skill-btn" id="btn-${s.id}" onclick="useSkill(${s.id})" ${s.pp <= 0 ? 'disabled' : ''}>
+    renderRocoBattleUI();
+
+    setTimeout(() => {
+      typeWriter(`A wild <b>${gameState.enemy.name}</b> appears!`, () => {
+        setTimeout(() => {
+          document.getElementById('msgBox').innerText = "Awaiting your command:";
+          document.getElementById('actionMenu').style.display = 'grid';
+          gameState.isAnimating = false;
+        }, 800);
+      });
+    }, 500);
+  }
+
+  function renderRocoBattleUI() {
+    const h = gameState.hero, e = gameState.enemy;
+
+    let skillsHtml = heroSkills.map(s => `
+        <button class="skill-btn" id="btn-s-${s.id}" onclick="useSkill(${s.id})" ${s.pp <= 0 ? 'disabled' : ''}>
             <div class="skill-name">${s.name}</div>
             <div class="skill-type ${s.cssType}">${s.cssLabel}</div>
-            <div class="skill-pp" id="pp-${s.id}">PP: ${s.pp}/${s.maxPp}</div>
+            <div class="skill-pp" id="text-pp-${s.id}">PP: ${s.pp}/${s.maxPp}</div>
         </button>
       `).join('');
 
-      content.innerHTML = `
+    content.innerHTML = `
         <div class="roco-game-screen">
             <div class="roco-battle-scene">
                 <div class="ground-ellipse ground-enemy"></div>
@@ -420,241 +413,257 @@
                     <div class="hud-name"><span>${h.name}</span> <span class="lvl">Lv.${gameState.level * 10 + 10}</span></div>
                     <div class="hp-bar-bg"><div class="hp-bar-fill" id="hHpBar"></div></div>
                     <div class="hp-text"><span id="hHpText">${h.hp}/${h.maxHp}</span></div>
-                    <div class="shield-tag" id="hShieldTag">🛡️ 套磁护盾激活中</div>
+                    <div class="shield-tag" id="hShieldTag">🛡️ Shield Active</div>
                 </div>
                 <div class="sprite sprite-hero" id="heroSprite">${h.icon}</div>
                 <div class="damage-text" id="heroDmg" style="bottom: 120px; left: 28%;"></div>
             </div>
 
             <div class="ui-bottom">
-                <div class="message-box" id="msgBox">准备战斗...</div>
+                <div class="message-box" id="msgBox">Preparing for battle...</div>
                 <div class="action-menu" id="actionMenu">${skillsHtml}</div>
             </div>
         </div>
       `;
-      updateBars();
-    }
+    updateDynamicUI();
+  }
 
-    // 打字机特效
-    function typeWriter(text, callback, clear=true) {
-        const box = document.getElementById('msgBox');
-        if (!box) return;
-        if(clear) box.innerHTML = ''; else box.innerHTML += '<br>';
-        
-        let i = 0; let speed = 30;
-        function type() {
-            if (i < text.length) {
-                box.innerHTML += text.charAt(i); i++;
-                setTimeout(type, speed);
-            } else if (callback) {
-                setTimeout(callback, 500);
-            }
-        }
-        type();
-    }
+  function typeWriter(text, callback, clear=true) {
+    const box = document.getElementById('msgBox');
+    if (!box) return;
+    if(clear) box.innerHTML = ''; else box.innerHTML += '<br>';
 
-    // 玩家回合出招
-    function useSkill(skillIdx) {
-        if (!gameState.inBattle || gameState.isAnimating) return;
-        const skill = heroSkills[skillIdx];
-        if (skill.pp <= 0) return;
-        
-        gameState.isAnimating = true;
-        document.getElementById('actionMenu').style.display = 'none';
-        
-        // 扣减PP
-        skill.pp--;
-        if(skillIdx === 3) gameState.potions--; // 同步全局血瓶
-        document.getElementById(`pp-${skillIdx}`).innerText = `PP: ${skill.pp}/${skill.maxPp}`;
-        if (skill.pp === 0) document.getElementById(`btn-${skillIdx}`).disabled = true;
-
-        typeWriter(`你 ${skill.text}`, () => {
-            if (skill.type === 'attack' || skill.type === 'heavy') {
-                playAttackAnim('hero', () => {
-                    // 等级加成伤害
-                    let dmg = skill.power + Math.floor(Math.random() * 15) + (gameState.level - 1) * 10;
-                    applyDamage('enemy', dmg);
-                    setTimeout(() => checkWinOrNext(), 1000);
-                });
-            } else if (skill.type === 'heal') {
-                let heal = Math.abs(skill.power) + (gameState.level * 15);
-                gameState.hero.hp = Math.min(gameState.hero.maxHp, gameState.hero.hp + heal);
-                updateBars();
-                showFloatingText('hero', `+${heal}`, '#48bb78');
-                setTimeout(() => checkWinOrNext(), 1000);
-            } else if (skill.type === 'shield') {
-                gameState.hero.shield = true;
-                updateBars();
-                setTimeout(() => checkWinOrNext(), 1000);
-            }
-        });
-    }
-
-    // 状态机检查
-    function checkWinOrNext() {
-        if (gameState.enemy.hp <= 0) {
-            typeWriter(`成功击溃了 ${gameState.enemy.name}！`, () => { setTimeout(() => winStage(), 1200); });
-        } else {
-            enemyTurn();
-        }
-    }
-
-    // 敌人回合
-    function enemyTurn() {
-        let eName = gameState.enemy.name;
-        typeWriter(`${eName} 发起了疯狂的反扑！`, () => {
-            playAttackAnim('enemy', () => {
-                let dmg = gameState.enemy.atk + Math.floor(Math.random() * 20);
-                if (gameState.hero.shield) {
-                    dmg = Math.floor(dmg * 0.3); // 护盾减伤
-                    gameState.hero.shield = false; 
-                    typeWriter(`套磁护盾抵挡了大量伤害！`, null, false);
-                }
-                
-                applyDamage('hero', dmg);
-                updateBars();
-                
-                setTimeout(() => {
-                    if (gameState.hero.hp <= 0) {
-                        typeWriter(`你被 DDL 和压力彻底击垮了...`, () => { setTimeout(() => loseStage(), 1500); });
-                    } else {
-                        document.getElementById('msgBox').innerText = "该你出招了，请选择战术：";
-                        document.getElementById('actionMenu').style.display = 'grid';
-                        gameState.isAnimating = false;
-                    }
-                }, 1000);
-            });
-        });
-    }
-
-    // 动画引擎调用
-    function playAttackAnim(attacker, onHit) {
-        const sprite = document.getElementById(attacker === 'hero' ? 'heroSprite' : 'enemySprite');
-        sprite.classList.add(attacker === 'hero' ? 'anim-hero-attack' : 'anim-enemy-attack');
-        setTimeout(() => { if (onHit) onHit(); }, 300); // 冲刺中间点造成伤害
-        setTimeout(() => { sprite.classList.remove('anim-hero-attack', 'anim-enemy-attack'); }, 600);
-    }
-
-    function applyDamage(target, damage) {
-        const tgtSprite = document.getElementById(target === 'hero' ? 'heroSprite' : 'enemySprite');
-        tgtSprite.classList.add('anim-hit');
-        setTimeout(() => tgtSprite.classList.remove('anim-hit'), 500);
-
-        if (target === 'enemy') {
-            gameState.enemy.hp = Math.max(0, gameState.enemy.hp - damage);
-        } else {
-            gameState.hero.hp = Math.max(0, gameState.hero.hp - damage);
-        }
-        updateBars();
-        showFloatingText(target, `-${damage}`, '#ff3333');
-    }
-
-    function showFloatingText(target, text, color) {
-        const dmgEl = document.getElementById(target === 'hero' ? 'heroDmg' : 'enemyDmg');
-        if(!dmgEl) return;
-        dmgEl.innerText = text; dmgEl.style.color = color;
-        dmgEl.classList.remove('damage-anim'); void dmgEl.offsetWidth; dmgEl.classList.add('damage-anim');
-    }
-
-    function updateBars() {
-        const hPct = (gameState.hero.hp / gameState.hero.maxHp) * 100;
-        const ePct = (gameState.enemy.hp / gameState.enemy.maxHp) * 100;
-        
-        const hBar = document.getElementById('hHpBar');
-        if(hBar) {
-            hBar.style.width = hPct + '%';
-            hBar.style.backgroundColor = hPct > 50 ? '#48bb78' : (hPct > 20 ? '#ecc94b' : '#e53e3e');
-            document.getElementById('hHpText').innerText = `${gameState.hero.hp}/${gameState.hero.maxHp}`;
-        }
-
-        const eBar = document.getElementById('eHpBar');
-        if(eBar) {
-            eBar.style.width = ePct + '%';
-            document.getElementById('eHpText').innerText = `${gameState.enemy.hp}/${gameState.enemy.maxHp}`;
-        }
-
-        const shieldTag = document.getElementById('hShieldTag');
-        if(shieldTag) { shieldTag.style.display = gameState.hero.shield ? 'block' : 'none'; }
-    }
-
-    // ======= 战斗结算 =======
-    function winStage() {
-      gameState.inBattle = false; gameState.isAnimating = false;
-      const stg = gameState.currentStage;
-      let rText = "你已经碾压过这个Boss，实力无需再证。";
-      
-      if (!gameState.cleared[stg.id]) {
-        gameState.cleared[stg.id] = true; 
-        gameState.gems += stg.gemReward; 
-        gameState.level++;
-        gameState.potions++; // 赢了奖励一瓶血
-        rText = `🎉 首次击杀！获得 <b>${stg.gemReward} 个徽印</b>，升级为 <b>Lv.${gameState.level}</b>，并缴获 1 杯冰美式！`;
+    let i = 0; let speed = 30;
+    function type() {
+      if (i < text.length) {
+        box.innerHTML += text.charAt(i); i++;
+        setTimeout(type, speed);
+      } else if (callback) {
+        setTimeout(callback, 500);
       }
-      updateHUD();
-      const all = gameState.cleared.every(Boolean);
-      
-      // 切回原版古堡结算界面
-      content.innerHTML = `
-        <div class="level-header"><div class="level-title">🏆 成功熬过本月！</div></div>
+    }
+    type();
+  }
+
+  function updateDynamicUI() {
+    const h = gameState.hero, e = gameState.enemy;
+    const hPct = Math.max(0, (h.hp / h.maxHp) * 100);
+    const ePct = Math.max(0, (e.hp / e.maxHp) * 100);
+
+    const hBar = document.getElementById('hHpBar');
+    if(hBar) {
+      hBar.style.width = hPct + '%';
+      hBar.style.background = hPct > 50 ? 'linear-gradient(90deg, #4ed481, #2a9a57)' : (hPct > 20 ? '#f1c40f' : '#e74c3c');
+      document.getElementById('hHpText').innerText = `${h.hp}/${h.maxHp}`;
+    }
+
+    const eBar = document.getElementById('eHpBar');
+    if(eBar) {
+      eBar.style.width = ePct + '%';
+      document.getElementById('eHpText').innerText = `${e.hp}/${e.maxHp}`;
+    }
+
+    heroSkills.forEach(s => {
+      const btn = document.getElementById(`btn-s-${s.id}`);
+      const ppText = document.getElementById(`text-pp-${s.id}`);
+      if(btn && ppText) {
+        ppText.innerText = `PP: ${s.pp}/${s.maxPp}`;
+        btn.disabled = (s.pp <= 0);
+      }
+    });
+
+    const shieldTag = document.getElementById('hShieldTag');
+    if(shieldTag) { shieldTag.style.display = gameState.hero.shield ? 'block' : 'none'; }
+  }
+
+  function popDamage(target, text, color) {
+    const el = document.getElementById(target === 'hero' ? 'heroDmg' : 'enemyDmg');
+    if(!el) return;
+    el.innerText = text; el.style.color = color;
+    el.classList.remove('damage-anim'); void el.offsetWidth; el.classList.add('damage-anim');
+  }
+
+  function useSkill(skillIdx) {
+    if (!gameState.inBattle || gameState.isAnimating) return;
+    const skill = heroSkills[skillIdx];
+    if (skill.pp <= 0) return;
+
+    gameState.isAnimating = true;
+    document.getElementById('actionMenu').style.display = 'none';
+
+    skill.pp--;
+    if(skillIdx === 3) {
+      gameState.potions--;
+      document.getElementById("potionCount").textContent = gameState.potions;
+    }
+    updateDynamicUI();
+
+    typeWriter(`You ${skill.log}`, () => {
+      const hSprite = document.getElementById('heroSprite');
+      const eSprite = document.getElementById('enemySprite');
+
+      if (skill.class === 'attack' || skill.class === 'heavy') {
+        hSprite.classList.add('anim-hero-attack');
+        setTimeout(() => {
+          let dmg = skill.power + Math.floor(Math.random() * 15) + (gameState.level - 1) * 10;
+          gameState.enemy.hp = Math.max(0, gameState.enemy.hp - dmg);
+          eSprite.classList.add('hit');
+          popDamage('enemy', `-${dmg}`, '#ff4757');
+          updateDynamicUI();
+
+          setTimeout(() => {
+            hSprite.classList.remove('anim-hero-attack');
+            eSprite.classList.remove('hit');
+            checkWinOrNext();
+          }, 400);
+        }, 200);
+
+      } else if (skill.class === 'heal') {
+        let heal = Math.abs(skill.power) + (gameState.level * 15);
+        gameState.hero.hp = Math.min(gameState.hero.maxHp, gameState.hero.hp + heal);
+        updateDynamicUI();
+        popDamage('hero', `+${heal}`, '#48bb78');
+        setTimeout(() => checkWinOrNext(), 800);
+      } else if (skill.class === 'shield') {
+        gameState.hero.shield = true;
+        updateDynamicUI();
+        setTimeout(() => checkWinOrNext(), 800);
+      }
+    });
+  }
+
+  function checkWinOrNext() {
+    if (gameState.enemy.hp <= 0) {
+      typeWriter(`Successfully crushed <b>${gameState.enemy.name}</b>!`, () => { setTimeout(() => winStage(), 1200); });
+    } else {
+      enemyTurn();
+    }
+  }
+
+  function enemyTurn() {
+    let eName = gameState.enemy.name;
+    typeWriter(`<b>${eName}</b> launched a frantic counterattack!`, () => {
+      const eSprite = document.getElementById('enemySprite');
+      const hSprite = document.getElementById('heroSprite');
+
+      eSprite.classList.add('anim-enemy-attack');
+
+      setTimeout(() => {
+        let dmg = gameState.enemy.atk + Math.floor(Math.random() * 20);
+        if (gameState.hero.shield) {
+          dmg = Math.floor(dmg * 0.3); // Shield absorbs 70%
+          gameState.hero.shield = false;
+          typeWriter(`The <b>Cold Email Shield</b> absorbed massive damage!`, null, false);
+        }
+
+        gameState.hero.hp = Math.max(0, gameState.hero.hp - dmg);
+        hSprite.classList.add('hit');
+        popDamage('hero', `-${dmg}`, '#ff4757');
+        updateDynamicUI();
+
+        setTimeout(() => {
+          eSprite.classList.remove('anim-enemy-attack');
+          hSprite.classList.remove('hit');
+
+          if (gameState.hero.hp <= 0) {
+            typeWriter(`You were thoroughly crushed by DDLs and pressure...`, () => { setTimeout(() => loseStage(), 1500); });
+          } else {
+            document.getElementById('msgBox').innerText = "Awaiting your command:";
+            document.getElementById('actionMenu').style.display = 'grid';
+            gameState.isAnimating = false;
+          }
+        }, 400);
+      }, 200);
+    });
+  }
+
+  // ======= Settlement =======
+  function winStage() {
+    gameState.inBattle = false; gameState.isAnimating = false;
+    const stg = gameState.currentStage;
+    let rText = "You have already crushed this Boss. Your strength needs no further proof.";
+
+    if (!gameState.cleared[stg.id]) {
+      gameState.cleared[stg.id] = true;
+      gameState.gems += stg.gemReward;
+      gameState.level++;
+      gameState.potions++;
+      rText = `🎉 First Blood! Gained <b>${stg.gemReward} Artifacts</b>, leveled up to <b>Lv.${gameState.level}</b>, and scavenged 1 Iced Americano!`;
+    }
+    updateHUD();
+    const all = gameState.cleared.every(Boolean);
+
+    content.innerHTML = `
+        <div class="level-header"><div class="level-title">🏆 Month Conquered!</div></div>
         <div class="box" style="text-align:center; padding: 40px;">
           <div style="font-size: 80px; filter: drop-shadow(0 0 20px #2ecc71); margin-bottom: 20px;">✨</div>
-          <div style="font-size: 1.2rem; margin-bottom: 20px;">${stg.enemy.name} 被你精妙的操作击溃了。</div>
+          <div style="font-size: 1.2rem; margin-bottom: 20px;"><b>${stg.enemy.name}</b> was obliterated by your precise tactics.</div>
           <div class="reward-box" style="border-color:#f1c40f;">${rText}</div>
           <div class="center-actions" style="margin-top:30px;">
-            <button class="btn next" onclick="document.getElementById('closeModal').click()">返回走廊</button>
-            ${all ? `<button class="btn next" style="background: linear-gradient(135deg, #e74c3c, #c0392b); color: #fff;" onclick="openFinal()">开启 最终圣殿</button>` : ''}
+            <button class="btn next" onclick="document.getElementById('closeModal').click()">Return to Citadel</button>
+            ${all ? `<button class="btn next" style="background: linear-gradient(135deg, #e74c3c, #c0392b); color: #fff;" onclick="openFinal()">Open The Sanctuary</button>` : ''}
           </div>
         </div>
       `;
-    }
+  }
 
-    function loseStage() {
-      gameState.inBattle = false; gameState.isAnimating = false;
-      content.innerHTML = `
-        <div class="level-header"><div class="level-title" style="color:#e74c3c;">💥 申请受挫</div></div>
+  function loseStage() {
+    gameState.inBattle = false; gameState.isAnimating = false;
+    content.innerHTML = `
+        <div class="level-header"><div class="level-title" style="color:#e74c3c;">💥 Application Foiled</div></div>
         <div class="box" style="text-align:center; padding: 40px;">
           <div style="font-size: 80px; filter: grayscale(1); margin-bottom: 20px;">🥀</div>
-          <div style="font-size: 1.2rem; margin-bottom: 20px;">你被 DDL 压垮了... 但不要灰心，收拾心情重来一次！</div>
+          <div style="font-size: 1.2rem; margin-bottom: 20px;">You were crushed by the DDLs... But do not despair. Gather your resolve and try again!</div>
           <div class="info-list" style="text-align:left;">
-            <div class="info-item">💡 提示：善用【外教精修斩】打出高爆发，残血时一定要喝【冰美式】。</div>
+            <div class="info-item">💡 Hint: Use [Proofreader's Slash] for high burst damage, and always chug an [Iced Americano] when your HP drops low.</div>
           </div>
           <div class="center-actions" style="margin-top:30px;">
-            <button class="btn next" onclick="openStage(${gameState.currentStage.id})">复活再战</button>
-            <button class="btn next" style="background: linear-gradient(135deg, #7f8c8d, #34495e); color:#fff;" onclick="document.getElementById('closeModal').click()">暂时撤退</button>
+            <button class="btn next" onclick="openStage(${gameState.currentStage.id})">Resurrect & Retaliate</button>
+            <button class="btn next" style="background: linear-gradient(135deg, #7f8c8d, #34495e); color:#fff;" onclick="document.getElementById('closeModal').click()">Tactical Retreat</button>
           </div>
         </div>
       `;
-    }
+  }
 
-    function openFinal() {
-      content.innerHTML = `
+  function openFinal() {
+    content.innerHTML = `
         <div class="final-reward-screen">
-          <div class="level-title" style="background: linear-gradient(90deg, #fff, #f1c40f, #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">🏰 终极 Offer 圣殿已开启 🏰</div>
+          <div class="level-title" style="background: linear-gradient(90deg, #fff, #f1c40f, #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-family: 'Georgia', serif;">🏰 Sanctuary of Offers Opened 🏰</div>
           <div class="big-gem">🎓</div>
-          <div class="level-desc" style="max-width:800px; margin: 0 auto; font-size: 1.1rem;">
-            恭喜你熬过了漫长且煎熬的申请季。<br>恶龙已死，僵尸退散，死神退避。<br>现在，准备好迎接属于你的 Offer 雨吧！
+          <div class="level-desc" style="max-width:800px; margin: 0 auto; font-size: 1.1rem; font-family: 'Georgia', serif;">
+            Congratulations on surviving the agonizing application season.<br>The Dragon is dead, the Zombie repelled, the Reaper evaded.<br>Now, prepare to embrace your rain of Offers!
           </div>
           <div class="box" style="margin-top:30px; max-width:500px; margin-left:auto; margin-right:auto; text-align:left;">
-            <div class="character-name">秋招战绩核算</div>
+            <div class="character-name">Autumn Recruitment Tally</div>
             <div class="info-list">
-              <div class="info-item">✨ 收集徽印：${gameState.gems} / 3</div>
-              <div class="info-item">✨ 最终申请力：Lv.${gameState.level}</div>
-              <div class="info-item">✨ 荣誉称号：<b>时间管理大师 · 斩妖者</b></div>
+              <div class="info-item">✨ Artifacts Collected: ${gameState.gems} / 3</div>
+              <div class="info-item">✨ Final Power Level: Lv.${gameState.level}</div>
+              <div class="info-item">✨ Honorary Title: <b>Master of Time · The Dragon Slayer</b></div>
             </div>
           </div>
           <div class="center-actions" style="margin-top:30px;">
-            <button class="btn next" onclick="alert('即将返回总地图！')">荣耀归来</button>
+            <button class="btn next" onclick="completeNode()">Return in Glory</button>
           </div>
         </div>
       `;
-      modal.classList.add("show");
+    modal.classList.add("show");
+  }
+
+  function completeNode() {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({
+        type: "gradquest:node-complete",
+        payload: { year: "y3", nodeId: 6 }
+      }, "*");
     }
+    alert('Map Guide: Returning to the Main Map!');
+  }
 
-    // 绑定大门点击事件
-    document.querySelectorAll(".door[data-level]").forEach(door => { door.addEventListener("click", () => openStage(Number(door.dataset.level))); });
-    document.getElementById("finalDoor").addEventListener("click", () => { if(gameState.cleared.every(Boolean)) openFinal(); else alert("还有 Boss 未清理，圣殿无法开启！"); });
-    updateHUD();
+  // Bind doors
+  document.querySelectorAll(".door[data-level]").forEach(door => { door.addEventListener("click", () => openStage(Number(door.dataset.level))); });
+  document.getElementById("finalDoor").addEventListener("click", () => { if(gameState.cleared.every(Boolean)) openFinal(); else alert("There are still Bosses uncleared! The Sanctuary remains sealed."); });
+  updateHUD();
 
-  </script>
+</script>
 </body>
 </html>
