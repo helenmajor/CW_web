@@ -157,9 +157,9 @@ const slamStamp = (type, color, label) => {
   stampEl.style.borderColor = color
 
   // 触发盖章动画
-  showStampAnim = false
+  showStampAnim.value = false
   void stampEl.offsetWidth
-  showStampAnim = true
+  showStampAnim.value = true
 
   setTimeout(() => {
     if (type === currentData.target) {

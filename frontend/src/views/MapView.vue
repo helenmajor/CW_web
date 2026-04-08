@@ -27,7 +27,7 @@
       <div
         v-for="level in store.currentLevels"
         :key="level.id"
-        :class="['node', `n${level.id}`, store.nodeClass(level)]"
+        :class="['node', `n${level.mapNode ?? level.id}`, store.nodeClass(level)]"
         @click="goToGame(level.id)"
       >
         <i :class="getNodeIcon(level)"></i>
@@ -50,7 +50,10 @@ function goToGame(levelId) {
     alert('此节点尚未解锁，请先完成前面的挑战！')
     return
   }
-  router.push(`/game/${levelId}`)
+  router.push({
+    path: `/game/${levelId}`,
+    query: { year: store.year },
+  })
 }
 
 function getNodeIcon(level) {

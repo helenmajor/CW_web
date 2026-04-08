@@ -1,6 +1,6 @@
 <template>
   <!-- 全局背景 -->
-  <body style="margin:0;min-height:100vh;">
+  <div class="swamp-page">
     <!-- 沼泽气泡动画 -->
     <div class="bubbles">
       <div 
@@ -73,7 +73,7 @@
         </button>
       </div>
     </div>
-  </body>
+  </div>
 </template>
 
 <script setup>
@@ -128,6 +128,7 @@ const isSuccess = ref(true)
 // 动态生成沼泽气泡（15个）
 const bubblesList = ref([])
 const generateBubbles = () => {
+  bubblesList.value = []
   for (let i = 0; i < 15; i++) {
     bubblesList.value.push({
       left: Math.random() * 100,
@@ -145,7 +146,7 @@ const heartDisplay = computed(() => {
 
 // 计算属性：当前雷区文本
 const currentMineText = computed(() => {
-  if (currentIndex.value >= mines.value) return ''
+  if (currentIndex.value >= mines.length) return ''
   return mines[currentIndex.value].text
 })
 
@@ -221,7 +222,7 @@ const closeToast = () => {
 const showFinalWin = () => {
   gameWin.value = true
   toastTitle.value = "🎓 沼泽肃清完毕！"
-  toastDesc.value = "你已成功避开所有高频 DIY 申请死角。\n\n获得《DIY避坑手册》\n已解锁 Y3-8 最终加冕大殿！"
+  toastDesc.value = "你已成功避开所有高频 DIY 申请死角。\n\n获得《DIY避坑手册》\n请返回地图，继续完成你的申请旅程！"
   toastBtnText.value = "前往加冕 (返回地图)"
   isSuccess.value = true
   showToast.value = true
@@ -237,7 +238,7 @@ onMounted(() => {
 <style>
 /* 完全保留原CSS样式、动画、渐变、特效，无任何修改 */
 * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-body { 
+.swamp-page { 
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
     background: radial-gradient(circle at 50% 100%, #064e3b 0%, #0f172a 60%, #020617 100%);
     color: #fff; height: 100vh; overflow: hidden; display: flex; flex-direction: column; align-items: center;
