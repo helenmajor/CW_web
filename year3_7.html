@@ -1,21 +1,21 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Y3-7 DIY 沼泽排雷战 · 施法版</title>
+    <title>Y3-7 DIY Bog Sweeper: The Casting Edition</title>
     <style>
-        /* 基础与西幻沼泽背景 */
+        /* Base & Western Fantasy Bog Background */
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: radial-gradient(circle at 50% 100%, #064e3b 0%, #0f172a 60%, #020617 100%);
             color: #fff; height: 100vh; overflow: hidden; display: flex; flex-direction: column; align-items: center;
         }
 
-        /* 沼泽毒气冒泡动画 */
+        /* Bog Poison Gas Bubble Animation */
         .bubbles { position: absolute; bottom: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
-        .bubble { 
+        .bubble {
             position: absolute; bottom: -50px; background: radial-gradient(circle at 30% 30%, rgba(52, 211, 153, 0.4), rgba(6, 78, 59, 0.8));
             border-radius: 50%; animation: rise 4s infinite ease-in; opacity: 0; box-shadow: 0 0 10px rgba(52, 211, 153, 0.2);
         }
@@ -25,27 +25,27 @@
             100% { transform: translateY(-80vh) scale(1.5); opacity: 0; }
         }
 
-        /* 游戏主容器 */
+        /* Main Game Container */
         .game-container {
-            position: relative; z-index: 10; width: 100%; max-width: 600px; height: 100%;
+            position: relative; z-index: 10; width: 100%; max-width: 700px; height: 100%;
             display: flex; flex-direction: column; padding: 30px 20px;
         }
 
-        /* 顶部信息面板 */
+        /* Top Information Panel */
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
-        .title-box h2 { color: #34d399; font-size: 1.5rem; text-shadow: 0 0 10px rgba(52, 211, 153, 0.5); margin-bottom: 5px; }
-        .title-box p { color: #94a3b8; font-size: 0.9rem; }
+        .title-box h2 { color: #34d399; font-size: 1.8rem; text-shadow: 0 0 10px rgba(52, 211, 153, 0.5); margin-bottom: 5px; font-family: "Georgia", serif;}
+        .title-box p { color: #94a3b8; font-size: 1rem; font-family: "Georgia", serif; font-style: italic;}
         .status-box { background: rgba(0,0,0,0.5); padding: 10px 15px; border-radius: 12px; border: 1px solid #1e293b; text-align: right; }
         .hp { color: #fb7185; font-weight: bold; font-size: 1.1rem; }
 
-        /* 沼泽中心：水泡雷区 */
+        /* Bog Center: Water Bubble Minefield */
         .swamp-center {
             flex: 1; display: flex; justify-content: center; align-items: center; position: relative;
         }
 
-        /* 当前的雷（恶魔符文） */
+        /* Current Mine (Demon Rune) */
         .mine-orb {
-            width: 240px; height: 240px; border-radius: 50%;
+            width: 280px; height: 280px; border-radius: 50%;
             background: radial-gradient(circle at 40% 40%, #1e293b, #0f172a);
             border: 2px solid #475569;
             box-shadow: 0 0 40px rgba(0,0,0,0.8), inset 0 0 20px rgba(255,255,255,0.05);
@@ -53,22 +53,22 @@
             text-align: center; padding: 20px; transition: 0.3s;
             animation: float 3s ease-in-out infinite; position: relative;
         }
-        .mine-orb::before { content: "⚠️"; font-size: 2rem; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.3)); }
-        .mine-text { font-size: 1.4rem; font-weight: 900; color: #f8fafc; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
-        
+        .mine-orb::before { content: "⚠️"; font-size: 2.5rem; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.3)); }
+        .mine-text { font-size: 1.3rem; font-weight: 900; color: #f8fafc; text-shadow: 0 2px 4px rgba(0,0,0,0.8); line-height: 1.4;}
+
         @keyframes float {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-15px); }
         }
 
-        /* 动画状态 */
+        /* Animation States */
         .shake { animation: shakeError 0.4s ease-in-out; border-color: #ef4444 !important; box-shadow: 0 0 40px rgba(239, 68, 68, 0.6) !important; }
         @keyframes shakeError {
             0%, 100% { transform: translateX(0); }
             20%, 60% { transform: translateX(-15px) rotate(-5deg); }
             40%, 80% { transform: translateX(15px) rotate(5deg); }
         }
-        
+
         .shatter { animation: shatterAnim 0.5s forwards; }
         @keyframes shatterAnim {
             0% { transform: scale(1); opacity: 1; filter: brightness(1); }
@@ -76,10 +76,10 @@
             100% { transform: scale(0); opacity: 0; filter: brightness(3); }
         }
 
-        /* 底部法术面板 */
+        /* Bottom Spell Panel */
         .spell-panel {
             display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
-            background: rgba(15, 23, 42, 0.8); padding: 20px; border-radius: 20px;
+            background: rgba(15, 23, 42, 0.85); padding: 20px; border-radius: 20px;
             border: 1px solid #1e293b; backdrop-filter: blur(10px);
         }
         .spell-btn {
@@ -90,33 +90,33 @@
         .spell-btn:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
         .spell-btn:active { transform: scale(0.95); }
         .spell-icon { font-size: 1.8rem; }
-        .spell-name { font-weight: bold; font-size: 0.9rem; }
-        .spell-desc { font-size: 0.7rem; color: #94a3b8; }
+        .spell-name { font-weight: bold; font-size: 1rem; font-family: "Georgia", serif;}
+        .spell-desc { font-size: 0.75rem; color: #94a3b8; text-align: center; line-height: 1.2;}
 
         .btn-fatal:hover { border-color: #ef4444; background: rgba(239, 68, 68, 0.1); }
         .btn-severe:hover { border-color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
         .btn-minor:hover { border-color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
 
-        /* 结算/提示弹窗 */
+        /* Settlement / Hint Modal */
         .toast {
             position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
             background: rgba(15, 23, 42, 0.95); border: 2px solid #34d399; border-radius: 16px;
-            padding: 25px; text-align: center; width: 90%; max-width: 400px;
+            padding: 25px; text-align: center; width: 90%; max-width: 450px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.6); z-index: 50; display: none;
             backdrop-filter: blur(5px);
         }
         .toast.show { display: block; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes popIn { 0% { transform: translate(-50%, -40%) scale(0.8); opacity: 0;} 100% { transform: translate(-50%, -50%) scale(1); opacity: 1;} }
-        
-        .toast h3 { font-size: 1.5rem; margin-bottom: 10px; }
-        .toast p { color: #cbd5e1; line-height: 1.6; font-size: 1rem; margin-bottom: 20px; }
-        .next-btn { 
-            background: #34d399; color: #022c22; border: none; padding: 12px 30px; 
-            border-radius: 999px; font-weight: bold; font-size: 1.1rem; cursor: pointer;
-        }
-        .next-btn:hover { background: #10b981; }
 
-        /* 屏幕泛红特效 */
+        .toast h3 { font-size: 1.6rem; margin-bottom: 15px; font-family: "Georgia", serif;}
+        .toast p { color: #cbd5e1; line-height: 1.6; font-size: 1.05rem; margin-bottom: 20px; font-family: "Georgia", serif;}
+        .next-btn {
+            background: #34d399; color: #022c22; border: none; padding: 12px 30px;
+            border-radius: 999px; font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: 0.2s;
+        }
+        .next-btn:hover { background: #10b981; transform: translateY(-2px); }
+
+        /* Screen Red Flash Effect */
         .damage-overlay { position: fixed; inset: 0; background: radial-gradient(circle, transparent 50%, rgba(239,68,68,0.4) 100%); pointer-events: none; opacity: 0; z-index: 100; transition: 0.2s;}
         .damage-overlay.active { opacity: 1; }
     </style>
@@ -129,49 +129,49 @@
 <div class="game-container">
     <div class="header">
         <div class="title-box">
-            <h2>DIY 沼泽排雷</h2>
-            <p>不要犹豫，用正确的魔法击碎陷阱！</p>
+            <h2>DIY Bog Sweeper</h2>
+            <p>Do not hesitate! Shatter the traps with the correct spell.</p>
         </div>
         <div class="status-box">
-            <div style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 4px;">净化进度</div>
-            <div style="font-weight: bold; color: #34d399;" id="progressText">0 / 4</div>
-            <div class="hp" id="hpText" style="margin-top: 6px;">护盾: ❤️❤️❤️</div>
+            <div style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 4px; font-weight: bold;">Purification Progress</div>
+            <div style="font-weight: bold; color: #34d399; font-size: 1.1rem;" id="progressText">0 / 4</div>
+            <div class="hp" id="hpText" style="margin-top: 6px;">Shield: ❤️❤️❤️</div>
         </div>
     </div>
 
     <div class="swamp-center">
         <div class="mine-orb" id="mineOrb">
-            <div class="mine-text" id="mineText">等待浮现...</div>
+            <div class="mine-text" id="mineText">Awaiting manifestation...</div>
         </div>
-        
+
         <div class="toast" id="toast">
-            <h3 id="toastTitle">✨ 击碎成功！</h3>
-            <p id="toastDesc">知识点解析...</p>
-            <button class="next-btn" id="nextBtn">继续前进</button>
+            <h3 id="toastTitle">✨ Shattered Successfully!</h3>
+            <p id="toastDesc">Knowledge parsed...</p>
+            <button class="next-btn" id="nextBtn">Continue Advance</button>
         </div>
     </div>
 
     <div class="spell-panel" id="spellPanel">
         <button class="spell-btn btn-fatal" onclick="castSpell('fatal')">
             <span class="spell-icon">🔴</span>
-            <span class="spell-name">致命破除</span>
-            <span class="spell-desc">直接被拒</span>
+            <span class="spell-name">Lethal Dispel</span>
+            <span class="spell-desc">Instant Rejection</span>
         </button>
         <button class="spell-btn btn-severe" onclick="castSpell('severe')">
             <span class="spell-icon">🟡</span>
-            <span class="spell-name">泥潭净化</span>
-            <span class="spell-desc">严重减分</span>
+            <span class="spell-name">Bog Purge</span>
+            <span class="spell-desc">Severe Penalty</span>
         </button>
         <button class="spell-btn btn-minor" onclick="castSpell('minor')">
             <span class="spell-icon">🟢</span>
-            <span class="spell-name">荆棘修剪</span>
-            <span class="spell-desc">扣印象分</span>
+            <span class="spell-name">Thorn Pruning</span>
+            <span class="spell-desc">Impression Penalty</span>
         </button>
     </div>
 </div>
 
 <script>
-    // 动态生成背景泡泡
+    // Dynamically generate background bubbles
     const bg = document.getElementById('bubbles');
     for(let i=0; i<15; i++) {
         let b = document.createElement('div');
@@ -184,31 +184,31 @@
         bg.appendChild(b);
     }
 
-    // 关卡数据库 (策划案里提到的陷阱)
+    // Level Database (Traps from the design document)
     const mines = [
-        { 
-            text: "错过网申截止时间", 
-            type: "fatal", 
-            title: "🔴 致命级失误", 
-            desc: "毫无商量余地！大部分学校的系统一过时间自动关闭，这是不可挽回的致命伤。" 
+        {
+            text: "Missing the application deadline",
+            type: "fatal",
+            title: "🔴 Lethal Blunder",
+            desc: "No room for negotiation! Most university systems automatically close the moment the deadline passes. This is an irreversible, fatal wound."
         },
-        { 
-            text: "推荐信缺抬头和手写签名", 
-            type: "severe", 
-            title: "🟡 严重级失误", 
-            desc: "学校可能会打回要求重传，这会严重拖延你的审理进度，甚至导致错过首轮审核。" 
+        {
+            text: "Recommendation letter missing letterhead and signature",
+            type: "severe",
+            title: "🟡 Severe Blunder",
+            desc: "The academy might bounce it back and demand a re-upload. This severely delays your review process and might cost you the first round of admissions."
         },
-        { 
-            text: "雅思小分差0.5未达标", 
-            type: "fatal", 
-            title: "🔴 致命级失误", 
-            desc: "特别是香港和英国部分专业，语言是硬门槛，没达标机器初筛就会直接把你刷掉。" 
+        {
+            text: "IELTS sub-score is 0.5 points below requirement",
+            type: "fatal",
+            title: "🔴 Lethal Blunder",
+            desc: "Especially for specific programs in HK and the UK, language is a hard threshold. Failing to meet it means the automated screening will instantly purge your application."
         },
-        { 
-            text: "所有材料命名全叫'1.pdf'", 
-            type: "minor", 
-            title: "🟢 印象级失误", 
-            desc: "不会直接被拒，但招生官下载后看到一堆乱码文件名，你的专业度和细节分会大打折扣。" 
+        {
+            text: "Naming all documents '1.pdf'",
+            type: "minor",
+            title: "🟢 Impression Blunder",
+            desc: "It won't trigger an instant rejection, but when an admissions officer downloads a messy pile of encrypted gibberish, your professionalism score will plummet."
         }
     ];
 
@@ -223,79 +223,79 @@
     const toast = document.getElementById('toast');
     const overlay = document.getElementById('damageOverlay');
 
-    // 初始化关卡
+    // Initialize Level
     function loadMine() {
         if(currentIndex >= mines.length) {
             orb.style.display = 'none';
             showFinalWin();
             return;
         }
-        orb.className = 'mine-orb'; // 重置类名
+        orb.className = 'mine-orb'; // Reset class
         textEl.innerText = mines[currentIndex].text;
         progressText.innerText = `${currentIndex} / ${mines.length}`;
         isAnimating = false;
     }
 
-    // 玩家施法判定
+    // Player Casting Judgment
     function castSpell(spellType) {
-        if(isAnimating) return; // 防连点
-        
+        if(isAnimating) return; // Prevent double clicks
+
         const currentMine = mines[currentIndex];
 
         if(spellType === currentMine.type) {
-            // 选对了：触发爆裂动画
+            // Correct: Trigger shatter animation
             isAnimating = true;
             orb.classList.add('shatter');
-            
+
             setTimeout(() => {
                 showToast(currentMine.title, currentMine.desc, true);
             }, 400);
 
         } else {
-            // 选错了：触发震动和红屏
+            // Incorrect: Trigger shake and red screen
             isAnimating = true;
             hp--;
-            hpText.innerText = "护盾: " + "❤️".repeat(hp) + "🖤".repeat(3-hp);
-            
+            hpText.innerText = "Shield: " + "❤️".repeat(hp) + "🖤".repeat(3-hp);
+
             orb.classList.add('shake');
             overlay.classList.add('active');
-            
+
             setTimeout(() => {
                 orb.classList.remove('shake');
                 overlay.classList.remove('active');
                 isAnimating = false;
-                
+
                 if(hp <= 0) {
-                    showToast("💀 护盾碎裂", "你踩中了太多暗雷，申请进度彻底瘫痪了！请重新挑战。", false);
+                    showToast("💀 Shield Shattered", "You stepped on too many hidden mines. Your application progress is completely paralyzed! Please restart the trial.", false);
                 } else {
-                    // 给个轻微提示
-                    const btnNames = {fatal: "致命破除", severe:"泥潭净化", minor:"荆棘修剪"};
-                    textEl.innerText = `不对！这不是【${btnNames[spellType]}】能解决的...`;
+                    // Give a slight hint
+                    const btnNames = {fatal: "Lethal Dispel", severe:"Bog Purge", minor:"Thorn Pruning"};
+                    textEl.innerText = `Incorrect! [${btnNames[spellType]}] cannot resolve this...`;
                     setTimeout(() => textEl.innerText = currentMine.text, 1200);
                 }
             }, 500);
         }
     }
 
-    // 显示解析弹窗
+    // Show Analysis Modal
     function showToast(title, desc, isSuccess) {
         document.getElementById('toastTitle').innerHTML = title;
         document.getElementById('toastTitle').style.color = isSuccess ? '#34d399' : '#fb7185';
-        document.getElementById('toastDesc').innerText = desc;
-        
+        document.getElementById('toastDesc').innerHTML = desc;
+
         const nextBtn = document.getElementById('nextBtn');
         if(isSuccess) {
-            nextBtn.innerText = "继续净化";
+            nextBtn.innerText = "Continue Purging";
             nextBtn.onclick = () => {
                 toast.classList.remove('show');
                 currentIndex++;
                 loadMine();
             };
         } else {
-            nextBtn.innerText = "重新尝试";
+            nextBtn.innerText = "Retry Trial";
             nextBtn.onclick = () => {
                 toast.classList.remove('show');
-                hp = 3; hpText.innerText = "护盾: ❤️❤️❤️";
+                hp = 3; hpText.innerText = "Shield: ❤️❤️❤️";
                 currentIndex = 0;
                 loadMine();
             };
@@ -303,23 +303,31 @@
         toast.classList.add('show');
     }
 
-    // 最终胜利结算
+    // Final Victory Settlement
     function showFinalWin() {
         progressText.innerText = `${mines.length} / ${mines.length}`;
         document.getElementById('spellPanel').style.display = 'none';
-        
-        document.getElementById('toastTitle').innerHTML = "🎓 沼泽肃清完毕！";
+
+        document.getElementById('toastTitle').innerHTML = "🎓 The Bog is Purged!";
         document.getElementById('toastTitle').style.color = "#fbbf24";
-        document.getElementById('toastDesc').innerHTML = "你已成功避开所有高频 DIY 申请死角。<br><br><b>获得《DIY避坑手册》</b><br>已解锁 Y3-8 最终加冕大殿！";
-        
+        document.getElementById('toastDesc').innerHTML = "You have successfully evaded the most lethal blind spots of DIY applications.<br><br><b>Acquired: [Tome of DIY Survival]</b><br>Unlocked Y3-8: The Grand Coronation Hall!";
+
         const nextBtn = document.getElementById('nextBtn');
-        nextBtn.innerText = "前往加冕 (返回地图)";
-        nextBtn.onclick = () => alert("即将返回总地图，进入最终标星挑战！");
-        
+        nextBtn.innerText = "Proceed to Coronation";
+        nextBtn.onclick = () => {
+            if (window.parent && window.parent !== window) {
+                window.parent.postMessage({
+                    type: "gradquest:node-complete",
+                    payload: { year: "y3", nodeId: 7 }
+                }, "*");
+            }
+            alert("Map Guide: Returning to the Main Map. Entering the Final Coronation Trial!");
+        };
+
         toast.classList.add('show');
     }
 
-    // 游戏启动
+    // Start Game
     setTimeout(loadMine, 500);
 
 </script>

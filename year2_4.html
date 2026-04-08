@@ -1,66 +1,66 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Y2-4 真知炼妖炉 (进阶版)</title>
+    <title>Y2-4 Cauldron of Truth: Advanced Alchemy</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        
-        body { 
+
+        body {
             background: radial-gradient(circle at center, #1e142e 0%, #08050d 100%);
-            display: flex; justify-content: center; align-items: center; 
+            display: flex; justify-content: center; align-items: center;
             min-height: 100vh; margin: 0; padding: 20px; color: #e0d8ee;
         }
 
         .alchemy-lab {
             background: rgba(30, 20, 45, 0.85); border: 3px solid #6b4c8a;
-            border-radius: 30px; padding: 30px; width: 100%; max-width: 950px;
+            border-radius: 30px; padding: 30px; width: 100%; max-width: 980px;
             box-shadow: 0 0 40px rgba(107, 76, 138, 0.5), inset 0 0 20px rgba(0,0,0,0.8);
             position: relative; overflow: hidden; backdrop-filter: blur(10px);
         }
 
         .header { text-align: center; margin-bottom: 25px; }
-        .header h2 { margin: 0 0 10px 0; font-size: 2.2rem; color: #f9d976; text-shadow: 0 0 15px rgba(249, 217, 118, 0.6); }
-        .header p { color: #a99bbd; font-size: 1rem; margin: 0;}
+        .header h2 { margin: 0 0 10px 0; font-size: 2.2rem; color: #f9d976; text-shadow: 0 0 15px rgba(249, 217, 118, 0.6); font-family: "Georgia", serif;}
+        .header p { color: #a99bbd; font-size: 1rem; margin: 0; font-family: "Georgia", serif; font-style: italic;}
 
-        /* 专业选择 */
+        /* Major Selector */
         .major-selector { display: flex; justify-content: center; gap: 15px; margin-bottom: 25px; }
         .major-btn {
             background: #2a1b3d; border: 2px solid #8c5aae; color: #d1bced;
             padding: 8px 20px; border-radius: 20px; cursor: pointer;
-            font-size: 1rem; font-weight: bold; transition: 0.3s;
+            font-size: 0.95rem; font-weight: bold; transition: 0.3s;
         }
         .major-btn.active { background: #8c5aae; color: #fff; border-color: #e5c3ff; box-shadow: 0 0 15px #8c5aae; }
 
-        /* 工作区：左边架子(8个)，右边炉子 */
+        /* Workspace: Left Shelf (8 items), Right Cauldron */
         .workspace {
             display: flex; justify-content: space-between; align-items: stretch; gap: 20px;
             background: rgba(0,0,0,0.3); padding: 25px; border-radius: 20px; border: 1px dashed #523b6e;
         }
 
-        /* 8格魔法材料架 */
+        /* 8-Grid Magic Ingredient Shelf */
         .ingredient-shelf {
             display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 65%;
         }
         .ingredient {
             background: linear-gradient(135deg, #3c2a4d, #241630);
-            border: 2px solid #5d4078; border-radius: 12px; padding: 12px 8px;
+            border: 2px solid #5d4078; border-radius: 12px; padding: 12px 6px;
             text-align: center; cursor: grab; transition: 0.2s; position: relative;
         }
         .ingredient:hover { transform: translateY(-5px); border-color: #f9d976; box-shadow: 0 5px 15px rgba(249,217,118,0.3); }
         .ing-icon { font-size: 1.8rem; margin-bottom: 5px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.3)); }
-        .ing-name { font-size: 0.8rem; font-weight: bold; color: #d1bced; line-height: 1.2;}
-        .ing-tag { position: absolute; top: -8px; right: -8px; font-size: 0.65rem; background:#e74c3c; color:white; padding:2px 6px; border-radius:10px; font-weight:bold; border:1px solid #fff;}
+        .ing-name { font-size: 0.75rem; font-weight: bold; color: #d1bced; line-height: 1.3;}
+        .ing-tag { position: absolute; top: -8px; right: -8px; font-size: 0.6rem; background:#e74c3c; color:white; padding:2px 5px; border-radius:10px; font-weight:bold; border:1px solid #fff; letter-spacing: 0.5px;}
 
-        /* 炼妖炉区域 */
+        /* Cauldron Area */
         .cauldron-area {
             width: 35%; display: flex; flex-direction: column; align-items: center; justify-content: center;
             border-left: 2px dashed #4a3068; padding-left: 20px;
         }
         .cauldron-wrapper { position: relative; width: 160px; height: 160px; }
-        
+
         .cauldron {
             width: 100%; height: 100%; background: #111; border-radius: 50% 50% 40% 40%;
             border: 6px solid #444; border-top: 15px solid #222; position: relative; z-index: 2;
@@ -68,7 +68,7 @@
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             transition: 0.3s;
         }
-        
+
         .cauldron::before {
             content: ''; position: absolute; top: 5px; left: 15px; right: 15px; height: 30px;
             background: radial-gradient(ellipse at center, #00ffcc 0%, transparent 70%);
@@ -79,12 +79,12 @@
         .cauldron.drag-over::before { opacity: 1; background: radial-gradient(ellipse at center, #00ffcc 0%, #0088ff 70%); }
 
         .item-count { font-weight: bold; color: #fff; background: rgba(0,0,0,0.7); padding: 4px 12px; border-radius: 12px; z-index: 3; font-size: 0.9rem;}
-        .added-list { margin-top: 5px; font-size: 0.75rem; color: #00ffcc; z-index: 3; text-align: center; max-width: 90%;}
+        .added-list { margin-top: 5px; font-size: 0.7rem; color: #00ffcc; z-index: 3; text-align: center; max-width: 90%; line-height: 1.4;}
 
         .btn-brew {
             margin-top: 25px; background: linear-gradient(90deg, #f9d976, #e2954a);
-            border: none; padding: 12px 35px; border-radius: 30px;
-            font-size: 1.1rem; font-weight: 900; color: #2b1b3d;
+            border: none; padding: 12px 30px; border-radius: 30px;
+            font-size: 1.05rem; font-weight: 900; color: #2b1b3d;
             cursor: pointer; transition: 0.2s; box-shadow: 0 5px 15px rgba(226, 149, 74, 0.4);
         }
         .btn-brew:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(226, 149, 74, 0.6); }
@@ -93,67 +93,73 @@
         .feedback-panel {
             margin-top: 20px; padding: 18px; border-radius: 12px; font-weight: bold;
             display: none; text-align: left; font-size: 1rem; line-height: 1.6;
-            animation: slideUp 0.3s ease-out;
+            animation: slideUp 0.3s ease-out; font-family: "Georgia", serif;
         }
         @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         .feedback-panel.success { background: rgba(0, 255, 204, 0.15); border: 2px solid #00ffcc; color: #bdfceb; }
         .feedback-panel.error { background: rgba(255, 51, 102, 0.15); border: 2px solid #ff3366; color: #ffb3c6; }
         .feedback-panel.warning { background: rgba(249, 217, 118, 0.15); border: 2px solid #f9d976; color: #fef0c2; }
+        .feedback-cta {
+            margin-top: 14px; border: none; border-radius: 999px; padding: 12px 18px;
+            background: linear-gradient(135deg, #22c55e, #15803d); color: #fff; font-weight: 900; cursor: pointer;
+            box-shadow: 0 5px 0 #14532d; transition: 0.2s;
+        }
+        .feedback-cta:hover { transform: translateY(-2px); }
     </style>
 </head>
 <body>
 
 <div class="alchemy-lab">
     <div class="header">
-        <h2><i class="fas fa-magic"></i> 真知炼妖炉</h2>
-        <p>资源是有限的。请选择目标专业，从 8 味药材中挑选 <b>最核心的 3 项</b> 投入炼妖炉！</p>
+        <h2><i class="fas fa-magic"></i> Cauldron of Truth</h2>
+        <p>Resources are finite. Select your discipline, choose the <b>3 most vital ingredients</b>, and cast them into the cauldron!</p>
     </div>
 
     <div class="major-selector">
-        <button class="major-btn active" onclick="setMajor('cs', this)">💻 理工/计算类 (STEM)</button>
-        <button class="major-btn" onclick="setMajor('business', this)">📈 泛商科类 (Business)</button>
-        <button class="major-btn" onclick="setMajor('arts', this)">🎨 设计艺术类 (Arts)</button>
+        <button class="major-btn active" onclick="setMajor('cs', this)">💻 STEM / CS Track</button>
+        <button class="major-btn" onclick="setMajor('business', this)">📈 Business & Finance</button>
+        <button class="major-btn" onclick="setMajor('arts', this)">🎨 Art & Design</button>
     </div>
 
     <div class="workspace">
         <div class="ingredient-shelf" id="shelf">
-            <div class="ingredient" draggable="true" id="ing-gpa" data-type="gpa" data-name="高阶羊皮卷">
-                <div class="ing-icon">📜</div><div class="ing-name">高阶羊皮卷<br>(高GPA)</div>
+            <div class="ingredient" draggable="true" id="ing-gpa" data-type="gpa" data-name="Elder Scroll">
+                <div class="ing-icon">📜</div><div class="ing-name">Elder Scroll<br>(High GPA)</div>
             </div>
-            <div class="ingredient" draggable="true" id="ing-lang" data-type="lang" data-name="海妖羽毛">
-                <div class="ing-icon">🗣️</div><div class="ing-name">海妖羽毛<br>(高雅思)</div>
+            <div class="ingredient" draggable="true" id="ing-lang" data-type="lang" data-name="Siren's Feather">
+                <div class="ing-icon">🗣️</div><div class="ing-name">Siren's Feather<br>(High IELTS)</div>
             </div>
-            <div class="ingredient" draggable="true" id="ing-gre" data-type="gre" data-name="巨龙逆鳞">
-                <div class="ing-tag">进阶</div>
-                <div class="ing-icon">🐉</div><div class="ing-name">巨龙逆鳞<br>(GRE/GMAT)</div>
+            <div class="ingredient" draggable="true" id="ing-gre" data-type="gre" data-name="Dragon Scale">
+                <div class="ing-tag">ADV</div>
+                <div class="ing-icon">🐉</div><div class="ing-name">Dragon Scale<br>(GRE/GMAT)</div>
             </div>
-            <div class="ingredient" draggable="true" id="ing-research" data-type="research" data-name="星尘试管">
-                <div class="ing-icon">🔬</div><div class="ing-name">星尘试管<br>(核心科研)</div>
+            <div class="ingredient" draggable="true" id="ing-research" data-type="research" data-name="Stardust Vial">
+                <div class="ing-icon">🔬</div><div class="ing-name">Stardust Vial<br>(Core Research)</div>
             </div>
-            <div class="ingredient" draggable="true" id="ing-intern" data-type="intern" data-name="大亨算盘">
-                <div class="ing-icon">💼</div><div class="ing-name">大亨算盘<br>(名企实习)</div>
+            <div class="ingredient" draggable="true" id="ing-intern" data-type="intern" data-name="Tycoon's Abacus">
+                <div class="ing-icon">💼</div><div class="ing-name">Tycoon's Abacus<br>(Top Internship)</div>
             </div>
-            <div class="ingredient" draggable="true" id="ing-contest" data-type="contest" data-name="决斗徽章">
-                <div class="ing-icon">🏅</div><div class="ing-name">决斗徽章<br>(ACM等竞赛)</div>
+            <div class="ingredient" draggable="true" id="ing-contest" data-type="contest" data-name="Gladiator's Badge">
+                <div class="ing-icon">🏅</div><div class="ing-name">Gladiator's Badge<br>(ACM/Contests)</div>
             </div>
-            <div class="ingredient" draggable="true" id="ing-portfolio" data-type="portfolio" data-name="幻象水晶">
-                <div class="ing-tag">特化</div>
-                <div class="ing-icon">🔮</div><div class="ing-name">幻象水晶<br>(作品集)</div>
+            <div class="ingredient" draggable="true" id="ing-portfolio" data-type="portfolio" data-name="Illusion Crystal">
+                <div class="ing-tag">SPEC</div>
+                <div class="ing-icon">🔮</div><div class="ing-name">Illusion Crystal<br>(Portfolio)</div>
             </div>
-            <div class="ingredient" draggable="true" id="ing-exchange" data-type="exchange" data-name="远洋罗盘">
-                <div class="ing-icon">🧭</div><div class="ing-name">远洋罗盘<br>(海外交换)</div>
+            <div class="ingredient" draggable="true" id="ing-exchange" data-type="exchange" data-name="Voyager's Compass">
+                <div class="ing-icon">🧭</div><div class="ing-name">Voyager's Compass<br>(Exchange)</div>
             </div>
         </div>
 
         <div class="cauldron-area">
             <div class="cauldron-wrapper" id="cauldronWrap">
                 <div class="cauldron" id="cauldron">
-                    <span class="item-count" id="itemCount">容量 (0/3)</span>
+                    <span class="item-count" id="itemCount">Capacity (0/3)</span>
                     <div class="added-list" id="addedList"></div>
                 </div>
             </div>
-            <button class="btn-brew" onclick="brewPotion()"><i class="fas fa-fire"></i> 点火鉴定配方</button>
-            <button class="btn-reset" onclick="resetCauldron()">[倒掉重炼]</button>
+            <button class="btn-brew" onclick="brewPotion()"><i class="fas fa-fire"></i> Ignite & Evaluate</button>
+            <button class="btn-reset" onclick="resetCauldron()">[ Discard & Rebrew ]</button>
         </div>
     </div>
 
@@ -164,6 +170,7 @@
     let currentMajor = 'cs';
     let addedItems = [];
 
+    // Switch major tab
     function setMajor(major, btnElement) {
         currentMajor = major;
         document.querySelectorAll('.major-btn').forEach(btn => btn.classList.remove('active'));
@@ -171,6 +178,7 @@
         resetCauldron();
     }
 
+    // Drag and Drop Setup
     const ingredients = document.querySelectorAll('.ingredient');
     const cauldron = document.getElementById('cauldron');
 
@@ -192,25 +200,25 @@
     cauldron.addEventListener('drop', (e) => {
         e.preventDefault();
         cauldron.classList.remove('drag-over');
-        
+
         const type = e.dataTransfer.getData('type');
         const name = e.dataTransfer.getData('name');
-        
-        if (addedItems.length >= 3) return alert("🪄 炼妖炉已满！只能容纳最核心的 3 味药材。");
-        if (addedItems.some(i => i.type === type)) return alert("🪄 同样的药材加一遍就够啦！");
+
+        if (addedItems.length >= 3) return alert("🪄 The Cauldron is full! It can only hold the 3 most core ingredients.");
+        if (addedItems.some(i => i.type === type)) return alert("🪄 One pinch of the same ingredient is enough!");
 
         addedItems.push({ type, name });
         updateUI();
-        
-        // 隐藏架子上的对应物品增加真实感
+
+        // Hide the item on the shelf to simulate dropping it in
         document.getElementById(`ing-${type}`).style.visibility = 'hidden';
     });
 
     function updateUI() {
         const countText = document.getElementById('itemCount');
         const listText = document.getElementById('addedList');
-        
-        countText.innerText = `容量 (${addedItems.length}/3)`;
+
+        countText.innerText = `Capacity (${addedItems.length}/3)`;
         countText.style.color = addedItems.length > 0 ? "#f9d976" : "#fff";
         listText.innerText = addedItems.map(i => i.name).join(' + ');
     }
@@ -224,7 +232,7 @@
 
     function brewPotion() {
         if (addedItems.length !== 3) {
-            return showFeedback('warning', '⏳ 必须放满 3 味核心药材才能点火鉴定！(升学规划需要有完整的组合拳)');
+            return showFeedback('warning', '⏳ You must add exactly 3 core ingredients before igniting! (Admissions require a complete combo).');
         }
 
         const types = addedItems.map(i => i.type);
@@ -233,44 +241,44 @@
         let msg = "";
         let status = "error";
 
-        // === 核心教务评判逻辑 ===
+        // === Core Evaluation Logic ===
 
-        // 陷阱1：如果不管什么专业都扔了作品集(除非艺术)
+        // Trap 1: Portfolio in non-art major
         if (has('portfolio') && currentMajor !== 'arts') {
-            msg = "💥 轰隆！实验室炸了！<br>你往非设计专业里扔了【作品集】？理工科和商科的老板对你的艺术细菌毫无兴趣，这纯属浪费精力！";
+            msg = "💥 BOOM! The lab exploded!<br>You threw an [Illusion Crystal (Portfolio)] into a non-art discipline? STEM and Business professors have zero interest in your artistic flair. Pure waste of energy!";
             status = "error";
-        } 
-        // 理工科 (STEM)
+        }
+        // STEM Track
         else if (currentMajor === 'cs') {
             if (has('gpa') && (has('research') || has('intern') || has('contest'))) {
-                msg = "✨ 炼制成功：【极客超载灵药】！<br>对于理工计算类方向，高GPA是绝对底色。配合硬核科研，或者大厂核心岗位实习/ACM竞赛，是证明你代码落地能力的最强王炸组合！";
+                msg = "✨ Brew Successful: [Geek's Overload Elixir]!<br>For STEM, a high GPA is the absolute foundation. Combined with hardcore research, top-tier tech internships, or ACM contests, it's the ultimate royal flush to prove your execution capability!";
                 status = "success";
             } else if (!has('gpa')) {
-                msg = "💨 药水变成了一团黑烟...<br>缺少了【高阶羊皮卷(GPA)】。理工科导师非常看重学术基础，没有绩点打底，再多花里胡哨的经历也容易被当成空中楼阁。";
+                msg = "💨 The potion turned into black smoke...<br>Missing [Elder Scroll (GPA)]. STEM mentors heavily weigh academic foundations. Without a solid GPA, all other flashy experiences are just castles in the air.";
             } else {
-                msg = "🤔 药水只发出了微弱的光芒。<br>方向对了，但缺乏“硬核输出”。理工科需要【星尘试管(科研)】或【算盘(大厂实习)】来证明你的实战落地能力。";
+                msg = "🤔 The potion emits only a faint glow.<br>Right direction, but lacks 'hardcore DPS'. STEM needs [Stardust Vial (Research)] or [Tycoon's Abacus (Internship)] to prove your practical abilities.";
                 status = "warning";
             }
         }
-        // 商科 (Business)
+        // Business & Finance
         else if (currentMajor === 'business') {
             if (has('gpa') && has('intern') && (has('gre') || has('lang') || has('exchange'))) {
-                msg = "✨ 炼制成功：【华尔街之狼魔药】！<br>商科极度看重职场潜力和实务经历！【名企实习】是商科的核心护城河，配合体面的三围（GPA/语言/GMAT），这就是顶级商学院的最爱。";
+                msg = "✨ Brew Successful: [Wolf of Wall Street Potion]!<br>Business schools heavily value career potential and practical experience! [Top Internship] is the core moat. Combined with decent stats (GPA/Language/GMAT), this is a top B-school's favorite.";
                 status = "success";
             } else if (!has('intern')) {
-                msg = "💥 药水变成了一摊泥！<br>缺少【大亨的金算盘(实习)】？商学院旨在培养职场精英，没有两段以上的拿手实习，在商科申请池里寸步难行！";
+                msg = "💥 The potion turned to mud!<br>Missing [Tycoon's Abacus (Internship)]? Business schools aim to forge workplace elites. Without solid internships, you won't survive the business applicant pool!";
             } else {
-                msg = "🤔 药水沸腾得不够剧烈。<br>商科非常看重沟通与门槛。建议加入【海妖羽毛(雅思)】或【巨龙逆鳞(GMAT)】来提升配方的纯度。";
+                msg = "🤔 The potion isn't boiling vigorously enough.<br>Business highly values communication and thresholds. Recommend adding [Siren's Feather (IELTS)] or [Dragon Scale (GMAT)] to increase purity.";
                 status = "warning";
             }
         }
-        // 艺术类 (Arts)
+        // Art & Design
         else if (currentMajor === 'arts') {
             if (has('portfolio') && has('gpa')) {
-                msg = "✨ 炼制成功：【达芬奇密码合剂】！<br>艺术设计类的黄金铁律：【作品集】就是绝对的话语权！只要GPA和语言过线，神级作品集能让你逆袭一切！";
+                msg = "✨ Brew Successful: [Da Vinci Code Concoction]!<br>The golden rule of Art & Design: [Portfolio] is absolute power! As long as GPA and language meet the baseline, a god-tier portfolio lets you override everything!";
                 status = "success";
             } else if (!has('portfolio')) {
-                msg = "💥 实验彻底失败！<br>竟然没放【幻象水晶(作品集)】？没有作品集，哪怕你GPA满分、GRE满分，艺术学院的大门也绝不会为你敞开半条缝！";
+                msg = "💥 The experiment completely failed!<br>You didn't add [Illusion Crystal (Portfolio)]? Without a portfolio, even with a perfect GPA and GRE, art schools won't open their doors even a crack for you!";
             }
         }
 
@@ -282,6 +290,19 @@
         fb.style.display = 'block';
         fb.className = `feedback-panel ${type}`;
         fb.innerHTML = message;
+        if (type === 'success') {
+            fb.insertAdjacentHTML('beforeend', `<div><button class="feedback-cta" onclick="completeNode()">Lock This Recipe & Return</button></div>`);
+        }
+    }
+
+    function completeNode() {
+        if (window.parent && window.parent !== window) {
+            window.parent.postMessage({
+                type: "gradquest:node-complete",
+                payload: { year: "y2", nodeId: 4 }
+            }, "*");
+        }
+        alert("Core artifacts confirmed. Proceed to the action-point astrolabe.");
     }
 </script>
 </body>

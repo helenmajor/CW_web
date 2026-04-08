@@ -1,79 +1,84 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Y2-7 命运扭蛋机 (Q弹金券版)</title>
+    <title>Y2-7 Gacha of Destiny: Golden Ticket</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background: radial-gradient(circle, #2b1b3d 0%, #0a0a0a 100%); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: #fff;}
-        
+
         .room { text-align: center; background: rgba(0,0,0,0.6); padding: 40px; border-radius: 20px; border: 2px dashed #f9d976; max-width: 600px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);}
-        
-        .btn-ans { background: transparent; color: #f9d976; border: 1px solid #f9d976; padding: 15px; width: 100%; margin-bottom: 15px; border-radius: 10px; cursor: pointer; transition: 0.3s; font-size: 1.1rem; font-weight: bold;}
+
+        .header-title { color:#f9d976; margin-top: 0; font-family: "Georgia", serif; letter-spacing: 1px; font-size: 2.2rem; margin-bottom: 20px;}
+        .question-desc { font-size: 1.15rem; margin-bottom: 25px; color:#e0e6ed; line-height: 1.5; font-family: "Georgia", serif;}
+
+        .btn-ans { background: transparent; color: #f9d976; border: 1px solid #f9d976; padding: 15px; width: 100%; margin-bottom: 15px; border-radius: 10px; cursor: pointer; transition: 0.3s; font-size: 1.05rem; font-weight: bold; text-align: left; line-height: 1.4;}
         .btn-ans:hover { background: #f9d976; color: #000; transform: translateX(5px); box-shadow: 0 5px 15px rgba(249, 217, 118, 0.4);}
-        
+
         .gacha { font-size: 6rem; cursor: pointer; display: none; margin: 20px auto; transition: 0.3s; filter: drop-shadow(0 0 20px rgba(249, 217, 118, 0.5));}
         .gacha:hover { transform: scale(1.1); filter: drop-shadow(0 0 30px rgba(249, 217, 118, 0.8));}
         .shaking { animation: shake 0.5s infinite; pointer-events: none;}
         @keyframes shake { 0%,100%{transform:rotate(0) scale(1.1);} 25%{transform:rotate(15deg) scale(1.1);} 75%{transform:rotate(-15deg) scale(1.1);} }
 
-        /* ================= 核心重写：金券弹出特效 ================= */
-        
-        /* 遮罩层使用 opacity 渐变，保证流畅度 */
+        /* ================= Core: Golden Ticket Animation ================= */
+
+        /* Overlay uses opacity for smooth transition */
         .overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
             z-index: 90; opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
         }
         .overlay.active { opacity: 1; pointer-events: auto; }
-        
-        /* 金券使用 scale 缩放，配合弹簧贝塞尔曲线 */
+
+        /* Golden Ticket with spring-like bezier scaling */
         .golden-ticket {
-            position: fixed; top: 50%; left: 50%; 
-            /* 初始状态缩小到 0 */
+            position: fixed; top: 50%; left: 50%;
+            /* Initial state: scaled to 0 */
             transform: translate(-50%, -50%) scale(0);
-            width: 90%; max-width: 480px; z-index: 100;
-            /* 纯金质感渐变 */
+            width: 90%; max-width: 500px; z-index: 100;
+            /* Pure gold gradient */
             background: linear-gradient(135deg, #FFD700 0%, #FDB931 50%, #996515 100%);
             padding: 40px; border-radius: 15px; border: 4px dashed #fff;
             box-shadow: 0 20px 60px rgba(255, 215, 0, 0.6), inset 0 0 20px rgba(255,255,255,0.5);
             text-align: center; color: #5c3a00;
-            /* 弹簧动画曲线 */
-            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            /* Spring animation curve */
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        /* 激活状态放大到 1 */
+        /* Active state: scaled to 1 */
         .golden-ticket.active { transform: translate(-50%, -50%) scale(1); }
 
-        .ticket-title { font-size: 2.2rem; font-weight: 900; margin-bottom: 10px; text-shadow: 1px 1px 2px rgba(255,255,255,0.8); letter-spacing: 2px;}
+        .ticket-title { font-size: 2.2rem; font-weight: 900; margin-bottom: 10px; text-shadow: 1px 1px 2px rgba(255,255,255,0.8); letter-spacing: 2px; font-family: "Georgia", serif;}
         .ticket-subtitle { font-size: 1.1rem; font-weight: bold; margin-bottom: 25px; border-bottom: 2px solid #5c3a00; padding-bottom: 15px;}
-        
-        .reward-content { background: rgba(255,255,255,0.3); padding: 20px; border-radius: 10px; font-size: 1.5rem; font-weight: bold; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.6);}
+
+        .reward-content { background: rgba(255,255,255,0.3); padding: 20px; border-radius: 10px; font-size: 1.35rem; font-weight: bold; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.6); line-height: 1.4;}
         .reward-content i { color: #d4af37; margin-right: 10px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));}
 
         .btn-claim {
             background: #5c3a00; color: #FFD700; border: none; padding: 15px 40px;
-            border-radius: 30px; font-size: 1.2rem; font-weight: bold; cursor: pointer; 
+            border-radius: 30px; font-size: 1.15rem; font-weight: bold; cursor: pointer;
             transition: 0.2s; box-shadow: 0 5px 15px rgba(92, 58, 0, 0.5); width: 100%;
         }
         .btn-claim:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(92, 58, 0, 0.7); background: #3d2600;}
+
+        .lore-text { font-size: 1rem; margin-bottom: 20px; line-height: 1.6; font-weight: 600; font-family: "Georgia", serif;}
     </style>
 </head>
 <body>
 
 <div class="room">
-    <h2 style="color:#f9d976; margin-top: 0;"><i class="fas fa-star"></i> Year 2 终极考验</h2>
+    <h2 class="header-title"><i class="fas fa-star"></i> The Ultimate Trial of Year 2</h2>
     <div id="qBox">
-        <p style="font-size: 1.1rem; margin-bottom: 25px; color:#e0e6ed;">看完了前人的档案，你认为决定大二/大三申请成败最关键的心态是什么？</p>
-        <button class="btn-ans" onclick="check(false)">A. 盲目焦虑，看别人卷我也卷</button>
-        <button class="btn-ans" onclick="check(true)">B. 尽早明确梯度，针对性补齐硬核背景</button>
-        <button class="btn-ans" onclick="check(false)">C. 顺其自然，等大四再说</button>
+        <p class="question-desc">Having reviewed the archives of the ancients, what do you believe is the most critical mindset for success in Year 2/Year 3 applications?</p>
+        <button class="btn-ans" onclick="check(false)">A. Blind anxiety: mindlessly joining the rat race.</button>
+        <button class="btn-ans" onclick="check(true)">B. Define your target tier early and strategically forge hardcore artifacts.</button>
+        <button class="btn-ans" onclick="check(false)">C. Let fate decide; postpone everything until Year 4.</button>
         <div id="errorMsg" style="color: #e74c3c; margin-top: 15px; font-weight: bold; display: none;"></div>
     </div>
-    
+
     <div id="successBox" style="display:none;">
-        <h3 style='color:#2ecc71'>✅ 考验通过！点击下方扭蛋机抽取毕业奖励！</h3>
+        <h3 style='color:#2ecc71; font-family: "Georgia", serif;'>✅ Trial Passed!<br>Click the Gacha Machine below to draw your graduation loot!</h3>
         <div class="gacha" id="machine" onclick="playGacha()">🎰</div>
     </div>
 </div>
@@ -81,14 +86,14 @@
 <div class="overlay" id="overlay"></div>
 <div class="golden-ticket" id="ticket">
     <div class="ticket-title">GOLDEN TICKET</div>
-    <div class="ticket-subtitle">Year 2 完美通关凭证</div>
-    
+    <div class="ticket-subtitle">Year 2 Perfect Clear Voucher</div>
+
     <div class="reward-content">
-        <i class="fas fa-gem"></i>名校大牛 1v1 诊断券
+        <i class="fas fa-gem"></i>1-on-1 Prophecy Consultation with an Elite Archmage
     </div>
-    
-    <p style="font-size: 0.95rem; margin-bottom: 20px; line-height: 1.5; font-weight: 600;">请收拾好行囊，带着这份荣誉与认知，<br>准备迈入 Year 3 申请季的修罗场！</p>
-    <button class="btn-claim" onclick="closeTicket()">收下金券，继续前行</button>
+
+    <p class="lore-text">Pack your inventory and bear this honor and wisdom.<br>Prepare to enter the Crucible of the Year 3 Application Season!</p>
+    <button class="btn-claim" onclick="closeTicket()">Claim the Golden Ticket & Advance</button>
 </div>
 
 <script>
@@ -97,9 +102,9 @@
             document.getElementById('qBox').style.display = 'none';
             document.getElementById('successBox').style.display = 'block';
             setTimeout(() => { document.getElementById('machine').style.display = 'block'; }, 100);
-        } else { 
+        } else {
             const errorMsg = document.getElementById('errorMsg');
-            errorMsg.innerHTML = "💀 错误！盲目的跟风或拖延是最大的杀手。";
+            errorMsg.innerHTML = "💀 Error! Blind conformity and procrastination are the ultimate assassins.";
             errorMsg.style.display = 'block';
             errorMsg.animate([{ transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'translateX(0)' }], { duration: 300 });
         }
@@ -107,27 +112,34 @@
 
     function playGacha() {
         const mac = document.getElementById('machine');
-        if (mac.classList.contains('shaking')) return; 
-        
-        // 扭蛋机抖动
+        if (mac.classList.contains('shaking')) return;
+
+        // Machine shaking animation
         mac.classList.add('shaking');
-        
+
         setTimeout(() => {
             mac.classList.remove('shaking');
-            
-            // 触发平滑的 CSS 过渡动画
+
+            // Trigger smooth CSS transition
             document.getElementById('overlay').classList.add('active');
             document.getElementById('ticket').classList.add('active');
-            
-        }, 1500); // 抖动 1.5 秒后弹窗
+
+        }, 1500); // Popup after 1.5s of shaking
     }
 
     function closeTicket() {
         document.getElementById('overlay').classList.remove('active');
         document.getElementById('ticket').classList.remove('active');
-        
+
+        if (window.parent && window.parent !== window) {
+            window.parent.postMessage({
+                type: "gradquest:node-complete",
+                payload: { year: "y2", nodeId: 7 }
+            }, "*");
+        }
+
         setTimeout(() => {
-            alert("向导：即将为您开启 Year 3 大门！(此处可对接路由跳转)"); 
+            alert("Map Guide: Unlocking the gates to Year 3! (Ready to proceed to the next chapter)");
         }, 500);
     }
 </script>
