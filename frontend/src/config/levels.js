@@ -3,9 +3,9 @@ const levelDefinitions = {
     { id: 1, mapNode: 1, name: 'Identity Forge', title: 'Y2-1: Identity Forge', file: 'year2_1.vue', sharedFile: 'year2_1.html', engine: 'vue' },
     { id: 2, mapNode: 2, name: 'Region Choice', title: 'Y2-2: Region Choice', file: 'year2_2.vue', sharedFile: 'year2_2.html', engine: 'vue' },
     { id: 3, mapNode: 3, name: 'Tier Mapping', title: 'Y2-3: Tier Mapping', file: 'year2_3.vue', sharedFile: 'year2_3.html', engine: 'vue' },
-    { id: 4, mapNode: 4, name: 'Major Recipe', title: 'Y2-4: Major Recipe', file: 'year2_4.vue', sharedFile: 'year2_4.html', engine: 'vue' },
+    { id: 4, mapNode: 4, name: 'Senior Cases', title: 'Y2-4: Senior Case Archives', file: 'year2_4.vue', sharedFile: 'year2_4.html', engine: 'vue' },
     { id: 5, mapNode: 5, name: 'Action Plan', title: 'Y2-5: Action Plan', file: 'year2_5.vue', sharedFile: 'year2_5.html', engine: 'vue' },
-    { id: 6, mapNode: 6, name: 'Case Search', title: 'Y2-6: Case Search', file: 'year2_6.vue', sharedFile: 'year2_6.html', engine: 'vue' },
+    { id: 6, mapNode: 6, name: 'Contract Guardian', title: 'Y2-6: Contract Guardian', file: 'year2_6.vue', sharedFile: 'year2_6.html', engine: 'vue' },
     { id: 7, mapNode: 7, name: 'Final Trial', title: 'Y2-7: Final Trial', file: 'year2_7.vue', sharedFile: 'year2_7.html', engine: 'vue' },
   ],
   y3: [
