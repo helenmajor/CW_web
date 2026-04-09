@@ -35,6 +35,7 @@ let timeoutIds = []
 let intervalIds = []
 let animationFrameIds = []
 let activeDragImage = null
+let syntheticDrag = null
 
 function encodeInlineHandler(code) {
   const bytes = textEncoder.encode(code)
@@ -242,10 +243,263 @@ function getDraggableSource(event) {
   return null
 }
 
+function markSyntheticDraggables(root) {
+  const elements = root instanceof Element ? [root, ...root.querySelectorAll('[draggable="true"]')] : []
+
+  elements.forEach((element) => {
+    if (!(element instanceof HTMLElement) || element.getAttribute('draggable') !== 'true') return
+
+    element.dataset.htmlGameDraggable = 'true'
+    element.draggable = false
+    element.removeAttribute('draggable')
+  })
+}
+
+function getSyntheticDraggable(event) {
+  const path = event.composedPath?.() || []
+  const fromPath = path.find(
+    (node) => node instanceof HTMLElement && node.dataset.htmlGameDraggable === 'true',
+  )
+  if (fromPath) return fromPath
+
+  if (event.target instanceof HTMLElement) {
+    return event.target.closest('[data-html-game-draggable="true"]')
+  }
+
+  return null
+}
+
+function createSyntheticDataTransfer() {
+  const data = new Map()
+  return {
+    dropEffect: 'move',
+    effectAllowed: 'all',
+    files: [],
+    items: [],
+    get types() {
+      return [...data.keys()]
+    },
+    clearData(type) {
+      if (type) {
+        data.delete(type)
+        return
+      }
+      data.clear()
+    },
+    getData(type) {
+      return data.get(type) || ''
+    },
+    setData(type, value) {
+      data.set(type, String(value))
+    },
+    setDragImage() {},
+  }
+}
+
+function defineSyntheticEventValue(event, name, value) {
+  Object.defineProperty(event, name, {
+    configurable: true,
+    value,
+  })
+}
+
+function dispatchSyntheticDragEvent(type, target, dataTransfer, pointerEvent) {
+  const event = new Event(type, { bubbles: true, cancelable: true, composed: true })
+  defineSyntheticEventValue(event, 'htmlGameSyntheticDrag', true)
+  defineSyntheticEventValue(event, 'dataTransfer', dataTransfer)
+  defineSyntheticEventValue(event, 'clientX', pointerEvent.clientX)
+  defineSyntheticEventValue(event, 'clientY', pointerEvent.clientY)
+  defineSyntheticEventValue(event, 'screenX', pointerEvent.screenX)
+  defineSyntheticEventValue(event, 'screenY', pointerEvent.screenY)
+
+  target.dispatchEvent(event)
+  return event
+}
+
+function stripGhostIds(root) {
+  if (!(root instanceof Element)) return
+
+  root.removeAttribute('id')
+  root.removeAttribute('data-html-game-draggable')
+  root.removeAttribute('draggable')
+  root.querySelectorAll('[id], [data-html-game-draggable], [draggable]').forEach((element) => {
+    element.removeAttribute('id')
+    element.removeAttribute('data-html-game-draggable')
+    element.removeAttribute('draggable')
+  })
+}
+
+function createSyntheticDragGhost(source, pointerEvent, offsetX, offsetY) {
+  const rect = source.getBoundingClientRect()
+  const ghost = source.cloneNode(true)
+
+  stripGhostIds(ghost)
+  ghost.dataset.htmlGameDragGhost = 'true'
+  Object.assign(ghost.style, {
+    boxSizing: 'border-box',
+    height: `${rect.height}px`,
+    left: `${pointerEvent.clientX - offsetX}px`,
+    margin: '0',
+    opacity: '0.96',
+    pointerEvents: 'none',
+    position: 'fixed',
+    top: `${pointerEvent.clientY - offsetY}px`,
+    transform: 'none',
+    transition: 'none',
+    width: `${rect.width}px`,
+    zIndex: '2147483647',
+  })
+
+  shadowRoot.appendChild(ghost)
+  return ghost
+}
+
+function updateSyntheticDragGhost(pointerEvent) {
+  if (!syntheticDrag?.ghost) return
+
+  syntheticDrag.ghost.style.left = `${pointerEvent.clientX - syntheticDrag.offsetX}px`
+  syntheticDrag.ghost.style.top = `${pointerEvent.clientY - syntheticDrag.offsetY}px`
+}
+
+function findSyntheticDropTarget(pointerEvent) {
+  const dropSelector = '.tier-zone, .card-deck, .cauldron, [ondrop], [data-html-game-drop-target="true"]'
+  const elements = shadowRoot.elementsFromPoint?.(pointerEvent.clientX, pointerEvent.clientY) || []
+
+  for (const element of elements) {
+    if (!(element instanceof HTMLElement)) continue
+    const target = element.closest(dropSelector)
+    if (target && gameBody.contains(target)) return target
+  }
+
+  return Array.from(gameBody.querySelectorAll(dropSelector)).find((target) => {
+    const rect = target.getBoundingClientRect()
+    return pointerEvent.clientX >= rect.left
+      && pointerEvent.clientX <= rect.right
+      && pointerEvent.clientY >= rect.top
+      && pointerEvent.clientY <= rect.bottom
+  }) || null
+}
+
+function updateSyntheticDropTarget(pointerEvent) {
+  if (!syntheticDrag?.started) return
+
+  const nextTarget = findSyntheticDropTarget(pointerEvent)
+  if (syntheticDrag.dropTarget !== nextTarget) {
+    if (syntheticDrag.dropTarget) {
+      dispatchSyntheticDragEvent('dragleave', syntheticDrag.dropTarget, syntheticDrag.dataTransfer, pointerEvent)
+    }
+    syntheticDrag.dropTarget = nextTarget
+  }
+
+  if (nextTarget) {
+    dispatchSyntheticDragEvent('dragover', nextTarget, syntheticDrag.dataTransfer, pointerEvent)
+  }
+}
+
+function startSyntheticDrag(pointerEvent) {
+  if (!syntheticDrag || syntheticDrag.started) return
+
+  const { source, dataTransfer, offsetX, offsetY } = syntheticDrag
+  syntheticDrag.started = true
+  dispatchSyntheticDragEvent('dragstart', source, dataTransfer, pointerEvent)
+  if (!dataTransfer.getData('text/plain') && source.id) {
+    dataTransfer.setData('text/plain', source.id)
+  }
+
+  syntheticDrag.ghost = createSyntheticDragGhost(source, pointerEvent, offsetX, offsetY)
+  updateSyntheticDropTarget(pointerEvent)
+}
+
+function cleanupSyntheticDragListeners() {
+  window.removeEventListener('pointermove', handleSyntheticPointerMove, true)
+  window.removeEventListener('pointerup', handleSyntheticPointerUp, true)
+  window.removeEventListener('pointercancel', handleSyntheticPointerCancel, true)
+}
+
+function finishSyntheticDrag(pointerEvent, { cancelled = false } = {}) {
+  if (!syntheticDrag) return
+
+  cleanupSyntheticDragListeners()
+
+  if (syntheticDrag.started) {
+    if (!cancelled && syntheticDrag.dropTarget) {
+      dispatchSyntheticDragEvent('drop', syntheticDrag.dropTarget, syntheticDrag.dataTransfer, pointerEvent)
+    }
+    dispatchSyntheticDragEvent('dragend', syntheticDrag.source, syntheticDrag.dataTransfer, pointerEvent)
+    syntheticDrag.source.style.opacity = '1'
+  }
+
+  syntheticDrag.ghost?.remove()
+  syntheticDrag = null
+}
+
+function handleSyntheticPointerMove(event) {
+  if (!syntheticDrag) return
+
+  const movedX = event.clientX - syntheticDrag.startX
+  const movedY = event.clientY - syntheticDrag.startY
+  if (!syntheticDrag.started && Math.hypot(movedX, movedY) >= 4) {
+    startSyntheticDrag(event)
+  }
+
+  if (syntheticDrag?.started) {
+    event.preventDefault()
+    updateSyntheticDragGhost(event)
+    updateSyntheticDropTarget(event)
+  }
+}
+
+function handleSyntheticPointerUp(event) {
+  finishSyntheticDrag(event)
+}
+
+function handleSyntheticPointerCancel(event) {
+  finishSyntheticDrag(event, { cancelled: true })
+}
+
+function installSyntheticDragBridge() {
+  if (!gameBody) return
+
+  const handlePointerDown = (event) => {
+    if (event.button !== 0 || syntheticDrag) return
+
+    const source = getSyntheticDraggable(event)
+    if (!source) return
+
+    const rect = source.getBoundingClientRect()
+    syntheticDrag = {
+      dataTransfer: createSyntheticDataTransfer(),
+      dropTarget: null,
+      ghost: null,
+      offsetX: clampDragOffset(event.clientX - rect.left, rect.width / 2, rect.width),
+      offsetY: clampDragOffset(event.clientY - rect.top, rect.height / 2, rect.height),
+      source,
+      started: false,
+      startX: event.clientX,
+      startY: event.clientY,
+    }
+
+    event.preventDefault()
+    window.addEventListener('pointermove', handleSyntheticPointerMove, true)
+    window.addEventListener('pointerup', handleSyntheticPointerUp, true)
+    window.addEventListener('pointercancel', handleSyntheticPointerCancel, true)
+  }
+
+  gameBody.addEventListener('pointerdown', handlePointerDown, true)
+  cleanupListeners.push(() => {
+    gameBody?.removeEventListener('pointerdown', handlePointerDown, true)
+    cleanupSyntheticDragListeners()
+    syntheticDrag?.ghost?.remove()
+    syntheticDrag = null
+  })
+}
+
 function installDragImageBridge() {
   if (!gameBody) return
 
   const handleDragStart = (event) => {
+    if (event.htmlGameSyntheticDrag) return
+
     const source = getDraggableSource(event)
     if (!source || !event.dataTransfer) return
 
@@ -510,12 +764,15 @@ async function mountRuntime() {
     mutations.forEach((mutation) => {
       mutation.addedNodes.forEach((node) => {
         if (node.nodeType === Node.ELEMENT_NODE) {
+          markSyntheticDraggables(node)
           rewriteInlineHandlers(node)
         }
       })
     })
   })
   mutationObserver.observe(gameBody, { childList: true, subtree: true })
+  markSyntheticDraggables(gameBody)
+  installSyntheticDragBridge()
   installDragImageBridge()
 
   if (props.userName) {

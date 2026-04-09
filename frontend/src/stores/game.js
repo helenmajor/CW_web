@@ -2,6 +2,8 @@ import { defineStore } from 'pinia'
 import { createInitialLevels } from '@/config/levels'
 
 const STORAGE_KEY = 'gradquest-vue-map-store'
+const COIN_ECONOMY_VERSION = 2
+const DEFAULT_LEVEL_REWARD = 30
 
 const createYearState = (year, coins) => ({
   coins,
@@ -13,8 +15,8 @@ const createDefaultState = () => ({
   year: 'y2',
   hydrated: false,
   travelerProfile: null,
-  y2: createYearState('y2', 120),
-  y3: createYearState('y3', 80),
+  y2: createYearState('y2', 0),
+  y3: createYearState('y3', 0),
 })
 
 function mergeLevels(defaultLevels, savedLevels) {
@@ -46,7 +48,7 @@ export const useGameStore = defineStore('game', {
       return this.currentState.levels
     },
     currentCoins() {
-      return this.currentState.coins
+      return this.y2.coins
     },
     travelerAvatar(state) {
       return state.travelerProfile?.avatar || {
@@ -74,12 +76,16 @@ export const useGameStore = defineStore('game', {
 
         this.travelerProfile = saved.travelerProfile || null
 
+        const sharedCoins = saved.coinEconomyVersion === COIN_ECONOMY_VERSION && Number.isFinite(saved.coins)
+          ? saved.coins
+          : defaults.y2.coins
+
         ;['y2', 'y3'].forEach((year) => {
           const target = this[year]
           const fallback = defaults[year]
           const source = saved[year] || {}
 
-          target.coins = Number.isFinite(source.coins) ? source.coins : fallback.coins
+          target.coins = sharedCoins
           target.currentNode = Number.isFinite(source.currentNode) ? source.currentNode : fallback.currentNode
           target.levels = mergeLevels(fallback.levels, source.levels)
         })
@@ -98,6 +104,8 @@ export const useGameStore = defineStore('game', {
           STORAGE_KEY,
           JSON.stringify({
             year: this.year,
+            coinEconomyVersion: COIN_ECONOMY_VERSION,
+            coins: this.currentCoins,
             travelerProfile: this.travelerProfile,
             y2: this.y2,
             y3: this.y3,
@@ -138,17 +146,17 @@ export const useGameStore = defineStore('game', {
       const level = this.getLevel(year, levelId)
       if (!level) return
 
-      const rewardCoins = Number.isFinite(options.rewardCoins) ? options.rewardCoins : 0
-      const wasCompleted = Boolean(level.completed || level.skipped)
-
+      const providedRewardCoins = Number(options.rewardCoins)
+      const rewardCoins = Number.isFinite(providedRewardCoins) && providedRewardCoins > 0
+        ? providedRewardCoins
+        : DEFAULT_LEVEL_REWARD
       level.unlocked = true
       level.completed = true
       level.skipped = false
       this[year].currentNode = levelId
 
-      if (!wasCompleted && rewardCoins > 0) {
-        this[year].coins += rewardCoins
-      }
+      this.y2.coins += rewardCoins
+      this.y3.coins = this.y2.coins
 
       if (year === 'y2' && levelId === 1 && options.profile) {
         this.travelerProfile = options.profile
@@ -184,9 +192,10 @@ export const useGameStore = defineStore('game', {
 
     redeemCurrentCurrency(cost) {
       if (!Number.isFinite(cost) || cost <= 0) return false
-      if (this[this.year].coins < cost) return false
+      if (this.currentCoins < cost) return false
 
-      this[this.year].coins -= cost
+      this.y2.coins -= cost
+      this.y3.coins = this.y2.coins
       this.persist()
       return true
     },

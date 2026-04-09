@@ -13,7 +13,7 @@
           <div class="header-right">
             <button class="btn-action" @click="showPrizeShop = true"><i class="fas fa-gift"></i> Loot Exchange</button>
             <button class="btn-action" @click="showHealingSandbox = true"><i class="fas fa-leaf"></i> Sanctuary</button>
-            <div class="coin-panel"><i class="fas fa-coins"></i><span>{{ store.y2.coins }}</span></div>
+            <div class="coin-panel"><i class="fas fa-coins"></i><span>{{ store.currentCoins }}</span></div>
           </div>
         </div>
 
@@ -61,7 +61,7 @@
           <div class="header-right">
             <button class="btn-action" @click="showPrizeShop = true"><i class="fas fa-gift"></i> Loot Exchange</button>
             <button class="btn-action" @click="showHealingSandbox = true"><i class="fas fa-leaf"></i> Sanctuary</button>
-            <div class="coin-panel"><i class="fas fa-gem"></i><span>{{ store.y3.coins }}</span></div>
+            <div class="coin-panel"><i class="fas fa-coins"></i><span>{{ store.currentCoins }}</span></div>
           </div>
         </div>
 
@@ -169,7 +169,7 @@ function syncTraveler(year, nodeId = store[year].currentNode) { nextTick(() => w
 function switchYear(year) { if (store.year === year) { syncTraveler(year); return } store.switchYear(year) }
 function openLevel(year, node) { if (!isAccessible(year, node.id)) { window.alert(`Finish node ${node.id - 1} first before entering node ${node.id}.`); return } if (openLevelTimer) clearTimeout(openLevelTimer); if (store.year !== year) store.switchYear(year); store.setCurrentNode(year, node.id); moveTravelerToNode(year, node.id); openLevelTimer = window.setTimeout(() => { activeLevel.value = { ...node, year } }, 420) }
 function closeGame() { if (openLevelTimer) { clearTimeout(openLevelTimer); openLevelTimer = null } activeLevel.value = null }
-function redeemPrize(prize) { const label = store.year === 'y2' ? 'Coins' : 'Gems'; if (!store.redeemCurrentCurrency(prize.cost)) { redeemMessage.value = `Not enough ${label}. Go clear some nodes to earn rewards!`; return } redeemMessage.value = `&#x1F389; Redemption Successful! You obtained <b>${prize.emoji} ${prize.name}</b><br>Consumed <b>${prize.cost}</b> ${label}. Remaining Balance: <b>${store.currentCoins}</b> ${label}` }
+function redeemPrize(prize) { const label = 'Coins'; if (!store.redeemCurrentCurrency(prize.cost)) { redeemMessage.value = `Not enough ${label}. Go clear some nodes to earn rewards!`; return } redeemMessage.value = `&#x1F389; Redemption Successful! You obtained <b>${prize.emoji} ${prize.name}</b><br>Consumed <b>${prize.cost}</b> ${label}. Remaining Balance: <b>${store.currentCoins}</b> ${label}` }
 function handleNativeComplete(payload = {}) { if (!activeLevel.value) return; const year = activeLevel.value.year; const levelId = activeLevel.value.id; const profile = payload.profile || payload; const rewardCoins = Number(payload.rewardCoins) || 0; store.completeNode(year, levelId, { rewardCoins, profile }); closeGame(); syncTraveler(year, store[year].currentNode) }
 function resetGame() { closeGame(); showPrizeShop.value = false; showHealingSandbox.value = false; showResetConfirm.value = false; redeemMessage.value = ''; store.resetStore(); syncTraveler('y2', 1) }
 function handleEscape(event) { if (event.key !== 'Escape') return; if (showResetConfirm.value) { showResetConfirm.value = false; return } if (activeLevel.value) { closeGame(); return } if (showPrizeShop.value) { showPrizeShop.value = false; return } if (showHealingSandbox.value) showHealingSandbox.value = false }
