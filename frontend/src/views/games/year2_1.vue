@@ -2,15 +2,19 @@
   <div class="forge">
     <div class="topbar">
       <div>
-        <h1><i class="fas fa-id-card"></i> Identity Forge</h1>
-        <p>Forge a brand-new student identity for Y2-1. This replaces the repeated portal game and sends your traveler back to the map.</p>
+        <h1><i class="fas fa-id-card"></i> 身份锻炉 / Identity Forge</h1>
+        <p>先定义你的申请者起点，再进入地区选择和选校判断。/ Define your applicant baseline before moving into route choice and school strategy.</p>
       </div>
-      <div class="charge">Forge Charge {{ chargedChoices }} / 4</div>
+      <div class="charge">锻造进度 / Forge Charge {{ chargedChoices }} / 4</div>
+    </div>
+
+    <div class="guide-shell">
+      <LevelGuideCard :guide="guide" :context-tags="guideTags" />
     </div>
 
     <div class="main">
       <section class="preview">
-        <p class="label">Live Preview</p>
+        <p class="label">实时预览 / Live Preview</p>
         <div class="stage">
           <div class="avatar" :style="avatarStyle">
             <div class="halo"></div>
@@ -24,29 +28,34 @@
 
         <div class="card">
           <div class="cardhead">
-            <h2>Arcane Student Card</h2>
+            <h2>申请者档案卡 / Applicant Card</h2>
             <div class="badge"><i class="fas" :class="selectedRoleIcon"></i></div>
           </div>
-          <div class="row"><span class="key">Codename</span><span class="value">{{ displayName }}</span></div>
-          <div class="row"><span class="key">Archetype</span><span class="value">{{ selectedRole?.name || 'Awaiting choice' }}</span></div>
-          <div class="row"><span class="key">Hair Rune</span><span class="value">{{ selectedHair?.name || 'Awaiting choice' }}</span></div>
-          <div class="row"><span class="key">Uniform Aura</span><span class="value">{{ selectedOutfit?.name || 'Awaiting choice' }}</span></div>
-          <div class="row"><span class="key">Familiar Tool</span><span class="value">{{ selectedTool?.name || 'Awaiting choice' }}</span></div>
+          <div class="row"><span class="key">代号 / Codename</span><span class="value">{{ displayName }}</span></div>
+          <div class="row"><span class="key">画像 / Archetype</span><span class="value">{{ selectedRole?.nameZhEn || '待选择 / Awaiting choice' }}</span></div>
+          <div class="row"><span class="key">发色 / Hair Rune</span><span class="value">{{ selectedHair?.nameZhEn || '待选择 / Awaiting choice' }}</span></div>
+          <div class="row"><span class="key">服装 / Uniform Aura</span><span class="value">{{ selectedOutfit?.nameZhEn || '待选择 / Awaiting choice' }}</span></div>
+          <div class="row"><span class="key">工具 / Familiar Tool</span><span class="value">{{ selectedTool?.nameZhEn || '待选择 / Awaiting choice' }}</span></div>
         </div>
       </section>
 
       <section class="panel">
-        <p class="label">Forging Console</p>
+        <p class="label">锻造控制台 / Forging Console</p>
 
-        <div class="box">
-          <label for="codename">1. Choose your codename</label>
-          <input id="codename" v-model.trim="state.name" maxlength="18" placeholder="Example: Nova / Atlas / Iris">
+        <div ref="nameRef" class="box" :class="{ missing: showValidation && !state.name }">
+          <label for="codename">1. 选择代号 / Choose your codename</label>
+          <input id="codename" v-model.trim="state.name" maxlength="18" placeholder="示例 / Example: Nova / Atlas / Iris">
+        </div>
+
+        <div v-if="validationMessage" class="validation-banner">
+          <i class="fas fa-triangle-exclamation"></i>
+          <span>{{ validationMessage }}</span>
         </div>
 
         <div class="groups">
-          <div class="group">
-            <h3>2. Select your study archetype</h3>
-            <p>This determines the sigil shown on your card.</p>
+          <div ref="roleRef" class="group" :class="{ missing: showValidation && !selectedRole }">
+            <h3>2. 选择学习画像 / Select your study archetype</h3>
+            <p>这会影响你后续如何理解申请任务。/ This sets the lens through which you approach later planning tasks.</p>
             <div class="grid3">
               <button
                 v-for="role in roles"
@@ -57,15 +66,15 @@
                 @click="state.roleId = role.id"
               >
                 <i class="fas" :class="role.icon"></i>
-                <strong>{{ role.name }}</strong>
-                <span>{{ role.copy }}</span>
+                <strong>{{ role.nameZhEn }}</strong>
+                <span>{{ role.copyZhEn }}</span>
               </button>
             </div>
           </div>
 
-          <div class="group">
-            <h3>3. Infuse a hair rune</h3>
-            <p>A small visual signature for the traveler on the map.</p>
+          <div ref="hairRef" class="group" :class="{ missing: showValidation && !selectedHair }">
+            <h3>3. 选择外观标记 / Infuse a hair rune</h3>
+            <p>这是地图角色的实时视觉反馈。/ This becomes a live visual change on your traveler.</p>
             <div class="grid3">
               <button
                 v-for="hair in hairs"
@@ -76,14 +85,14 @@
                 @click="state.hairId = hair.id"
               >
                 <span class="dot" :style="{ background: hair.color }"></span>
-                <strong>{{ hair.name }}</strong>
+                <strong>{{ hair.nameZhEn }}</strong>
               </button>
             </div>
           </div>
 
-          <div class="group">
-            <h3>4. Choose a uniform aura</h3>
-            <p>This becomes the main outfit color for your traveler.</p>
+          <div ref="outfitRef" class="group" :class="{ missing: showValidation && !selectedOutfit }">
+            <h3>4. 选择阶段徽色 / Choose a uniform aura</h3>
+            <p>它会强化你当前阶段的身份感。/ This reinforces your current planning-stage identity.</p>
             <div class="grid3">
               <button
                 v-for="outfit in outfits"
@@ -94,14 +103,14 @@
                 @click="state.outfitId = outfit.id"
               >
                 <span class="dot" :style="{ background: outfit.color }"></span>
-                <strong>{{ outfit.name }}</strong>
+                <strong>{{ outfit.nameZhEn }}</strong>
               </button>
             </div>
           </div>
 
-          <div class="group">
-            <h3>5. Carry one familiar tool</h3>
-            <p>Every explorer needs one item that represents how they solve problems.</p>
+          <div ref="toolRef" class="group" :class="{ missing: showValidation && !selectedTool }">
+            <h3>5. 选择代表工具 / Carry one familiar tool</h3>
+            <p>它代表你解决申请问题时最依赖的能力。/ It represents the strength you rely on when solving application problems.</p>
             <div class="grid3">
               <button
                 v-for="tool in tools"
@@ -112,15 +121,15 @@
                 @click="state.toolId = tool.id"
               >
                 <i class="fas" :class="tool.icon"></i>
-                <strong>{{ tool.name }}</strong>
-                <span>{{ tool.copy }}</span>
+                <strong>{{ tool.nameZhEn }}</strong>
+                <span>{{ tool.copyZhEn }}</span>
               </button>
             </div>
           </div>
         </div>
 
         <div class="progress">
-          <strong>{{ chargedChoices }} / 4 sigils charged</strong>
+          <strong>{{ chargedChoices }} / 4 项已完成 / sigils charged</strong>
           <div class="progressbar">
             <div class="fill" :style="{ width: `${chargedChoices * 25}%` }"></div>
           </div>
@@ -128,22 +137,22 @@
         </div>
 
         <div class="foot">
-          <span>This native Vue version sends appearance data straight into the Pinia store.</span>
-          <button class="primary" :disabled="!sealReady" @click="showSummary = true">Seal Identity</button>
+          <span>完成后，地图角色与阶段身份会即时更新。/ Finishing here updates your live traveler card and map avatar.</span>
+          <button class="primary" @click="attemptSeal">封印身份 / Seal Identity</button>
         </div>
       </section>
     </div>
 
     <div v-if="showSummary" class="modal" @click.self="showSummary = false">
       <div class="modalcard">
-        <h2><i class="fas fa-wand-sparkles"></i> Identity Sealed</h2>
-        <p>Your traveler is ready. Returning will unlock Y2-2 and apply this appearance to the little character on the main map.</p>
+        <h2><i class="fas fa-wand-sparkles"></i> 身份已封印 / Identity Sealed</h2>
+        <p>你已经完成申请者起点设定。返回后会解锁地区路线选择，并把这份画像应用到地图角色上。/ Your traveler baseline is now ready, and Y2-2 route selection will build on it.</p>
         <div class="pill"><i class="fas fa-user"></i> {{ forgedProfile.name }}</div>
         <div class="pill"><i class="fas" :class="selectedRoleIcon"></i> {{ forgedProfile.archetype }}</div>
         <div class="pill"><i class="fas fa-wand-sparkles"></i> {{ forgedProfile.familiar }}</div>
         <div class="actions">
-          <button class="secondary" @click="showSummary = false">Refine Again</button>
-          <button class="primary2" @click="returnToMap">Return To Map</button>
+          <button class="secondary" @click="showSummary = false">继续微调 / Refine Again</button>
+          <button class="primary2" @click="returnToMap">返回地图 / Return To Map</button>
         </div>
       </div>
     </div>
@@ -152,31 +161,32 @@
 
 <script setup>
 import { computed, reactive, ref } from 'vue'
+import LevelGuideCard from '@/components/LevelGuideCard.vue'
 
 const emit = defineEmits(['complete', 'close'])
 
 const roles = [
-  { id: 'analyst', name: 'Quiet Analyst', icon: 'fa-chart-line', copy: 'Plans with structure and evidence.' },
-  { id: 'storyweaver', name: 'Story Weaver', icon: 'fa-feather-pointed', copy: 'Turns ideas into memorable stories.' },
-  { id: 'trailblazer', name: 'Trailblazer', icon: 'fa-compass', copy: 'Explores first and learns fast.' },
+  { id: 'analyst', name: 'Quiet Analyst', nameZhEn: '冷静分析者 / Quiet Analyst', icon: 'fa-chart-line', copyZhEn: '偏向结构化和证据化思考。/ Plans with structure and evidence.' },
+  { id: 'storyweaver', name: 'Story Weaver', nameZhEn: '叙事编织者 / Story Weaver', icon: 'fa-feather-pointed', copyZhEn: '擅长把经历组织成有记忆点的故事。/ Turns ideas into memorable stories.' },
+  { id: 'trailblazer', name: 'Trailblazer', nameZhEn: '先行探索者 / Trailblazer', icon: 'fa-compass', copyZhEn: '喜欢快速试错并主动开路。/ Explores first and learns fast.' },
 ]
 
 const hairs = [
-  { id: 'walnut', name: 'Walnut', color: '#3a2a25' },
-  { id: 'midnight', name: 'Midnight', color: '#1f2937' },
-  { id: 'ember', name: 'Ember', color: '#8a3f1f' },
+  { id: 'walnut', name: 'Walnut', nameZhEn: '胡桃 / Walnut', color: '#3a2a25' },
+  { id: 'midnight', name: 'Midnight', nameZhEn: '夜幕 / Midnight', color: '#1f2937' },
+  { id: 'ember', name: 'Ember', nameZhEn: '余烬 / Ember', color: '#8a3f1f' },
 ]
 
 const outfits = [
-  { id: 'amber', name: 'Amber', color: '#ffd46d' },
-  { id: 'azure', name: 'Azure', color: '#7dc6ff' },
-  { id: 'rose', name: 'Rose', color: '#ff9f9f' },
+  { id: 'amber', name: 'Amber', nameZhEn: '琥珀 / Amber', color: '#ffd46d' },
+  { id: 'azure', name: 'Azure', nameZhEn: '湛蓝 / Azure', color: '#7dc6ff' },
+  { id: 'rose', name: 'Rose', nameZhEn: '蔷薇 / Rose', color: '#ff9f9f' },
 ]
 
 const tools = [
-  { id: 'quill', name: 'Quill of Clarity', icon: 'fa-pen-nib', copy: 'Shapes messy thoughts into crisp language.' },
-  { id: 'prism', name: 'Prism Lens', icon: 'fa-gem', copy: 'Breaks one problem into clean angles.' },
-  { id: 'satchel', name: 'Compass Satchel', icon: 'fa-bag-shopping', copy: 'Keeps essentials ready when plans shift.' },
+  { id: 'quill', name: 'Quill of Clarity', nameZhEn: '清晰羽笔 / Quill of Clarity', icon: 'fa-pen-nib', copyZhEn: '把混乱想法整理成清楚表达。/ Shapes messy thoughts into crisp language.' },
+  { id: 'prism', name: 'Prism Lens', nameZhEn: '棱镜透镜 / Prism Lens', icon: 'fa-gem', copyZhEn: '把复杂问题拆成更清楚的角度。/ Breaks one problem into clean angles.' },
+  { id: 'satchel', name: 'Compass Satchel', nameZhEn: '罗盘行囊 / Compass Satchel', icon: 'fa-bag-shopping', copyZhEn: '当计划变化时保持秩序和机动性。/ Keeps essentials ready when plans shift.' },
 ]
 
 const state = reactive({
@@ -188,6 +198,33 @@ const state = reactive({
 })
 
 const showSummary = ref(false)
+const showValidation = ref(false)
+const validationMessage = ref('')
+const nameRef = ref(null)
+const roleRef = ref(null)
+const hairRef = ref(null)
+const outfitRef = ref(null)
+const toolRef = ref(null)
+
+const guide = {
+  eyebrow: '本关学习目标 / Learning Goal',
+  summary: 'Define your baseline as an applicant before making later planning decisions.',
+  summaryZh: '在做后续申请判断前，先定义你的申请者起点。',
+  learn: '你将学会什么 / What you will learn',
+  learnBody: 'How to summarize your profile into a clear archetype, visible identity, and problem-solving strength.',
+  learnBodyZh: '学会把自己的背景概括成清晰的申请画像、可视化身份和问题解决风格。',
+  realTask: '本关对应的真实申请任务 / Real-world application task',
+  realTaskBody: 'Create a simple applicant profile card that later route and school decisions can build on.',
+  realTaskBodyZh: '建立一张后续地区选择和选校定位都能沿用的申请者基础画像卡。',
+  mechanics: [
+    { term: '学习画像 / Archetype', meaning: 'maps to the way you present yourself in later applications and narratives.' },
+    { term: '实时外观 / Live avatar', meaning: 'gives immediate visual feedback so your planning stage feels tangible.' },
+    { term: '代表工具 / Familiar tool', meaning: 'stands for the strength you naturally use when solving study-abroad planning problems.' },
+  ],
+  help: '缺少选项时会直接提示你哪里还没完成。/ If something is missing, the page will tell you exactly which section still needs attention.',
+}
+
+const guideTags = ['起点建模 / Baseline setup', '角色实时变化 / Live avatar changes']
 
 const selectedRole = computed(() => roles.find((item) => item.id === state.roleId) ?? null)
 const selectedHair = computed(() => hairs.find((item) => item.id === state.hairId) ?? null)
@@ -215,9 +252,9 @@ const sealReady = computed(() => Boolean(
 ))
 
 const progressCopy = computed(() => {
-  if (!state.name) return 'Start by giving your traveler a codename.'
-  if (chargedChoices.value < 4) return 'Keep charging the remaining sigils until the identity is stable enough to seal.'
-  return 'All four sigils are charged. Your student card is ready.'
+  if (!state.name) return '先填写代号，再继续定义申请者画像。/ Start by naming your traveler.'
+  if (chargedChoices.value < 4) return '还差一些信息未完成，补齐后你的申请者画像才足够稳定。/ Finish the remaining choices to stabilize your applicant identity.'
+  return '五项信息已完整，你的申请者基础画像已经成型。/ Your baseline applicant identity is ready.'
 })
 
 const avatarStyle = computed(() => ({
@@ -227,14 +264,46 @@ const avatarStyle = computed(() => ({
 
 const forgedProfile = computed(() => ({
   name: displayName.value,
-  archetype: selectedRole.value?.name || 'Awaiting role',
-  familiar: selectedTool.value?.name || 'Awaiting tool',
+  archetype: selectedRole.value?.nameZhEn || '待选择 / Awaiting role',
+  familiar: selectedTool.value?.nameZhEn || '待选择 / Awaiting tool',
   avatar: {
     hairColor: selectedHair.value?.color || '#3a2a25',
     outfitColor: selectedOutfit.value?.color || '#ffd46d',
   },
   sigilIcon: selectedRole.value?.icon || 'fa-star',
 }))
+
+function scrollToFirstMissing() {
+  const target = [
+    !state.name && nameRef.value,
+    !selectedRole.value && roleRef.value,
+    !selectedHair.value && hairRef.value,
+    !selectedOutfit.value && outfitRef.value,
+    !selectedTool.value && toolRef.value,
+  ].find(Boolean)
+
+  target?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+
+function attemptSeal() {
+  showValidation.value = true
+
+  if (sealReady.value) {
+    validationMessage.value = ''
+    showSummary.value = true
+    return
+  }
+
+  const missing = []
+  if (!state.name) missing.push('代号 / codename')
+  if (!selectedRole.value) missing.push('学习画像 / study archetype')
+  if (!selectedHair.value) missing.push('外观标记 / appearance mark')
+  if (!selectedOutfit.value) missing.push('阶段徽色 / uniform aura')
+  if (!selectedTool.value) missing.push('代表工具 / familiar tool')
+
+  validationMessage.value = `你还没有完成：${missing.join('、')}。请先补全高亮区域。/ You still need to complete: ${missing.join(', ')}. Please finish the highlighted section first.`
+  scrollToFirstMissing()
+}
 
 function returnToMap() {
   emit('complete', {
@@ -255,6 +324,10 @@ function returnToMap() {
   color: #eef2ff;
   border-radius: 22px;
   overflow: hidden;
+}
+
+.guide-shell {
+  padding: 0 28px 18px;
 }
 
 .topbar {
@@ -506,6 +579,12 @@ function returnToMap() {
   border: 1px solid rgba(148, 163, 184, 0.12);
 }
 
+.box.missing,
+.group.missing {
+  border-color: rgba(248, 113, 113, 0.55);
+  box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.22);
+}
+
 .box {
   margin-bottom: 18px;
 }
@@ -531,6 +610,19 @@ input {
 input:focus {
   border-color: rgba(96, 165, 250, 0.6);
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+}
+
+.validation-banner {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(127, 29, 29, 0.28);
+  border: 1px solid rgba(248, 113, 113, 0.38);
+  color: #fee2e2;
+  line-height: 1.5;
 }
 
 .groups {
@@ -769,6 +861,7 @@ input:focus {
 
 @media (max-width: 700px) {
   .topbar,
+  .guide-shell,
   .preview,
   .panel {
     padding-left: 18px;

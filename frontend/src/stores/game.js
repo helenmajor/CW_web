@@ -2,8 +2,15 @@ import { defineStore } from 'pinia'
 import { createInitialLevels } from '@/config/levels'
 
 const STORAGE_KEY = 'gradquest-vue-map-store'
-const COIN_ECONOMY_VERSION = 2
+const LEGACY_SHARED_COIN_ECONOMY_VERSION = 2
 const DEFAULT_LEVEL_REWARD = 30
+
+const createDefaultApplicationProfile = () => ({
+  preferredRoute: null,
+  routeChoices: [],
+  schoolStrategy: '',
+  latestTakeaway: '',
+})
 
 const createYearState = (year, coins) => ({
   coins,
@@ -15,8 +22,9 @@ const createDefaultState = () => ({
   year: 'y2',
   hydrated: false,
   travelerProfile: null,
-  y2: createYearState('y2', 0),
-  y3: createYearState('y3', 0),
+  applicationProfile: createDefaultApplicationProfile(),
+  y2: createYearState('y2', 120),
+  y3: createYearState('y3', 80),
 })
 
 function mergeLevels(defaultLevels, savedLevels) {
@@ -40,6 +48,27 @@ function mergeLevels(defaultLevels, savedLevels) {
   })
 }
 
+function mergeApplicationProfile(defaultProfile, savedProfile) {
+  if (!savedProfile || typeof savedProfile !== 'object') {
+    return defaultProfile
+  }
+
+  const preferredRoute = savedProfile.preferredRoute && typeof savedProfile.preferredRoute === 'object'
+    ? { ...savedProfile.preferredRoute }
+    : null
+
+  return {
+    ...defaultProfile,
+    ...savedProfile,
+    preferredRoute,
+    routeChoices: Array.isArray(savedProfile.routeChoices)
+      ? savedProfile.routeChoices
+        .filter((entry) => entry && typeof entry === 'object')
+        .map((entry) => ({ ...entry }))
+      : defaultProfile.routeChoices,
+  }
+}
+
 export const useGameStore = defineStore('game', {
   state: () => createDefaultState(),
   getters: {
@@ -48,12 +77,76 @@ export const useGameStore = defineStore('game', {
       return this.currentState.levels
     },
     currentCoins() {
-      return this.y2.coins
+      return this.currentState.coins
+    },
+    currentCurrencyLabel(state) {
+      return state.year === 'y2' ? 'Coins / 金币' : 'Gems / 宝石'
     },
     travelerAvatar(state) {
       return state.travelerProfile?.avatar || {
         hairColor: '#3a2a25',
         outfitColor: '#ffd46d',
+      }
+    },
+    yearProgress: (state) => (year) => {
+      const levels = state[year]?.levels || []
+      const completed = levels.filter((level) => level.completed).length
+      const cleared = levels.filter((level) => level.completed || level.skipped).length
+
+      return {
+        completed,
+        cleared,
+        total: levels.length,
+        ratio: levels.length ? cleared / levels.length : 0,
+      }
+    },
+    travelerStage(state) {
+      const totalCleared = ['y2', 'y3']
+        .flatMap((year) => state[year].levels)
+        .filter((level) => level.completed || level.skipped)
+        .length
+
+      if (totalCleared >= 13) {
+        return {
+          title: 'Offer Archmage',
+          titleZh: 'Offer 大法师',
+          badge: 'Grand Finale',
+          badgeZh: '终章完成者',
+        }
+      }
+
+      if (totalCleared >= 9) {
+        return {
+          title: 'Application Strategist',
+          titleZh: '申请战略师',
+          badge: 'Execution Mode',
+          badgeZh: '执行冲刺态',
+        }
+      }
+
+      if (totalCleared >= 5) {
+        return {
+          title: 'Route Alchemist',
+          titleZh: '路径炼金师',
+          badge: 'Planning Stable',
+          badgeZh: '规划已成型',
+        }
+      }
+
+      if (totalCleared >= 2) {
+        return {
+          title: 'Pathfinder',
+          titleZh: '路径探索者',
+          badge: 'Direction Building',
+          badgeZh: '方向构建中',
+        }
+      }
+
+      return {
+        title: 'Novice Traveler',
+        titleZh: '新手旅者',
+        badge: 'Starting Point',
+        badgeZh: '起点阶段',
       }
     },
   },
@@ -75,17 +168,24 @@ export const useGameStore = defineStore('game', {
         }
 
         this.travelerProfile = saved.travelerProfile || null
+        this.applicationProfile = mergeApplicationProfile(
+          defaults.applicationProfile,
+          saved.applicationProfile,
+        )
 
-        const sharedCoins = saved.coinEconomyVersion === COIN_ECONOMY_VERSION && Number.isFinite(saved.coins)
-          ? saved.coins
-          : defaults.y2.coins
+        const hasLegacySharedCoins = saved.coinEconomyVersion === LEGACY_SHARED_COIN_ECONOMY_VERSION
+          && Number.isFinite(saved.coins)
 
         ;['y2', 'y3'].forEach((year) => {
           const target = this[year]
           const fallback = defaults[year]
           const source = saved[year] || {}
 
-          target.coins = sharedCoins
+          target.coins = Number.isFinite(source.coins)
+            ? source.coins
+            : hasLegacySharedCoins
+              ? saved.coins
+              : fallback.coins
           target.currentNode = Number.isFinite(source.currentNode) ? source.currentNode : fallback.currentNode
           target.levels = mergeLevels(fallback.levels, source.levels)
         })
@@ -104,9 +204,8 @@ export const useGameStore = defineStore('game', {
           STORAGE_KEY,
           JSON.stringify({
             year: this.year,
-            coinEconomyVersion: COIN_ECONOMY_VERSION,
-            coins: this.currentCoins,
             travelerProfile: this.travelerProfile,
+            applicationProfile: this.applicationProfile,
             y2: this.y2,
             y3: this.y3,
           }),
@@ -142,6 +241,22 @@ export const useGameStore = defineStore('game', {
       this.persist()
     },
 
+    setApplicationProfile(partialProfile) {
+      if (!partialProfile || typeof partialProfile !== 'object') return
+
+      this.applicationProfile = mergeApplicationProfile(
+        {
+          ...createDefaultApplicationProfile(),
+          ...this.applicationProfile,
+        },
+        {
+          ...this.applicationProfile,
+          ...partialProfile,
+        },
+      )
+      this.persist()
+    },
+
     completeNode(year, levelId, options = {}) {
       const level = this.getLevel(year, levelId)
       if (!level) return
@@ -150,16 +265,32 @@ export const useGameStore = defineStore('game', {
       const rewardCoins = Number.isFinite(providedRewardCoins) && providedRewardCoins > 0
         ? providedRewardCoins
         : DEFAULT_LEVEL_REWARD
+      const wasCompleted = Boolean(level.completed || level.skipped)
+
       level.unlocked = true
       level.completed = true
       level.skipped = false
       this[year].currentNode = levelId
 
-      this.y2.coins += rewardCoins
-      this.y3.coins = this.y2.coins
+      if (!wasCompleted && rewardCoins > 0) {
+        this[year].coins += rewardCoins
+      }
 
       if (year === 'y2' && levelId === 1 && options.profile) {
         this.travelerProfile = options.profile
+      }
+
+      if (options.preferences) {
+        this.applicationProfile = mergeApplicationProfile(
+          {
+            ...createDefaultApplicationProfile(),
+            ...this.applicationProfile,
+          },
+          {
+            ...this.applicationProfile,
+            ...options.preferences,
+          },
+        )
       }
 
       const nextLevel = this.getLevel(year, levelId + 1)
@@ -194,8 +325,7 @@ export const useGameStore = defineStore('game', {
       if (!Number.isFinite(cost) || cost <= 0) return false
       if (this.currentCoins < cost) return false
 
-      this.y2.coins -= cost
-      this.y3.coins = this.y2.coins
+      this[this.year].coins -= cost
       this.persist()
       return true
     },
@@ -205,6 +335,7 @@ export const useGameStore = defineStore('game', {
 
       this.year = defaults.year
       this.travelerProfile = defaults.travelerProfile
+      this.applicationProfile = defaults.applicationProfile
       this.y2 = defaults.y2
       this.y3 = defaults.y3
       this.hydrated = true

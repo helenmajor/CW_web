@@ -2,12 +2,17 @@
   <div class="modal-overlay" @click.self="closeSandbox">
     <div class="healing-modal-content">
       <div class="modal-header">
-        <span><i class="fas fa-leaf"></i> Sanctuary of Healing</span>
+        <span><i class="fas fa-leaf"></i> 疗愈小站 / Reflection Nook</span>
       </div>
 
       <div class="healing-title-area">
-        <h2>Drag items into the sand tray and listen to your inner voice</h2>
-        <p>This is your safe space. No right or wrong, just comfort.</p>
+        <h2>把压力放进沙盘，也把节奏找回来。/ Reset your pace in the sand tray.</h2>
+        <p>这是一个低压力的恢复区，不计分，但服务于长期申请规划。/ No score, no judgment, just recovery support for a long application journey.</p>
+      </div>
+
+      <div class="reflection-note">
+        <strong>功能说明 / Why this exists</strong>
+        <span>申请是长跑。这里帮助你用轻量反思和情绪恢复维持节奏。/ Applications are a marathon, and this nook supports pacing and emotional recovery.</span>
       </div>
 
       <div
@@ -41,11 +46,11 @@
           @dragstart="dragSandboxItem($event, item.id)"
         >
           <span class="item-emoji">{{ item.emoji }}</span>
-          <span class="item-label">{{ item.label }}</span>
+          <span class="item-label">{{ item.labelZh }} / {{ item.label }}</span>
         </button>
       </div>
 
-      <button class="btn-exit" @click="closeSandbox">Leave Sanctuary</button>
+      <button class="btn-exit" @click="closeSandbox">离开小站 / Leave Nook</button>
     </div>
   </div>
 </template>
@@ -69,44 +74,51 @@ const shelfItems = [
   {
     id: 'tree',
     emoji: '\u{1F333}',
+    labelZh: '扎根',
     label: 'Life',
-    message: 'You are taking root quietly like a tree. All your efforts will become upward strength.',
+    message: '你正在像树一样悄悄扎根。所有努力都会慢慢长成向上的力量。/ You are taking root quietly like a tree. Your effort will become upward strength.',
   },
   {
     id: 'home',
     emoji: '\u{1F3E0}',
+    labelZh: '安全感',
     label: 'Safety',
-    message: 'No matter how far you travel, do not forget to build a warm little sanctuary in your heart.',
+    message: '不管走多远，也别忘了在心里给自己留一个安全的小角落。/ No matter how far you travel, keep a warm little sanctuary inside.',
   },
   {
     id: 'sun',
     emoji: '\u2600\uFE0F',
+    labelZh: '能量',
     label: 'Energy',
-    message: 'You are your own sun; you do not need to rely on anyone else for light.',
+    message: '你可以先做自己的太阳。恢复节奏，也是在恢复掌控感。/ You can be your own sun. Regaining pace is regaining control.',
   },
   {
     id: 'cat',
     emoji: '\u{1F431}',
+    labelZh: '自由',
     label: 'Freedom',
-    message: 'Be like a little cat. Do not flatter the world, just please yourself.',
+    message: '像小猫一样保留一点自由感，不必把每一次波动都看成失败。/ Keep some freedom like a cat; not every setback is failure.',
   },
   {
     id: 'flower',
     emoji: '\u{1F338}',
+    labelZh: '希望',
     label: 'Hope',
-    message: 'Flowers bloom in their own time. No need to rush; you will have your moment.',
+    message: '花会在自己的季节里开。你也可以按自己的节奏推进。/ Flowers bloom in their own time, and so can you.',
   },
   {
     id: 'boat',
     emoji: '\u26F5',
+    labelZh: '航程',
     label: 'Journey',
-    message: 'If you feel exhausted, allow yourself to drop anchor and rest for a while.',
+    message: '如果很累，就允许自己短暂停靠。暂停不等于放弃。/ If you feel exhausted, allow yourself to anchor and rest. Rest is not quitting.',
   },
   {
     id: 'heart',
     emoji: '\u2764\uFE0F',
+    labelZh: '自我关照',
     label: 'Love',
-    message: 'Loving yourself is the beginning of a lifelong romance.',
+    message: '先把自己照顾好，才有力气完成漫长的申请旅程。/ Caring for yourself gives you strength for a long application journey.',
   },
 ]
 
@@ -217,6 +229,24 @@ onBeforeUnmount(() => {
   font-size: 0.95rem;
   font-style: italic;
   margin: 0;
+}
+
+.reflection-note {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(93, 64, 55, 0.08);
+  border: 1px solid rgba(141, 110, 99, 0.2);
+  color: #6c564e;
+  line-height: 1.55;
+}
+
+.reflection-note strong {
+  color: #5d4037;
+  white-space: nowrap;
 }
 
 .sand-tray {

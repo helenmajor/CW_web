@@ -2,18 +2,28 @@
   <div class="map-page">
     <div class="app-shell">
       <div class="top-switcher">
-        <button class="switch-btn" :class="store.year === 'y2' ? 'primary' : 'secondary'" @click="switchYear('y2')"><i class="fas fa-map"></i> Year 2</button>
-        <button class="switch-btn" :class="store.year === 'y3' ? 'primary' : 'secondary'" @click="switchYear('y3')"><i class="fas fa-fire"></i> Year 3</button>
-        <button class="switch-btn danger" @click="showResetConfirm = true"><i class="fas fa-rotate-left"></i> Reset</button>
+        <button class="switch-btn" :class="store.year === 'y2' ? 'primary' : 'secondary'" @click="switchYear('y2')"><i class="fas fa-map"></i> Year 2 / 大二</button>
+        <button class="switch-btn" :class="store.year === 'y3' ? 'primary' : 'secondary'" @click="switchYear('y3')"><i class="fas fa-fire"></i> Year 3 / 大三</button>
+        <button class="switch-btn profile" @click="showDashboard = true"><i class="fas fa-address-card"></i> 我的申请画像 / My Planning Profile</button>
+        <button class="switch-btn danger" @click="showResetConfirm = true"><i class="fas fa-rotate-left"></i> Reset / 重置</button>
+      </div>
+
+      <div v-if="systemNotice.visible" class="system-notice" :class="systemNotice.tone">
+        <strong>{{ systemNotice.title }}</strong>
+        <span>{{ systemNotice.text }}</span>
       </div>
 
       <section class="board y2" :class="{ active: store.year === 'y2' }">
         <div class="header">
-          <h1><i class="fas fa-route"></i> Year 2 · The Foggy Exploration</h1>
+          <div>
+            <h1><i class="fas fa-route"></i> Year 2 · 迷雾探索期 / The Foggy Exploration</h1>
+            <p class="header-subtitle">进度 {{ y2Progress.cleared }} / {{ y2Progress.total }} · 先做方向判断，再进入选校与行动配置。/ Build direction first, then tier schools and allocate effort.</p>
+          </div>
           <div class="header-right">
-            <button class="btn-action" @click="showPrizeShop = true"><i class="fas fa-gift"></i> Loot Exchange</button>
-            <button class="btn-action" @click="showHealingSandbox = true"><i class="fas fa-leaf"></i> Sanctuary</button>
-            <div class="coin-panel"><i class="fas fa-coins"></i><span>{{ store.currentCoins }}</span></div>
+            <div class="progress-pill">Year 2: {{ y2Progress.cleared }} / {{ y2Progress.total }}</div>
+            <button class="btn-action" @click="showPrizeShop = true"><i class="fas fa-gift"></i> Reward Exchange / 奖励兑换</button>
+            <button class="btn-action" @click="showHealingSandbox = true"><i class="fas fa-leaf"></i> Reflection Nook / 疗愈小站</button>
+            <div class="coin-panel"><i class="fas fa-coins"></i><span>{{ store.y2.coins }}</span><small>Coins / 金币</small></div>
           </div>
         </div>
 
@@ -57,11 +67,15 @@
 
       <section class="board y3" :class="{ active: store.year === 'y3' }">
         <div class="header">
-          <h1><i class="fas fa-star"></i> Year 3 · The Astral Sprint</h1>
+          <div>
+            <h1><i class="fas fa-star"></i> Year 3 · 星轨冲刺期 / The Astral Sprint</h1>
+            <p class="header-subtitle">进度 {{ y3Progress.cleared }} / {{ y3Progress.total }} · 重点是时间线、材料分工和申请季策略。/ Focus on timing, materials, and application-season strategy.</p>
+          </div>
           <div class="header-right">
-            <button class="btn-action" @click="showPrizeShop = true"><i class="fas fa-gift"></i> Loot Exchange</button>
-            <button class="btn-action" @click="showHealingSandbox = true"><i class="fas fa-leaf"></i> Sanctuary</button>
-            <div class="coin-panel"><i class="fas fa-coins"></i><span>{{ store.currentCoins }}</span></div>
+            <div class="progress-pill">Year 3: {{ y3Progress.cleared }} / {{ y3Progress.total }}</div>
+            <button class="btn-action" @click="showPrizeShop = true"><i class="fas fa-gift"></i> Reward Exchange / 奖励兑换</button>
+            <button class="btn-action" @click="showHealingSandbox = true"><i class="fas fa-leaf"></i> Reflection Nook / 疗愈小站</button>
+            <div class="coin-panel"><i class="fas fa-gem"></i><span>{{ store.y3.coins }}</span><small>Gems / 宝石</small></div>
           </div>
         </div>
 
@@ -98,13 +112,41 @@
       </section>
     </div>
 
+    <LearningDashboardDrawer
+      v-if="showDashboard"
+      :traveler-profile="store.travelerProfile"
+      :application-profile="store.applicationProfile"
+      :stage="store.travelerStage"
+      :progress="progressCards"
+      :active-year-meta="activeYearMeta"
+      :route-preference-text="routePreferenceText"
+      :current-guidance="currentGuidance"
+      :current-year="store.year"
+      @close="showDashboard = false"
+    />
+
     <div v-if="activeLevel" class="modal-overlay">
       <div class="game-modal-content">
         <button class="absolute-close-btn" @click="closeGame"><i class="fas fa-times"></i></button>
-        <div class="modal-header"><span>{{ activeLevel.title }}</span></div>
+        <div class="modal-header">
+          <div class="modal-title-block">
+            <span>{{ activeLevel.titleZh }} / {{ activeLevel.title }}</span>
+            <small>{{ activeLevel.guide?.summaryZh }} / {{ activeLevel.guide?.summary }}</small>
+          </div>
+          <span class="modal-status-pill">
+            {{ activeLevelState?.completed || activeLevelState?.skipped ? '可复习 / Replay available' : '进行中 / In progress' }}
+          </span>
+        </div>
         <div class="game-stage native-stage">
-          <component v-if="nativeGameComponent" :is="nativeGameComponent" @complete="handleNativeComplete" @close="closeGame" />
-          <div v-else class="missing-native-game">This level is still being wired into Vue.</div>
+          <component
+            v-if="nativeGameComponent"
+            :is="nativeGameComponent"
+            :guide="activeLevel.guide"
+            :context-data="runtimeContext"
+            @complete="handleNativeComplete"
+            @close="closeGame"
+          />
+          <div v-else class="missing-native-game">该节点仍在接入中。/ This level is still being wired into Vue.</div>
         </div>
       </div>
     </div>
@@ -114,22 +156,28 @@
 
     <div v-if="showResetConfirm" class="modal-overlay" @click.self="showResetConfirm = false">
       <div class="confirm-modal-content">
-        <h2>Reset all progress?</h2>
-        <p>This will clear Year 2, Year 3, coins, unlocked nodes, and your traveler profile.</p>
+        <h2>重置全部进度？/ Reset all progress?</h2>
+        <p>这会清空 Year 2、Year 3、金币、解锁节点和旅者画像。/ This will clear Year 2, Year 3, currency, unlocked nodes, and your traveler profile.</p>
         <div class="confirm-actions">
-          <button class="confirm-btn cancel" @click="showResetConfirm = false">Cancel</button>
-          <button class="confirm-btn reset" @click="resetGame">Yes, Reset Everything</button>
+          <button class="confirm-btn cancel" @click="showResetConfirm = false">取消 / Cancel</button>
+          <button class="confirm-btn reset" @click="resetGame">确认全部重置 / Yes, Reset Everything</button>
         </div>
       </div>
+    </div>
+
+    <div v-if="rewardToast.visible" class="reward-toast">
+      <i class="fas fa-coins"></i>
+      <span>+{{ rewardToast.amount }} {{ rewardToast.label }}</span>
     </div>
   </div>
 </template>
 
 <script setup>
 import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import PrizeShop from '@/components/PrizeShop.vue'
 import HealingSandbox from '@/components/HealingSandbox.vue'
-import { LEVEL_DEFINITIONS } from '@/config/levels'
+import LearningDashboardDrawer from '@/components/LearningDashboardDrawer.vue'
+import PrizeShop from '@/components/PrizeShop.vue'
+import { LEVEL_DEFINITIONS, YEAR_META } from '@/config/levels'
 import { useGameStore } from '@/stores/game'
 
 const store = useGameStore()
@@ -137,48 +185,276 @@ store.hydrate()
 
 const y2Path = 'M572.3 368.6C575.8 325.1 579.2 281.6 573.5 243.1 567.7 204.7 558.2 165.2 537.6 137.9 517 110.6 482.5 87.3 449.8 79.3c-32.8-8-78.8-5-108.7 10.7-29.9 15.7-55.7 49.8-70.5 83.7-14.8 33.9-17.9 79.3-18.5 119.5-.6 40.3 4.1 91.5 15.1 122 11 30.5 27.7 45.4 50.9 61 23.2 15.5 56.5 30.6 87.9 32.2 31.4 1.6 75.7-10 100.6-22.7 24.9-12.7 40.5-34.3 48.6-53.8 8.1-19.5 6.2-51.4 0-63.4-6.2-12-28-12.4-37-8.4-9 4-15.6 18.7-17.3 32.3-1.7 13.5-5.8 31.3 6.9 49 12.7 17.7 30.4 36 68.7 50.6 38.3 14.6 100.9 28.7 160.7 29.9 59.7 1.2 155.7-4.8 197.7-22.7 42-17.9 51.4-59.8 54.3-84.9 2.9-25.1-9.4-48.6-37-65.7-27.6-17.1-89.6-23.7-128.3-37.1-38.7-13.4-82.1-22.9-104-43-22-20.1-29.1-51.6-27.8-77.7 1.4-26.1 19.1-58.6 35.9-78.9 16.8-20.3 39.7-36.2 64.8-43 25-6.8 61.5-3.4 85.5 2.4 24 5.7 36.8 10.9 53.6 21.7 16.8 10.8 52.7 56.4 59.7 61.9'
 const y3Path = 'M284 351.5 388.257 259.513 383.437 124.872 526.06 129.423 623.5 31 720.94 129.423 863.563 124.872 858.743 259.513 963 351.5 858.743 443.487 863.563 578.128 720.94 573.577 623.5 672 526.06 573.577 383.437 578.128 388.257 443.487Z'
-const meta = { y2: Object.fromEntries(LEVEL_DEFINITIONS.y2.map((l) => [l.id, l])), y3: Object.fromEntries(LEVEL_DEFINITIONS.y3.map((l) => [l.id, l])) }
+const meta = { y2: Object.fromEntries(LEVEL_DEFINITIONS.y2.map((level) => [level.id, level])), y3: Object.fromEntries(LEVEL_DEFINITIONS.y3.map((level) => [level.id, level])) }
 const gameModules = import.meta.glob('./games/*.vue')
-const y2Nodes = [{ id: 1, icon: '\uf2bb', radius: 28, x: 572, y: 368, textY: 48 }, { id: 2, icon: '\uf0ac', radius: 26, x: 341, y: 90, textY: 48 }, { id: 3, icon: '\uf54e', radius: 26, x: 252, y: 293, textY: 48 }, { id: 4, icon: '\uf0c3', radius: 27, x: 506, y: 485, textY: 50 }, { id: 5, icon: '\uf017', radius: 26, x: 737, y: 528, textY: 48 }, { id: 6, icon: '\uf002', radius: 26, x: 952, y: 355, textY: 48 }, { id: 7, icon: '\uf005', radius: 32, x: 992, y: 161, textY: 55, final: true }].map((n) => ({ ...n, label: `${n.id}. ${meta.y2[n.id].name}`, title: meta.y2[n.id].title, sharedFile: meta.y2[n.id].sharedFile, file: meta.y2[n.id].file, engine: meta.y2[n.id].engine }))
-const y3Nodes = [{ id: 1, positionClass: 'n1', iconClass: 'fas fa-hourglass-half' }, { id: 2, positionClass: 'n2', iconClass: 'fas fa-cubes' }, { id: 3, positionClass: 'n3', iconClass: 'fas fa-microscope' }, { id: 4, positionClass: 'n4', iconClass: 'fas fa-book-open', iconTopClass: 'fas fa-pen-nib', stacked: true }, { id: 5, positionClass: 'n5', iconClass: 'fas fa-cat' }, { id: 6, positionClass: 'n6', iconClass: 'fas fa-calendar-alt' }, { id: 7, positionClass: 'n7', iconClass: 'fas fa-biohazard' }, { id: 8, positionClass: 'n8', iconClass: 'fas fa-crown', final: true }].map((n) => ({ ...n, label: `${n.id}. ${meta.y3[n.id].name}`, title: meta.y3[n.id].title, sharedFile: meta.y3[n.id].sharedFile, file: meta.y3[n.id].file, engine: meta.y3[n.id].engine }))
+const y2Nodes = [{ id: 1, icon: '\uf2bb', radius: 28, x: 572, y: 368, textY: 48 }, { id: 2, icon: '\uf0ac', radius: 26, x: 341, y: 90, textY: 48 }, { id: 3, icon: '\uf54e', radius: 26, x: 252, y: 293, textY: 48 }, { id: 4, icon: '\uf0c3', radius: 27, x: 506, y: 485, textY: 50 }, { id: 5, icon: '\uf017', radius: 26, x: 737, y: 528, textY: 48 }, { id: 6, icon: '\uf002', radius: 26, x: 952, y: 355, textY: 48 }, { id: 7, icon: '\uf005', radius: 32, x: 992, y: 161, textY: 55, final: true }].map((node) => ({ ...node, label: `${node.id}. ${meta.y2[node.id].mapLabel}`, title: meta.y2[node.id].title, titleZh: meta.y2[node.id].titleZh, guide: meta.y2[node.id].guide, rewardCoins: meta.y2[node.id].rewardCoins, file: meta.y2[node.id].file }))
+const y3Nodes = [{ id: 1, positionClass: 'n1', iconClass: 'fas fa-hourglass-half' }, { id: 2, positionClass: 'n2', iconClass: 'fas fa-cubes' }, { id: 3, positionClass: 'n3', iconClass: 'fas fa-microscope' }, { id: 4, positionClass: 'n4', iconClass: 'fas fa-book-open', iconTopClass: 'fas fa-pen-nib', stacked: true }, { id: 5, positionClass: 'n5', iconClass: 'fas fa-cat' }, { id: 6, positionClass: 'n6', iconClass: 'fas fa-calendar-alt' }, { id: 7, positionClass: 'n7', iconClass: 'fas fa-biohazard' }, { id: 8, positionClass: 'n8', iconClass: 'fas fa-crown', final: true }].map((node) => ({ ...node, label: `${node.id}. ${meta.y3[node.id].mapLabel}`, title: meta.y3[node.id].title, titleZh: meta.y3[node.id].titleZh, guide: meta.y3[node.id].guide, rewardCoins: meta.y3[node.id].rewardCoins, file: meta.y3[node.id].file }))
+
+const showDashboard = ref(false)
 const showPrizeShop = ref(false)
 const showHealingSandbox = ref(false)
 const showResetConfirm = ref(false)
 const redeemMessage = ref('')
 const activeLevel = ref(null)
+const rewardToast = reactive({ visible: false, amount: 0, label: '' })
+const systemNotice = reactive({ visible: false, tone: 'info', title: '', text: '' })
 const mapAreas = reactive({ y2: null, y3: null })
 const nodeRefs = reactive({ y2: {}, y3: {} })
 const traveler = reactive({ y2: { left: '50%', top: '50%', walking: false, reached: false }, y3: { left: '50%', top: '50%', walking: false, reached: false } })
+
 const travelerStyle = computed(() => ({ '--traveler-hair': store.travelerAvatar.hairColor, '--traveler-outfit': store.travelerAvatar.outfitColor }))
+const y2Progress = computed(() => store.yearProgress('y2'))
+const y3Progress = computed(() => store.yearProgress('y3'))
+const activeYearMeta = computed(() => YEAR_META[store.year])
+const progressCards = computed(() => ([
+  { year: 'y2', label: 'Year 2 / 大二', ...y2Progress.value },
+  { year: 'y3', label: 'Year 3 / 大三', ...y3Progress.value },
+]))
+const routePreferenceText = computed(() => {
+  const preferredRoute = store.applicationProfile.preferredRoute
+  if (!preferredRoute) {
+    return '尚未确认。先完成 Y2-2 地区罗盘。/ Not decided yet. Complete Y2-2 Region Choice first.'
+  }
+
+  const reason = preferredRoute.reasonZh || preferredRoute.reason || ''
+  return reason
+    ? `${preferredRoute.labelZh} / ${preferredRoute.label} · ${reason}`
+    : `${preferredRoute.labelZh} / ${preferredRoute.label}`
+})
+const currentGuidance = computed(() => {
+  const nextLevel = store[store.year].levels.find((level) => level.unlocked && !level.completed && !level.skipped)
+  if (nextLevel) {
+    return `建议优先进入 ${nextLevel.nameZh} / ${nextLevel.name}。/ Recommended next node: ${nextLevel.name}.`
+  }
+
+  return '当前年份主线已清理完毕，可以复习已完成节点或切换到另一学年。/ This year is cleared. Revisit earlier nodes or switch to the other year.'
+})
+const runtimeContext = computed(() => ({
+  travelerProfile: store.travelerProfile,
+  applicationProfile: store.applicationProfile,
+}))
+const activeLevelState = computed(() => (
+  activeLevel.value
+    ? store.getLevel(activeLevel.value.year, activeLevel.value.id)
+    : null
+))
 const nativeGameComponent = computed(() => {
-  if (!activeLevel.value || activeLevel.value.engine !== 'vue') return null
+  if (!activeLevel.value) return null
   const loader = gameModules[`./games/${activeLevel.value.file}`]
   if (!loader) return null
   return defineAsyncComponent(loader)
 })
+
 let openLevelTimer = null
+let noticeTimer = null
+let rewardTimer = null
 const travelerTimers = { y2: null, y3: null }
 const setMapAreaRef = (year) => (element) => { mapAreas[year] = element || null }
 const setNodeRef = (year, nodeId) => (element) => { if (element) nodeRefs[year][nodeId] = element; else delete nodeRefs[year][nodeId] }
 const getLevelState = (year, nodeId) => store.getLevel(year, nodeId)
 const isAccessible = (year, nodeId) => store.isNodeAccessible(year, nodeId)
 const isCleared = (year, nodeId) => Boolean(getLevelState(year, nodeId)?.completed || getLevelState(year, nodeId)?.skipped)
-function getNodeCenter(year, nodeId) { const map = mapAreas[year]; const node = nodeRefs[year][nodeId]; if (!map || !node) return null; const mr = map.getBoundingClientRect(); const nr = node.getBoundingClientRect(); if (!mr.width || !nr.width) return null; return { left: nr.left - mr.left + nr.width / 2, top: nr.top - mr.top + nr.height / 2 } }
-function moveTravelerToNode(year, nodeId) { const center = getNodeCenter(year, nodeId); if (!center) return; traveler[year].left = `${center.left}px`; traveler[year].top = `${center.top}px`; traveler[year].walking = true; traveler[year].reached = false; if (travelerTimers[year]) clearTimeout(travelerTimers[year]); travelerTimers[year] = window.setTimeout(() => { traveler[year].walking = false; traveler[year].reached = true }, 850) }
-function syncTraveler(year, nodeId = store[year].currentNode) { nextTick(() => window.requestAnimationFrame(() => moveTravelerToNode(year, nodeId))) }
-function switchYear(year) { if (store.year === year) { syncTraveler(year); return } store.switchYear(year) }
-function openLevel(year, node) { if (!isAccessible(year, node.id)) { window.alert(`Finish node ${node.id - 1} first before entering node ${node.id}.`); return } if (openLevelTimer) clearTimeout(openLevelTimer); if (store.year !== year) store.switchYear(year); store.setCurrentNode(year, node.id); moveTravelerToNode(year, node.id); openLevelTimer = window.setTimeout(() => { activeLevel.value = { ...node, year } }, 420) }
-function closeGame() { if (openLevelTimer) { clearTimeout(openLevelTimer); openLevelTimer = null } activeLevel.value = null }
-function redeemPrize(prize) { const label = 'Coins'; if (!store.redeemCurrentCurrency(prize.cost)) { redeemMessage.value = `Not enough ${label}. Go clear some nodes to earn rewards!`; return } redeemMessage.value = `&#x1F389; Redemption Successful! You obtained <b>${prize.emoji} ${prize.name}</b><br>Consumed <b>${prize.cost}</b> ${label}. Remaining Balance: <b>${store.currentCoins}</b> ${label}` }
-function handleNativeComplete(payload = {}) { if (!activeLevel.value) return; const year = activeLevel.value.year; const levelId = activeLevel.value.id; const profile = payload.profile || payload; const rewardCoins = Number(payload.rewardCoins) || 0; store.completeNode(year, levelId, { rewardCoins, profile }); closeGame(); syncTraveler(year, store[year].currentNode) }
-function resetGame() { closeGame(); showPrizeShop.value = false; showHealingSandbox.value = false; showResetConfirm.value = false; redeemMessage.value = ''; store.resetStore(); syncTraveler('y2', 1) }
-function handleEscape(event) { if (event.key !== 'Escape') return; if (showResetConfirm.value) { showResetConfirm.value = false; return } if (activeLevel.value) { closeGame(); return } if (showPrizeShop.value) { showPrizeShop.value = false; return } if (showHealingSandbox.value) showHealingSandbox.value = false }
+
+function showNotice({ tone = 'info', title, text }) {
+  systemNotice.visible = true
+  systemNotice.tone = tone
+  systemNotice.title = title
+  systemNotice.text = text
+
+  if (noticeTimer) clearTimeout(noticeTimer)
+  noticeTimer = window.setTimeout(() => {
+    systemNotice.visible = false
+  }, 4200)
+}
+
+function showReward(amount, label) {
+  rewardToast.visible = true
+  rewardToast.amount = amount
+  rewardToast.label = label
+
+  if (rewardTimer) clearTimeout(rewardTimer)
+  rewardTimer = window.setTimeout(() => {
+    rewardToast.visible = false
+  }, 2200)
+}
+
+function getNodeCenter(year, nodeId) {
+  const map = mapAreas[year]
+  const node = nodeRefs[year][nodeId]
+  if (!map || !node) return null
+  const mapRect = map.getBoundingClientRect()
+  const nodeRect = node.getBoundingClientRect()
+  if (!mapRect.width || !nodeRect.width) return null
+  return {
+    left: nodeRect.left - mapRect.left + nodeRect.width / 2,
+    top: nodeRect.top - mapRect.top + nodeRect.height / 2,
+  }
+}
+
+function moveTravelerToNode(year, nodeId) {
+  const center = getNodeCenter(year, nodeId)
+  if (!center) return
+  traveler[year].left = `${center.left}px`
+  traveler[year].top = `${center.top}px`
+  traveler[year].walking = true
+  traveler[year].reached = false
+
+  if (travelerTimers[year]) clearTimeout(travelerTimers[year])
+  travelerTimers[year] = window.setTimeout(() => {
+    traveler[year].walking = false
+    traveler[year].reached = true
+  }, 850)
+}
+
+function syncTraveler(year, nodeId = store[year].currentNode) {
+  nextTick(() => window.requestAnimationFrame(() => moveTravelerToNode(year, nodeId)))
+}
+
+function switchYear(year) {
+  if (store.year === year) {
+    syncTraveler(year)
+    return
+  }
+  store.switchYear(year)
+}
+
+function openLevel(year, node) {
+  if (!isAccessible(year, node.id)) {
+    const requiredLevel = meta[year][node.id - 1]
+    showNotice({
+      tone: 'warning',
+      title: '节点尚未解锁 / Node locked',
+      text: `请先完成 ${requiredLevel?.nameZh || `第 ${node.id - 1} 节点`} / ${requiredLevel?.name || `node ${node.id - 1}`}，再进入当前节点。/ Finish the previous prerequisite node first.`,
+    })
+    return
+  }
+
+  if (openLevelTimer) clearTimeout(openLevelTimer)
+  if (store.year !== year) store.switchYear(year)
+  store.setCurrentNode(year, node.id)
+  moveTravelerToNode(year, node.id)
+  openLevelTimer = window.setTimeout(() => {
+    activeLevel.value = { ...node, year }
+  }, 420)
+}
+
+function closeGame() {
+  if (openLevelTimer) {
+    clearTimeout(openLevelTimer)
+    openLevelTimer = null
+  }
+  activeLevel.value = null
+}
+
+function redeemPrize(prize) {
+  const label = store.currentCurrencyLabel
+  if (!store.redeemCurrentCurrency(prize.cost)) {
+    redeemMessage.value = `你当前的 ${label} 不足。请先完成更多节点。/ You do not have enough ${label}. Clear more nodes first.`
+    showNotice({
+      tone: 'warning',
+      title: '奖励不足 / Not enough currency',
+      text: `请先完成更多学习节点，再回来兑换 ${prize.name}。/ Clear more learning nodes before redeeming ${prize.name}.`,
+    })
+    return
+  }
+
+  redeemMessage.value = `&#x1F389; 兑换成功 / Redemption successful!<br>获得 <b>${prize.emoji} ${prize.name}</b>，消耗 <b>${prize.cost}</b> ${label}。/ You obtained <b>${prize.name}</b> for <b>${prize.cost}</b> ${label}.`
+  showNotice({
+    tone: 'success',
+    title: '奖励到账 / Reward unlocked',
+    text: `${prize.name} 已加入你的奖励记录。/ ${prize.name} has been added to your reward log.`,
+  })
+}
+
+function handleNativeComplete(payload = {}) {
+  if (!activeLevel.value) return
+
+  const year = activeLevel.value.year
+  const levelId = activeLevel.value.id
+  const rewardCoins = Number(payload.rewardCoins) || Number(activeLevel.value.rewardCoins) || 0
+  const profile = payload.profile && typeof payload.profile === 'object' ? payload.profile : null
+  const preferences = payload.preferences && typeof payload.preferences === 'object' ? payload.preferences : null
+  const levelMeta = meta[year][levelId]
+  const nextLevel = meta[year][levelId + 1]
+
+  store.completeNode(year, levelId, {
+    rewardCoins,
+    profile,
+    preferences,
+  })
+
+  closeGame()
+  syncTraveler(year, store[year].currentNode)
+
+  if (rewardCoins > 0) {
+    showReward(rewardCoins, year === 'y2' ? 'Coins / 金币' : 'Gems / 宝石')
+  }
+
+  showNotice({
+    tone: 'success',
+    title: '节点完成 / Node completed',
+    text: nextLevel
+      ? `你已完成 ${levelMeta.nameZh} / ${levelMeta.name}，并解锁 ${nextLevel.nameZh} / ${nextLevel.name}。/ You unlocked the next learning node.`
+      : `你已完成 ${levelMeta.nameZh} / ${levelMeta.name}。当前学年主线已全部完成。/ This year path is now complete.`,
+  })
+}
+
+function resetGame() {
+  closeGame()
+  showDashboard.value = false
+  showPrizeShop.value = false
+  showHealingSandbox.value = false
+  showResetConfirm.value = false
+  redeemMessage.value = ''
+  store.resetStore()
+  syncTraveler('y2', 1)
+  showNotice({
+    tone: 'info',
+    title: '进度已重置 / Progress reset',
+    text: '系统已恢复到初始状态。你可以重新体验完整学习路径。/ The project has been reset to the starting state.',
+  })
+}
+
+function handleEscape(event) {
+  if (event.key !== 'Escape') return
+  if (showResetConfirm.value) {
+    showResetConfirm.value = false
+    return
+  }
+  if (showDashboard.value) {
+    showDashboard.value = false
+    return
+  }
+  if (activeLevel.value) {
+    closeGame()
+    return
+  }
+  if (showPrizeShop.value) {
+    showPrizeShop.value = false
+    return
+  }
+  if (showHealingSandbox.value) showHealingSandbox.value = false
+}
 const handleResize = () => syncTraveler(store.year)
+
 watch(() => store.year, (year) => syncTraveler(year, store[year].currentNode))
 watch(() => store.y2.currentNode, (nodeId) => { if (store.year === 'y2') syncTraveler('y2', nodeId) })
 watch(() => store.y3.currentNode, (nodeId) => { if (store.year === 'y3') syncTraveler('y3', nodeId) })
-onMounted(() => { window.addEventListener('keydown', handleEscape); window.addEventListener('resize', handleResize); syncTraveler(store.year, store[store.year].currentNode) })
-onBeforeUnmount(() => { window.removeEventListener('keydown', handleEscape); window.removeEventListener('resize', handleResize); if (openLevelTimer) clearTimeout(openLevelTimer); Object.values(travelerTimers).forEach((timer) => { if (timer) clearTimeout(timer) }) })
+
+onMounted(() => {
+  window.addEventListener('keydown', handleEscape)
+  window.addEventListener('resize', handleResize)
+  syncTraveler(store.year, store[store.year].currentNode)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleEscape)
+  window.removeEventListener('resize', handleResize)
+  if (openLevelTimer) clearTimeout(openLevelTimer)
+  if (noticeTimer) clearTimeout(noticeTimer)
+  if (rewardTimer) clearTimeout(rewardTimer)
+  Object.values(travelerTimers).forEach((timer) => { if (timer) clearTimeout(timer) })
+})
 </script>
 
 <style scoped>
@@ -191,19 +467,29 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', handleEscape); win
 .switch-btn { border: none; border-radius: 999px; padding: 10px 25px; min-width: 130px; font-weight: 900; cursor: pointer; box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2); transition: 0.2s; font-size: 1.05rem; }
 .switch-btn.primary { background: #2c5a6e; color: #fff3c0; border: 2px solid #ffcf7a; }
 .switch-btn.secondary { background: #f6e7be; color: #2c5a6e; border: 2px solid #e3be73; }
+.switch-btn.profile { background: rgba(255, 255, 255, 0.08); color: #f8fafc; border: 2px solid rgba(255, 255, 255, 0.12); }
 .switch-btn.danger { background: #8f2f1e; color: #fff4ec; border: 2px solid #ffc1a8; }
 .switch-btn:hover { transform: translateY(-2px); }
 .switch-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2); }
 .board { width: 100%; height: clamp(720px, calc(100vh - 120px), 860px); border-radius: 42px; overflow: hidden; display: none; flex-direction: column; position: relative; }
+.system-notice { margin-bottom: 18px; padding: 14px 18px; border-radius: 18px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; border: 1px solid transparent; }
+.system-notice strong { font-size: 0.95rem; }
+.system-notice span { color: #e5edf9; line-height: 1.5; }
+.system-notice.info { background: rgba(37, 99, 235, 0.18); border-color: rgba(96, 165, 250, 0.28); }
+.system-notice.success { background: rgba(22, 163, 74, 0.16); border-color: rgba(74, 222, 128, 0.24); }
+.system-notice.warning { background: rgba(180, 83, 9, 0.18); border-color: rgba(251, 191, 36, 0.24); }
 .board.active { display: flex; animation: fade-in 0.4s ease; }
 .header { padding: 16px 30px; display: flex; justify-content: space-between; align-items: center; z-index: 20; }
 .header-right { display: flex; align-items: center; gap: 14px; }
 .header h1 { font-size: 1.6rem; font-weight: 900; font-family: Georgia, serif; }
 .header h1 i { margin-right: 8px; }
+.header-subtitle { margin: 8px 0 0; color: #d6e2ff; font-size: 0.92rem; line-height: 1.5; }
 .btn-action { border: none; border-radius: 999px; padding: 10px 20px; font-weight: 900; cursor: pointer; transition: 0.1s; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
 .btn-action:hover { filter: brightness(1.05); }
 .btn-action:active { transform: translateY(4px); box-shadow: 0 0 0 transparent; }
+.progress-pill { padding: 10px 16px; border-radius: 999px; font-size: 0.92rem; font-weight: 900; color: #fff7ed; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); }
 .coin-panel { padding: 10px 20px; border-radius: 999px; font-size: 1.1rem; font-weight: 900; display: flex; align-items: center; gap: 8px; }
+.coin-panel small { font-size: 0.78rem; font-weight: 800; opacity: 0.85; }
 .map-area { flex: 1; position: relative; overflow: hidden; }
 .y2.board { background: rgba(15, 23, 42, 0.74); border: 3px solid rgba(243, 207, 154, 0.22); box-shadow: 0 0 60px rgba(0, 0, 0, 0.65), inset 0 0 40px rgba(112, 48, 160, 0.18); }
 .y2 .header { background: linear-gradient(to bottom, rgba(243, 207, 154, 0.08), transparent); border-bottom: 1px solid rgba(243, 207, 154, 0.14); }
@@ -289,6 +575,9 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', handleEscape); win
 .absolute-close-btn { position: absolute; top: -20px; right: -20px; width: 55px; height: 55px; border-radius: 50%; background: #e74c3c; color: #fff; border: 4px solid #fff; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4); font-size: 1.8rem; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 1000; transition: 0.2s; }
 .absolute-close-btn:hover { background: #c0392b; transform: scale(1.15); }
 .modal-header { font-size: 1.5rem; color: #2d5a6e; border-bottom: 2px dashed #e7bc7a; padding-bottom: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; font-weight: 900; font-family: Georgia, serif; }
+.modal-title-block { display: flex; flex-direction: column; gap: 4px; }
+.modal-title-block small { font-size: 0.88rem; color: #64748b; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; line-height: 1.45; }
+.modal-status-pill { padding: 8px 12px; border-radius: 999px; background: rgba(44, 90, 110, 0.08); color: #2d5a6e; border: 1px solid rgba(44, 90, 110, 0.14); font-size: 0.82rem; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
 .game-stage { flex: 1; overflow: auto; border-radius: 16px; background: rgba(15, 23, 42, 0.04); }
 .native-stage { padding: 0; }
 .missing-native-game { min-height: 320px; display: grid; place-items: center; padding: 32px; text-align: center; color: #475569; font-weight: 700; }
@@ -301,6 +590,7 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', handleEscape); win
 .confirm-btn:hover { transform: translateY(-2px); }
 .confirm-btn.cancel { background: rgba(30, 41, 59, 0.08); color: #334155; border: 2px solid rgba(148, 163, 184, 0.28); }
 .confirm-btn.reset { background: linear-gradient(135deg, #ef4444, #b91c1c); color: #fff; box-shadow: 0 8px 18px rgba(185, 28, 28, 0.22); }
+.reward-toast { position: fixed; right: 24px; bottom: 24px; z-index: 650; display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-radius: 999px; background: rgba(17, 24, 39, 0.92); color: #fde68a; border: 1px solid rgba(253, 224, 71, 0.32); box-shadow: 0 14px 24px rgba(0, 0, 0, 0.28); font-weight: 900; animation: fade-in 0.22s ease; }
 @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes star-twinkle { 0% { opacity: 0.5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.015); } 100% { opacity: 0.72; transform: scale(1.03); } }
 @keyframes map-star-twinkle { 0% { opacity: 0.42; filter: brightness(0.9); } 50% { opacity: 0.95; filter: brightness(1.25); } 100% { opacity: 0.64; filter: brightness(1); } }
@@ -317,9 +607,10 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', handleEscape); win
   .header { padding: 14px 18px; flex-direction: column; align-items: flex-start; gap: 12px; }
   .header-right { width: 100%; flex-wrap: wrap; }
   .btn-action, .coin-panel, .switch-btn { width: 100%; justify-content: center; }
+  .progress-pill { width: 100%; text-align: center; }
   .game-modal-content { padding: 18px; width: calc(100% - 24px); }
   .absolute-close-btn { right: 8px; top: 8px; width: 44px; height: 44px; font-size: 1.2rem; }
   .modal-header { padding-right: 44px; font-size: 1.2rem; }
+  .modal-status-pill { margin-top: 8px; }
 }
 </style>
-

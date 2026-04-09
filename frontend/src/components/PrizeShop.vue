@@ -2,33 +2,38 @@
   <div class="modal-overlay" @click.self="$emit('close')">
     <div class="shop-modal-content">
       <div class="modal-header">
-        <span><i class="fas fa-gift"></i> Loot Exchange Center</span>
+        <span><i class="fas fa-gift"></i> 奖励兑换站 / Reward Exchange</span>
       </div>
 
       <div class="shop-topbar">
         <div>
-          <h2>Trade your effort for lovely rewards!</h2>
-          <p>Year 2 and Year 3 share one Coin balance.</p>
+          <h2>把学习进度换成温和的正反馈。/ Turn progress into gentle positive reinforcement.</h2>
+          <p>这里不是主线玩法，而是给长期申请规划一点可见成就感。/ This is a support loop for long-term planning, not the main learning task.</p>
         </div>
-        <div class="shop-balance">Current Balance: {{ balance }} {{ currencyLabel }}</div>
+        <div class="shop-balance">当前余额 / Current Balance: {{ balance }} {{ currencyLabel }}</div>
+      </div>
+
+      <div class="shop-learning-note">
+        <strong>系统说明 / Why this exists</strong>
+        <span>完成节点得到货币，兑换奖励是为了强化持续规划的节奏感。/ Currency rewards are here to reinforce consistent progress through the application-learning journey.</span>
       </div>
 
       <div class="shop-grid">
         <div v-for="item in prizes" :key="item.id" class="prize-card">
           <div class="prize-emoji">{{ item.emoji }}</div>
-          <div class="prize-title">{{ item.name }}</div>
-          <div class="prize-desc">{{ item.desc }}</div>
-          <div class="prize-cost">Cost {{ item.cost }} {{ currencyLabel }}</div>
+          <div class="prize-title">{{ item.nameZh }} / {{ item.name }}</div>
+          <div class="prize-desc">{{ item.descZh }} / {{ item.desc }}</div>
+          <div class="prize-cost">价格 / Cost {{ item.cost }} {{ currencyLabel }}</div>
           <button class="prize-btn" :disabled="balance < item.cost" @click="$emit('redeem', item)">
-            {{ balance >= item.cost ? 'Redeem' : 'Not Enough' }}
+            {{ balance >= item.cost ? '兑换 / Redeem' : '余额不足 / Not Enough' }}
           </button>
         </div>
       </div>
 
       <div v-if="redeemMessage" class="redeem-log" v-html="redeemMessage"></div>
-      <div class="shop-note">Treat this as a gamified feedback loop. Returning here after clearing nodes brings a huge sense of achievement.</div>
+      <div class="shop-note">把它当作阶段奖励而不是目标本身。/ Treat the shop as milestone feedback, not the goal itself.</div>
 
-      <button class="btn-exit" @click="$emit('close')">Exit Shop</button>
+      <button class="btn-exit" @click="$emit('close')">离开兑换站 / Exit Shop</button>
     </div>
   </div>
 </template>
@@ -54,14 +59,14 @@ const props = defineProps({
 })
 
 const prizes = [
-  { id: 'bear', name: 'XJTLU Bear', emoji: '\u{1F9F8}', cost: 40, desc: 'A super cute popular reward, perfect as a souvenir for minor milestones.' },
-  { id: 'movie', name: 'Movie Ticket', emoji: '\u{1F3AC}', cost: 60, desc: 'Reward your hardworking self with a relaxing movie night. It is okay to pause.' },
-  { id: 'hotpot', name: 'Hotpot Voucher', emoji: '\u{1F372}', cost: 80, desc: 'You worked hard. Reward yourself with a steaming hot pot of joy.' },
-  { id: 'course', name: 'VIP Express Course', emoji: '\u{1F393}', cost: 100, desc: 'A functional grand prize. Perfect for unlocking after saving up resources.' },
-  { id: 'vocab', name: 'Vocabulary Book', emoji: '\u{1F4D8}', cost: 30, desc: 'Practical and cute. A low-threshold reward to build positive feedback.' },
+  { id: 'bear', name: 'XJTLU Bear', nameZh: '西浦小熊', emoji: '\u{1F9F8}', cost: 40, desc: 'A cute milestone souvenir.', descZh: '适合作为小阶段完成后的纪念奖励。' },
+  { id: 'movie', name: 'Movie Ticket', nameZh: '电影票', emoji: '\u{1F3AC}', cost: 60, desc: 'A reminder that rest is part of strategy.', descZh: '提醒你休息也是长期规划的一部分。' },
+  { id: 'hotpot', name: 'Hotpot Voucher', nameZh: '火锅券', emoji: '\u{1F372}', cost: 80, desc: 'Celebrate a heavy week of progress.', descZh: '适合在高强度推进后给自己一个阶段庆祝。' },
+  { id: 'course', name: 'VIP Express Course', nameZh: '进阶课程券', emoji: '\u{1F393}', cost: 100, desc: 'A functional grand prize after sustained saving.', descZh: '更偏实用型的大额奖励，适合长期积累后兑换。' },
+  { id: 'vocab', name: 'Vocabulary Book', nameZh: '词汇书', emoji: '\u{1F4D8}', cost: 30, desc: 'A practical low-threshold study reward.', descZh: '门槛较低、也更贴近学习的实用奖励。' },
 ]
 
-const currencyLabel = computed(() => 'Coins')
+const currencyLabel = computed(() => (props.activeYear === 'y2' ? 'Coins / 金币' : 'Gems / 宝石'))
 </script>
 
 <style scoped>
@@ -128,6 +133,24 @@ const currencyLabel = computed(() => 'Coins')
   font-size: 1.05rem;
   border: 2px solid #ffcd7e;
   box-shadow: 0 3px 0 #163a48;
+}
+
+.shop-learning-note {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(32, 52, 62, 0.08);
+  border: 1px solid rgba(44, 90, 110, 0.15);
+  color: #51646e;
+  line-height: 1.55;
+}
+
+.shop-learning-note strong {
+  color: #2c5a6e;
+  white-space: nowrap;
 }
 
 .shop-grid {
