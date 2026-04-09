@@ -8,7 +8,7 @@
       <div class="shop-topbar">
         <div>
           <h2>Trade your effort for lovely rewards!</h2>
-          <p>Year 2 uses Coins, Year 3 uses Gems. Automatically detected.</p>
+          <p>Year 2 and Year 3 share one Coin balance.</p>
         </div>
         <div class="shop-balance">Current Balance: {{ balance }} {{ currencyLabel }}</div>
       </div>
@@ -61,7 +61,7 @@ const prizes = [
   { id: 'vocab', name: 'Vocabulary Book', emoji: '\u{1F4D8}', cost: 30, desc: 'Practical and cute. A low-threshold reward to build positive feedback.' },
 ]
 
-const currencyLabel = computed(() => (props.activeYear === 'y2' ? 'Coins' : 'Gems'))
+const currencyLabel = computed(() => 'Coins')
 </script>
 
 <style scoped>
