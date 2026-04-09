@@ -34,6 +34,7 @@ let restoreUserName = null
 let timeoutIds = []
 let intervalIds = []
 let animationFrameIds = []
+let activeDragImage = null
 
 function encodeInlineHandler(code) {
   const bytes = textEncoder.encode(code)
@@ -136,6 +137,155 @@ function loadExternalScript(src) {
 
   loadedScriptCache.set(src, loader)
   return loader
+}
+
+function removeActiveDragImage() {
+  activeDragImage?.remove()
+  activeDragImage = null
+}
+
+function moveDragImageOutOfView(dragImage) {
+  if (activeDragImage !== dragImage) return
+
+  dragImage.style.left = '-10000px'
+  dragImage.style.top = '-10000px'
+}
+
+function clampDragOffset(value, fallback, max) {
+  if (!Number.isFinite(value)) return fallback
+  return Math.max(0, Math.min(value, max))
+}
+
+function getReadableDragText(source) {
+  return source.innerText
+    ?.replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 72) || ''
+}
+
+function colorOrFallback(value, fallback) {
+  return value && value !== 'rgba(0, 0, 0, 0)' && value !== 'transparent'
+    ? value
+    : fallback
+}
+
+function paintRoundedRect(context, width, height, radius) {
+  context.beginPath()
+  context.moveTo(radius, 0)
+  context.lineTo(width - radius, 0)
+  context.quadraticCurveTo(width, 0, width, radius)
+  context.lineTo(width, height - radius)
+  context.quadraticCurveTo(width, height, width - radius, height)
+  context.lineTo(radius, height)
+  context.quadraticCurveTo(0, height, 0, height - radius)
+  context.lineTo(0, radius)
+  context.quadraticCurveTo(0, 0, radius, 0)
+  context.closePath()
+}
+
+function createCanvasDragImage(source) {
+  const rect = source.getBoundingClientRect()
+  const style = window.getComputedStyle(source)
+  const scale = window.devicePixelRatio || 1
+  const width = Math.max(1, Math.round(rect.width))
+  const height = Math.max(1, Math.round(rect.height))
+  const canvas = document.createElement('canvas')
+  const context = canvas.getContext('2d')
+
+  canvas.width = Math.ceil(width * scale)
+  canvas.height = Math.ceil(height * scale)
+  canvas.style.width = `${width}px`
+  canvas.style.height = `${height}px`
+  context.scale(scale, scale)
+
+  const radius = Math.min(14, width / 5, height / 5)
+  context.shadowColor = 'rgba(0, 0, 0, 0.38)'
+  context.shadowBlur = 12
+  context.shadowOffsetY = 5
+  paintRoundedRect(context, width - 14, height - 14, radius)
+  context.translate(7, 4)
+  context.fillStyle = colorOrFallback(style.backgroundColor, '#0f172a')
+  context.fill()
+
+  context.shadowColor = 'transparent'
+  context.lineWidth = Math.max(2, Number.parseFloat(style.borderTopWidth) || 2)
+  context.strokeStyle = colorOrFallback(style.borderTopColor, '#fbbf24')
+  context.stroke()
+
+  const label = getReadableDragText(source)
+  const fontSize = Math.max(13, Math.min(18, Number.parseFloat(style.fontSize) || 15))
+  context.fillStyle = colorOrFallback(style.color, '#f8fafc')
+  context.font = `700 ${fontSize}px ${style.fontFamily || 'sans-serif'}`
+  context.textAlign = 'center'
+  context.textBaseline = 'middle'
+
+  const firstLine = label.slice(0, 22)
+  const secondLine = label.length > 22 ? label.slice(22, 44).trim() : ''
+  context.fillText(firstLine, (width - 14) / 2, secondLine ? (height - 14) / 2 - fontSize * 0.55 : (height - 14) / 2)
+  if (secondLine) {
+    context.font = `600 ${Math.max(11, fontSize - 3)}px ${style.fontFamily || 'sans-serif'}`
+    context.fillText(secondLine, (width - 14) / 2, (height - 14) / 2 + fontSize * 0.8)
+  }
+
+  return canvas
+}
+
+function getDraggableSource(event) {
+  const path = event.composedPath?.() || []
+  const fromPath = path.find((node) => node instanceof HTMLElement && node.draggable)
+  if (fromPath) return fromPath
+
+  if (event.target instanceof HTMLElement) {
+    return event.target.closest('[draggable="true"]')
+  }
+
+  return null
+}
+
+function installDragImageBridge() {
+  if (!gameBody) return
+
+  const handleDragStart = (event) => {
+    const source = getDraggableSource(event)
+    if (!source || !event.dataTransfer) return
+
+    removeActiveDragImage()
+
+    const rect = source.getBoundingClientRect()
+    const dragImage = createCanvasDragImage(source)
+
+    Object.assign(dragImage.style, {
+      position: 'fixed',
+      left: '0',
+      top: '0',
+      margin: '0',
+      pointerEvents: 'none',
+      transform: 'none',
+      zIndex: '2147483647',
+    })
+
+    document.body.appendChild(dragImage)
+    activeDragImage = dragImage
+
+    event.dataTransfer.setDragImage(
+      dragImage,
+      clampDragOffset(event.clientX - rect.left, rect.width / 2, rect.width),
+      clampDragOffset(event.clientY - rect.top, rect.height / 2, rect.height),
+    )
+
+    window.requestAnimationFrame(() => moveDragImageOutOfView(dragImage))
+  }
+
+  gameBody.addEventListener('dragstart', handleDragStart, true)
+  gameBody.addEventListener('dragend', removeActiveDragImage, true)
+  gameBody.addEventListener('drop', removeActiveDragImage, true)
+
+  cleanupListeners.push(() => {
+    gameBody?.removeEventListener('dragstart', handleDragStart, true)
+    gameBody?.removeEventListener('dragend', removeActiveDragImage, true)
+    gameBody?.removeEventListener('drop', removeActiveDragImage, true)
+    removeActiveDragImage()
+  })
 }
 
 function handleCompletionMessage(data) {
@@ -289,6 +439,7 @@ function cleanupRuntime() {
   timeoutIds = []
   intervalIds = []
   animationFrameIds = []
+  removeActiveDragImage()
 
   if (window.__htmlGameContexts) {
     delete window.__htmlGameContexts[contextId]
@@ -365,6 +516,7 @@ async function mountRuntime() {
     })
   })
   mutationObserver.observe(gameBody, { childList: true, subtree: true })
+  installDragImageBridge()
 
   if (props.userName) {
     const previous = window.localStorage.getItem('userName')
