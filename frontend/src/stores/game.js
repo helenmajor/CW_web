@@ -146,6 +146,7 @@ export const useGameStore = defineStore('game', {
       const level = this.getLevel(year, levelId)
       if (!level) return
 
+      const wasCompleted = level.completed
       const providedRewardCoins = Number(options.rewardCoins)
       const rewardCoins = Number.isFinite(providedRewardCoins) && providedRewardCoins > 0
         ? providedRewardCoins
@@ -155,7 +156,9 @@ export const useGameStore = defineStore('game', {
       level.skipped = false
       this[year].currentNode = levelId
 
-      this.y2.coins += rewardCoins
+      if (!wasCompleted) {
+        this.y2.coins += rewardCoins
+      }
       this.y3.coins = this.y2.coins
 
       if (year === 'y2' && levelId === 1 && options.profile) {

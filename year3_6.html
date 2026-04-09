@@ -90,12 +90,15 @@
     .final-door { position: absolute; left: 50%; bottom: 32%; transform: translateX(-50%); width: 16%; height: 128px; border-radius: 24px 24px 10px 10px; z-index: 11; background: linear-gradient(to bottom, rgba(255,255,255,.10), rgba(255,255,255,.03)), linear-gradient(to bottom, #6b573b, #45331f 44%, #1c140c 100%); box-shadow: 0 0 20px rgba(0,0,0,.28), 0 0 18px rgba(235,220,175,.10), inset 0 0 14px rgba(255,255,255,.05); }
     .final-door:hover { transform: translateX(-50%) translateY(-6px) scale(1.03); }
 
-    .hint { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 25; background: rgba(8, 12, 24, .85); border: 1px solid rgba(255,255,255,.10); padding: 12px 25px; border-radius: 999px; color: #e8edff; text-align: center; backdrop-filter: blur(10px); box-shadow: 0 0 14px rgba(0,0,0,.18); font-weight: bold;}
+    .hint { position: fixed; left: 50%; bottom: 10px; transform: translateX(-50%); z-index: 25; width: min(820px, 82vw); background: rgba(8, 12, 24, .82); border: 1px solid rgba(255,255,255,.10); padding: 8px 18px; border-radius: 999px; color: #e8edff; text-align: center; backdrop-filter: blur(10px); box-shadow: 0 0 14px rgba(0,0,0,.18); font-weight: bold; font-size: 0.9rem; line-height: 1.28; pointer-events: none;}
 
     /* ================= Modal Foundation UI ================= */
     .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(5, 7, 14, .84); z-index: 60; padding: 18px; }
     .modal.show { display: flex; }
-    .modal-card { position: relative; width: min(1120px, 96vw); max-height: 92vh; overflow: auto; border-radius: 22px; padding: 24px; background: linear-gradient(180deg, rgba(17,22,38,.98), rgba(10,14,24,.98)), radial-gradient(circle at top right, rgba(255,255,255,.06), transparent 30%); border: 1px solid rgba(255,255,255,.12); box-shadow: 0 0 38px rgba(0,0,0,.3); }
+    .modal-card { position: relative; width: min(1120px, 96vw); max-height: 92vh; overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; border-radius: 22px; padding: 24px; background: linear-gradient(180deg, rgba(17,22,38,.98), rgba(10,14,24,.98)), radial-gradient(circle at top right, rgba(255,255,255,.06), transparent 30%); border: 1px solid rgba(255,255,255,.12); box-shadow: 0 0 38px rgba(0,0,0,.3); }
+    .modal-scroll-cue { position: fixed; right: 34px; bottom: 34px; width: 48px; height: 48px; border-radius: 50%; border: 2px solid rgba(255,255,255,.72); background: rgba(8, 12, 24, .86); color: #fff; font-size: 28px; line-height: 1; cursor: pointer; z-index: 130; display: none; box-shadow: 0 8px 20px rgba(0,0,0,.36); }
+    .modal-scroll-cue.show { display: grid; place-items: center; }
+    .modal-scroll-cue:hover { background: rgba(232,210,155,.95); color: #1a202c; }
     .close-btn { position: absolute; top: 12px; right: 12px; width: 42px; height: 42px; border-radius: 50%; border: none; background: rgba(255,255,255,.08); color: #fff; font-size: 22px; cursor: pointer; z-index: 100; font-weight: bold;}
     .close-btn:hover { background: #e74c3c; }
 
@@ -114,7 +117,7 @@
 
     /* ================= Battle Scene UI ================= */
     .roco-game-screen {
-      width: 100%; max-width: 1000px; height: 600px; background: #000;
+      width: 100%; max-width: min(1040px, 100%); height: clamp(500px, calc(100dvh - 140px), 620px); background: #000;
       border: 4px solid rgba(255,255,255,0.1); border-radius: 15px; position: relative;
       box-shadow: 0 0 30px rgba(0,0,0,0.6); overflow: hidden;
       display: flex; flex-direction: column; margin: 0 auto;
@@ -191,16 +194,16 @@
 
     /* Bottom Control Area */
     .ui-bottom {
-      height: 180px; background: linear-gradient(to bottom, #2d3748, #1a202c);
+      height: 112px; flex: 0 0 112px; background: linear-gradient(to bottom, #2d3748, #1a202c);
       border-top: 4px solid #f6e05e; display: flex;
     }
     .message-box {
-      flex: 1; padding: 25px; font-size: 1.3rem; line-height: 1.6; font-weight: bold;
+      flex: 1; padding: 12px 18px; font-size: 1rem; line-height: 1.35; font-weight: bold;
       color: #fff; border-right: 4px solid #4a5568; display: flex; align-items: center; text-shadow: 0 2px 4px rgba(0,0,0,0.5); font-family: "Georgia", serif;
     }
     .action-menu {
       width: 500px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
-      padding: 12px; gap: 12px; display: none;
+      padding: 8px 10px; gap: 8px 10px; display: none;
     }
     .skill-btn {
       background: linear-gradient(to bottom, #fffaf0, #e2e8f0); border: 3px solid #a0aec0;
@@ -210,9 +213,9 @@
     .skill-btn:hover { background: #fefcbf; border-color: #d69e2e; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
     .skill-btn:active { transform: scale(0.95); }
     .skill-btn:disabled { filter: grayscale(1); opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none;}
-    .skill-name { font-weight: 900; font-size: 1.15rem; color: #2d3748; }
-    .skill-pp { font-size: 0.85rem; color: #718096; font-weight: bold; margin-top: 5px; }
-    .skill-type { font-size: 0.8rem; padding: 2px 8px; border-radius: 4px; color: #fff; margin-top: 4px; font-weight: bold;}
+    .skill-name { font-weight: 900; font-size: 0.92rem; color: #2d3748; }
+    .skill-pp { font-size: 0.72rem; color: #718096; font-weight: bold; margin-top: 2px; }
+    .skill-type { font-size: 0.66rem; padding: 1px 6px; border-radius: 4px; color: #fff; margin-top: 2px; font-weight: bold;}
     .type-normal { background: #a0aec0; } .type-fire { background: #e53e3e; } .type-magic { background: #805ad5; } .type-heal { background: #38b2ac; }
 
     /* Final Settlement Panel */
@@ -274,6 +277,7 @@
     <button class="close-btn" id="closeModal">×</button>
     <div id="gameContent"></div>
   </div>
+  <button class="modal-scroll-cue" id="modalScrollCue" type="button" aria-label="Scroll down">↓</button>
 </div>
 
 <script>
@@ -296,7 +300,7 @@
     { id: 0, name: "Mock Exam Thrust", pp: 15, maxPp: 15, power: 30, class: "attack", cssType: "type-normal", cssLabel: "Physical", log: "executed <b>Mock Exam Thrust</b>!" },
     { id: 1, name: "Proofreader's Slash", pp: 3, maxPp: 3, power: 80, class: "heavy", cssType: "type-fire", cssLabel: "Magic · Crit", log: "unleashed the ultimate <b>Proofreader's Slash</b>! It's super effective!" },
     { id: 2, name: "Cold Email Shield", pp: 5, maxPp: 5, power: 0, class: "shield", cssType: "type-magic", cssLabel: "Buff · Defense", log: "sent a <b>Cold Email</b>! Defense sharply increased!" },
-    { id: 3, name: "Iced Americano", pp: gameState.potions, maxPp: gameState.potions, power: -80, class: "potion", cssType: "type-heal", cssLabel: "Heal", log: "chugged an <b>Iced Americano</b>! Vitality restored!" }
+    { id: 3, name: "Iced Americano", pp: gameState.potions, maxPp: gameState.potions, power: -80, class: "heal", cssType: "type-heal", cssLabel: "Heal", log: "chugged an <b>Iced Americano</b>! Vitality restored!" }
   ];
 
   // ======= Visual Init =======
@@ -329,15 +333,55 @@
 
   // ======= Modals & Flow =======
   const modal = document.getElementById("gameModal"), content = document.getElementById("gameContent");
+  const modalCard = document.getElementById("modalCard"), scrollCue = document.getElementById("modalScrollCue");
+
+  function updateScrollCue() {
+    if (!modal.classList.contains("show") || !modalCard || !scrollCue) {
+      if (scrollCue) scrollCue.classList.remove("show");
+      return;
+    }
+    const canScroll = modalCard.scrollHeight - modalCard.clientHeight > 14;
+    const atBottom = modalCard.scrollTop + modalCard.clientHeight >= modalCard.scrollHeight - 14;
+    scrollCue.classList.toggle("show", canScroll && !atBottom);
+  }
+
+  function resetModalScroll() {
+    if (modalCard) modalCard.scrollTop = 0;
+    requestAnimationFrame(updateScrollCue);
+    setTimeout(updateScrollCue, 120);
+  }
+
+  if (modalCard) modalCard.addEventListener("scroll", updateScrollCue);
+  if (scrollCue) {
+    scrollCue.addEventListener("click", () => {
+      modalCard.scrollBy({ top: Math.round(modalCard.clientHeight * 0.75), behavior: "smooth" });
+      setTimeout(updateScrollCue, 360);
+    });
+  }
+  window.addEventListener("resize", updateScrollCue);
+
   document.getElementById("closeModal").addEventListener("click", () => {
     if(gameState.inBattle && !confirm("The battle is ongoing! Are you sure you want to flee?")) return;
+    cancelTypeWriter();
+    clearTurnWatchdog();
     modal.classList.remove("show");
     gameState.inBattle = false;
+    updateScrollCue();
   });
 
   function openStage(idx) {
     if(idx>0 && !gameState.cleared[idx-1]) return;
     const stg = stages[idx]; gameState.currentStage = stg;
+    const stageIntel = idx === 0
+      ? `
+              <div class="info-item">Language scores are hard thresholds: check the <b>official program page</b> for overall score, every sub-score, accepted tests, waiver policy, and whether the score is still valid at enrollment.</div>
+              <div class="info-item">Plan backwards: IELTS/TOEFL scores are usually valid for <b>2 years</b>; IELTS paper-based results often take about <b>13 days</b>, TOEFL iBT about <b>6-10 days</b>. Try to qualify before summer ends and leave September-October for retakes.</div>
+              <div class="info-item">Prep with core materials first: <b>official guides, Cambridge IELTS papers, and TOEFL TPO-style practice</b>. Analyze mistakes; do not worship shortcut packages.</div>
+            `
+      : `
+              <div class="info-item">⚔️ Manage the PP of <b>Proofreader's Slash</b>. It deals massive damage but has limited uses.</div>
+              <div class="info-item">🛡️ In moments of crisis, the <b>Cold Email Shield</b> blocks 70% of incoming damage.</div>
+            `;
 
     content.innerHTML = `
         <div class="level-header"><div><div class="level-title">${stg.title}</div><div class="level-desc">${stg.subtitle}</div></div></div>
@@ -350,8 +394,7 @@
           <div class="box">
             <div class="character-name">Combat Intel</div>
             <div class="info-list">
-              <div class="info-item">⚔️ Manage the PP of <b>Proofreader's Slash</b>. It deals massive damage but has limited uses.</div>
-              <div class="info-item">🛡️ In moments of crisis, the <b>Cold Email Shield</b> blocks 70% of incoming damage.</div>
+              ${stageIntel}
             </div>
             ${gameState.cleared[idx] ? '<div class="reward-box" style="border-color:#2ecc71;">Boss already slain. No extra rewards for repeated challenges.</div>' : `<div class="reward-box">First Clear Reward: <b>${stg.gemReward} Artifacts</b> + Level Up + Iced Americano.</div>`}
           </div>
@@ -359,6 +402,7 @@
         <div class="center-actions"><button class="btn next" onclick="initBattle()">Draw Sword & Engage</button></div>
       `;
     modal.classList.add("show");
+    resetModalScroll();
   }
 
   // ======= RPG Engine =======
@@ -372,13 +416,12 @@
     gameState.inBattle = true; gameState.isAnimating = true;
 
     renderRocoBattleUI();
+    resetModalScroll();
 
     setTimeout(() => {
       typeWriter(`A wild <b>${gameState.enemy.name}</b> appears!`, () => {
         setTimeout(() => {
-          document.getElementById('msgBox').innerText = "Awaiting your command:";
-          document.getElementById('actionMenu').style.display = 'grid';
-          gameState.isAnimating = false;
+          showCommandMenu();
         }, 800);
       });
     }, 500);
@@ -428,18 +471,76 @@
     updateDynamicUI();
   }
 
-  function typeWriter(text, callback, clear=true) {
+  let typeWriterRun = 0;
+  let turnWatchdog = null;
+
+  function cancelTypeWriter() {
+    typeWriterRun++;
+  }
+
+  function clearTurnWatchdog() {
+    if (!turnWatchdog) return;
+    clearTimeout(turnWatchdog);
+    turnWatchdog = null;
+  }
+
+  function startTurnWatchdog() {
+    clearTurnWatchdog();
+    turnWatchdog = setTimeout(() => {
+      if (!gameState.inBattle || !gameState.isAnimating || !gameState.enemy) return;
+      if (gameState.hero.hp <= 0 || gameState.enemy.hp <= 0) return;
+      showCommandMenu("Awaiting your command:");
+    }, 12000);
+  }
+
+  function hideCommandMenu() {
+    const menu = document.getElementById('actionMenu');
+    if (menu) menu.style.display = 'none';
+  }
+
+  function showCommandMenu(message="Awaiting your command:") {
+    cancelTypeWriter();
+    clearTurnWatchdog();
     const box = document.getElementById('msgBox');
-    if (!box) return;
-    if(clear) box.innerHTML = ''; else box.innerHTML += '<br>';
+    const menu = document.getElementById('actionMenu');
+    if (box) box.textContent = message;
+    if (menu) menu.style.display = 'grid';
+    gameState.isAnimating = false;
+  }
+
+  function holdCommandMenu() {
+    gameState.isAnimating = true;
+    hideCommandMenu();
+    startTurnWatchdog();
+  }
+
+  function typeWriter(text, callback, clear=true) {
+    const runId = ++typeWriterRun;
+    const box = document.getElementById('msgBox');
+    if (!box) {
+      if (callback) setTimeout(callback, 0);
+      return;
+    }
+    const message = String(text).replace(/<\/?b>/g, '');
+    if(clear) {
+      box.replaceChildren();
+    } else {
+      box.appendChild(document.createElement('br'));
+    }
+    const textNode = document.createTextNode('');
+    box.appendChild(textNode);
 
     let i = 0; let speed = 30;
     function type() {
-      if (i < text.length) {
-        box.innerHTML += text.charAt(i); i++;
+      if (runId !== typeWriterRun) return;
+      if (i < message.length) {
+        textNode.data += message.charAt(i);
+        i++;
         setTimeout(type, speed);
-      } else if (callback) {
-        setTimeout(callback, 500);
+      } else if (callback && runId === typeWriterRun) {
+        setTimeout(() => {
+          if (runId === typeWriterRun) callback();
+        }, 500);
       }
     }
     type();
@@ -488,8 +589,7 @@
     const skill = heroSkills[skillIdx];
     if (skill.pp <= 0) return;
 
-    gameState.isAnimating = true;
-    document.getElementById('actionMenu').style.display = 'none';
+    holdCommandMenu();
 
     skill.pp--;
     if(skillIdx === 3) {
@@ -528,12 +628,15 @@
         gameState.hero.shield = true;
         updateDynamicUI();
         setTimeout(() => checkWinOrNext(), 800);
+      } else {
+        setTimeout(() => checkWinOrNext(), 400);
       }
     });
   }
 
   function checkWinOrNext() {
     if (gameState.enemy.hp <= 0) {
+      clearTurnWatchdog();
       typeWriter(`Successfully crushed <b>${gameState.enemy.name}</b>!`, () => { setTimeout(() => winStage(), 1200); });
     } else {
       enemyTurn();
@@ -566,11 +669,10 @@
           hSprite.classList.remove('hit');
 
           if (gameState.hero.hp <= 0) {
+            clearTurnWatchdog();
             typeWriter(`You were thoroughly crushed by DDLs and pressure...`, () => { setTimeout(() => loseStage(), 1500); });
           } else {
-            document.getElementById('msgBox').innerText = "Awaiting your command:";
-            document.getElementById('actionMenu').style.display = 'grid';
-            gameState.isAnimating = false;
+            showCommandMenu();
           }
         }, 400);
       }, 200);
@@ -579,6 +681,8 @@
 
   // ======= Settlement =======
   function winStage() {
+    clearTurnWatchdog();
+    cancelTypeWriter();
     gameState.inBattle = false; gameState.isAnimating = false;
     const stg = gameState.currentStage;
     let rText = "You have already crushed this Boss. Your strength needs no further proof.";
@@ -605,9 +709,12 @@
           </div>
         </div>
       `;
+    resetModalScroll();
   }
 
   function loseStage() {
+    clearTurnWatchdog();
+    cancelTypeWriter();
     gameState.inBattle = false; gameState.isAnimating = false;
     content.innerHTML = `
         <div class="level-header"><div class="level-title" style="color:#e74c3c;">💥 Application Foiled</div></div>
@@ -623,6 +730,7 @@
           </div>
         </div>
       `;
+    resetModalScroll();
   }
 
   function openFinal() {
@@ -647,6 +755,7 @@
         </div>
       `;
     modal.classList.add("show");
+    resetModalScroll();
   }
 
   function completeNode() {

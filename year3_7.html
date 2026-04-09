@@ -54,7 +54,7 @@
             animation: float 3s ease-in-out infinite; position: relative;
         }
         .mine-orb::before { content: "⚠️"; font-size: 2.5rem; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.3)); }
-        .mine-text { font-size: 1.3rem; font-weight: 900; color: #f8fafc; text-shadow: 0 2px 4px rgba(0,0,0,0.8); line-height: 1.4;}
+        .mine-text { font-size: clamp(0.95rem, 2.2vw, 1.2rem); font-weight: 900; color: #f8fafc; text-shadow: 0 2px 4px rgba(0,0,0,0.8); line-height: 1.35;}
 
         @keyframes float {
             0%, 100% { transform: translateY(0); }
@@ -135,7 +135,7 @@
         <div class="status-box">
             <div style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 4px; font-weight: bold;">Purification Progress</div>
             <div style="font-weight: bold; color: #34d399; font-size: 1.1rem;" id="progressText">0 / 4</div>
-            <div class="hp" id="hpText" style="margin-top: 6px;">Shield: ❤️❤️❤️</div>
+            <div class="hp" id="hpText" style="margin-top: 6px;">Shield: ❤️❤️❤️❤️❤️❤️</div>
         </div>
     </div>
 
@@ -205,6 +205,78 @@
             desc: "Especially for specific programs in HK and the UK, language is a hard threshold. Failing to meet it means the automated screening will instantly purge your application."
         },
         {
+            text: "Only check the overall IELTS/TOEFL score and ignore Writing/Speaking minimums",
+            type: "fatal",
+            title: "Language Threshold Trap",
+            desc: "Always verify both the total score and every sub-score on the target program's official admissions page. A beautiful overall score cannot rescue a missing writing minimum."
+        },
+        {
+            text: "Use a language score that expires before enrollment registration",
+            type: "fatal",
+            title: "Expired Scroll",
+            desc: "IELTS and TOEFL are usually valid for 2 years from the test date. Plan with the enrollment/registration date in mind, not just the application submission day."
+        },
+        {
+            text: "Wait until late October for your first language test attempt",
+            type: "severe",
+            title: "Timing Wound",
+            desc: "Aim to finish a qualifying IELTS/TOEFL by the end of summer. IELTS paper-based reports often need about 13 days; TOEFL iBT scores often need about 6-10 days. Leave September-October for a retake."
+        },
+        {
+            text: "Trust an agency screenshot instead of reading the official program requirement",
+            type: "severe",
+            title: "Borrowed Eyes Curse",
+            desc: "Agencies and seniors can help, but the official university/program admissions page is the source of truth. Requirements differ by major; media/law-type programs often set higher language bars."
+        },
+        {
+            text: "Assume an English-taught degree automatically waives language tests",
+            type: "severe",
+            title: "Waiver Mirage",
+            desc: "A full-time degree from an English-speaking country may qualify for a waiver, but policies vary. Confirm the exact waiver rule on each target school's website before deleting IELTS from your plan."
+        },
+        {
+            text: "Agency promises: guaranteed Top 10 admission, private deal with admissions officers",
+            type: "severe",
+            title: "Agency Siren Song",
+            desc: "No consultant can guarantee an offer. Outcomes depend on your profile, program fit, documents, timing, and that year's competition. Treat 'guaranteed Top 10' as a scam alarm."
+        },
+        {
+            text: "Sign with an agency that refuses to share the application email/account/password",
+            type: "severe",
+            title: "Locked Account Trap",
+            desc: "You are the owner of the application. Keep access to the application email, portals, submitted forms, and final documents so you can review and approve every submission."
+        },
+        {
+            text: "Contract says 'premium service' but skips school list, advisor name, essay revision limit, refund rules",
+            type: "severe",
+            title: "Foggy Contract",
+            desc: "Before paying, make the contract concrete: school/program list, shared accounts, revision limits, interview support, the named advisor, staged payments, full-rejection refund, under-delivery refund, and extra fees."
+        },
+        {
+            text: "Pay the entire agency fee on day one",
+            type: "severe",
+            title: "Payment Lock",
+            desc: "Prefer staged payment. For example: deposit at signing, a second payment after essays are finalized, and the final payment after the first offer. Do not give away all leverage at the start."
+        },
+        {
+            text: "All sample essays from an agency sound like the same polished stranger",
+            type: "minor",
+            title: "Template Smell",
+            desc: "Template writing weakens your personal narrative. Ask for brainstorming, edit actively, and keep final review power. Your PS should sound like your evidence-backed story, not a mass-produced brochure."
+        },
+        {
+            text: "Choose an agency only from its own success posters",
+            type: "minor",
+            title: "Reputation Blind Spot",
+            desc: "Do outside reference checks: search student reviews, compare negative feedback patterns, and if possible speak with former students. Start screening around February-April and try to finalize before July-August."
+        },
+        {
+            text: "Buy random test-prep packages but skip OG, Cambridge IELTS papers, and TOEFL TPO",
+            type: "minor",
+            title: "Resource Detour",
+            desc: "Start with core prep sources: official guides, Cambridge IELTS past-paper series, and TOEFL TPO-style online practice. Fancy shortcuts cannot replace timed practice and error analysis."
+        },
+        {
             text: "Naming all documents '1.pdf'",
             type: "minor",
             title: "🟢 Impression Blunder",
@@ -212,8 +284,9 @@
         }
     ];
 
+    const MAX_HP = 6;
     let currentIndex = 0;
-    let hp = 3;
+    let hp = MAX_HP;
     let isAnimating = false;
 
     const orb = document.getElementById('mineOrb');
@@ -255,7 +328,7 @@
             // Incorrect: Trigger shake and red screen
             isAnimating = true;
             hp--;
-            hpText.innerText = "Shield: " + "❤️".repeat(hp) + "🖤".repeat(3-hp);
+            renderShield();
 
             orb.classList.add('shake');
             overlay.classList.add('active');
@@ -295,7 +368,8 @@
             nextBtn.innerText = "Retry Trial";
             nextBtn.onclick = () => {
                 toast.classList.remove('show');
-                hp = 3; hpText.innerText = "Shield: ❤️❤️❤️";
+                hp = MAX_HP;
+                renderShield();
                 currentIndex = 0;
                 loadMine();
             };
@@ -325,6 +399,10 @@
         };
 
         toast.classList.add('show');
+    }
+
+    function renderShield() {
+        hpText.innerText = "Shield: " + "❤️".repeat(hp) + "🖤".repeat(MAX_HP - hp);
     }
 
     // Start Game
