@@ -1,15 +1,39 @@
 <template>
-  <component :is="currentGame" :levelId="levelId" />
+  <div class="game-shell">
+    <div class="game-modal-content">
+      <div class="modal-header">
+        <button class="back-btn" @click="goBack">
+          <i class="fas fa-arrow-left"></i> Back To Map
+        </button>
+        <span>{{ levelTitle }}</span>
+        <span class="year-chip">{{ store.year === 'y2' ? 'Year 2' : 'Year 3' }}</span>
+      </div>
+
+      <div class="game-stage">
+        <component :is="currentGame" :level-id="levelId" @complete="handleChildComplete" @close="goBack" />
+      </div>
+
+      <div class="game-actions" v-if="!isMissingLevel">
+        <button class="action-btn secondary" @click="skipLevel">
+          Skip And Unlock Next
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
 import { computed, defineAsyncComponent, watchEffect } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { getLevelDefinition } from '@/config/levels'
 import { useGameStore } from '@/stores/game'
 
 const route = useRoute()
+const router = useRouter()
 const store = useGameStore()
+
+store.hydrate()
+
 const levelId = computed(() => Number.parseInt(route.params.id, 10))
 const gameModules = import.meta.glob('./games/*.vue')
 
@@ -20,27 +44,172 @@ watchEffect(() => {
   }
 })
 
+const levelDefinition = computed(() => getLevelDefinition(store.year, levelId.value))
+
 const MissingLevelView = {
   template: `
-    <div style="min-height: 100vh; display: grid; place-items: center; padding: 24px; background: linear-gradient(145deg, #c2e4f5 0%, #aad0e8 100%);">
-      <div style="max-width: 520px; text-align: center; background: #fffcf3; border: 3px solid #e2bc7c; border-radius: 24px; padding: 32px; box-shadow: 0 25px 40px rgba(0, 0, 0, 0.2);">
-        <h2 style="margin-bottom: 12px; color: #2d5a6e;">关卡暂不可用</h2>
-        <p style="color: #4b5563; line-height: 1.6;">当前路由没有匹配到可加载的关卡文件，请返回地图重新进入。</p>
+    <div style="min-height: 360px; display: grid; place-items: center; padding: 24px; background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%); border-radius: 16px;">
+      <div style="max-width: 520px; text-align: center; background: #fffcf3; border: 3px solid #e2bc7c; border-radius: 24px; padding: 32px; box-shadow: 0 25px 40px rgba(0, 0, 0, 0.12);">
+        <h2 style="margin-bottom: 12px; color: #2d5a6e;">Level not available yet</h2>
+        <p style="color: #4b5563; line-height: 1.6;">The Vue route could not find a matching level component. Return to the map and choose another node.</p>
       </div>
     </div>
   `,
 }
 
-const currentGame = computed(() => {
-  const level = getLevelDefinition(store.year, levelId.value)
-  if (!level) return MissingLevelView
+const isMissingLevel = computed(() => {
+  if (!levelDefinition.value) return true
+  return !gameModules[`./games/${levelDefinition.value.file}`]
+})
 
-  const loader = gameModules[`./games/${level.file}`]
-  if (!loader) return MissingLevelView
+const currentGame = computed(() => {
+  if (isMissingLevel.value) return MissingLevelView
 
   return defineAsyncComponent({
-    loader,
+    loader: gameModules[`./games/${levelDefinition.value.file}`],
     errorComponent: MissingLevelView,
   })
 })
+
+const levelTitle = computed(() => {
+  if (!levelDefinition.value) return 'Loading Level...'
+  return `${store.year === 'y2' ? 'Y2' : 'Y3'}-${levelDefinition.value.id}: ${levelDefinition.value.name}`
+})
+
+function goBack() {
+  router.push({ name: 'map' })
+}
+
+function handleChildComplete(payload = {}) {
+  const profile = payload.profile || payload
+  const rewardCoins = Number(payload.rewardCoins) || 0
+  store.completeNode(store.year, levelId.value, { rewardCoins, profile })
+  goBack()
+}
+
+function skipLevel() {
+  store.skipLevel(levelId.value)
+  goBack()
+}
 </script>
+
+<style scoped>
+.game-shell {
+  min-height: 100vh;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(56, 189, 248, 0.16) 0%, transparent 18%),
+    radial-gradient(circle at 82% 16%, rgba(244, 114, 182, 0.14) 0%, transparent 18%),
+    radial-gradient(circle at 50% 80%, rgba(168, 85, 247, 0.12) 0%, transparent 20%),
+    linear-gradient(160deg, #070a14 0%, #110d1e 42%, #070b12 100%);
+}
+
+.game-modal-content {
+  background: #fffcf3;
+  width: 95%;
+  max-width: 1200px;
+  min-height: 88vh;
+  border-radius: 24px;
+  padding: 25px;
+  border: 3px solid #e2bc7c;
+  box-shadow: 0 25px 40px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  font-size: 1.5rem;
+  color: #2d5a6e;
+  border-bottom: 2px dashed #e7bc7a;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  font-weight: 900;
+  font-family: Georgia, serif;
+}
+
+.back-btn,
+.action-btn {
+  border: none;
+  border-radius: 999px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.back-btn {
+  padding: 10px 18px;
+  background: rgba(44, 90, 110, 0.1);
+  color: #2d5a6e;
+  border: 2px solid rgba(227, 178, 73, 0.35);
+}
+
+.back-btn:hover {
+  transform: translateY(-2px);
+}
+
+.year-chip {
+  font-size: 0.95rem;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #2c5a6e;
+  color: #ffdf99;
+}
+
+.game-stage {
+  flex: 1;
+  overflow: auto;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.game-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  padding: 12px 18px;
+}
+
+.action-btn.primary {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  box-shadow: 0 4px 0 rgba(146, 64, 14, 0.7);
+}
+
+.action-btn.secondary {
+  background: rgba(15, 23, 42, 0.08);
+  color: #334155;
+  border: 2px solid rgba(148, 163, 184, 0.24);
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+}
+
+@media (max-width: 880px) {
+  .modal-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .game-actions {
+    justify-content: stretch;
+  }
+
+  .action-btn,
+  .back-btn {
+    width: 100%;
+  }
+}
+</style>

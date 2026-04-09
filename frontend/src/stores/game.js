@@ -1,49 +1,210 @@
-// src/stores/game.js
 import { defineStore } from 'pinia'
 import { createInitialLevels } from '@/config/levels'
 
+const STORAGE_KEY = 'gradquest-vue-map-store'
+
+const createYearState = (year, coins) => ({
+  coins,
+  currentNode: 1,
+  levels: createInitialLevels(year),
+})
+
+const createDefaultState = () => ({
+  year: 'y2',
+  hydrated: false,
+  travelerProfile: null,
+  y2: createYearState('y2', 120),
+  y3: createYearState('y3', 80),
+})
+
+function mergeLevels(defaultLevels, savedLevels) {
+  if (!Array.isArray(savedLevels)) return defaultLevels
+
+  return defaultLevels.map((level, index) => {
+    const savedLevel = savedLevels.find((item) => item.id === level.id)
+    if (!savedLevel) {
+      return {
+        ...level,
+        unlocked: index === 0,
+      }
+    }
+
+    return {
+      ...level,
+      unlocked: Boolean(savedLevel.unlocked || index === 0),
+      completed: Boolean(savedLevel.completed),
+      skipped: Boolean(savedLevel.skipped),
+    }
+  })
+}
+
 export const useGameStore = defineStore('game', {
-  state: () => ({
-    year: 'y2',   // 当前显示的年份
-    y2: {
-      coins: 60,
-      levels: createInitialLevels('y2')
-    },
-    y3: {
-      coins: 80,
-      levels: createInitialLevels('y3')
-    }
-  }),
+  state: () => createDefaultState(),
   getters: {
-    currentLevels: (state) => state[state.year].levels,
-    currentCoins: (state) => state[state.year].coins,
-    nodeClass: (state) => (level) => {
-      if (level.completed) return 'completed'
-      if (level.skipped) return 'skipped'
-      if (!level.unlocked) return 'locked'
-      return ''
-    }
+    currentState: (state) => state[state.year],
+    currentLevels() {
+      return this.currentState.levels
+    },
+    currentCoins() {
+      return this.currentState.coins
+    },
+    travelerAvatar(state) {
+      return state.travelerProfile?.avatar || {
+        hairColor: '#3a2a25',
+        outfitColor: '#ffd46d',
+      }
+    },
   },
   actions: {
-    completeLevel(levelId, rewardCoins = 20) {
-      const levels = this.currentLevels
-      const level = levels.find(l => l.id === levelId)
-      if (!level || level.completed) return
-      level.completed = true
-      this[this.year].coins += rewardCoins
-      const nextLevel = levels.find(l => l.id === levelId + 1)
-      if (nextLevel && !nextLevel.unlocked) nextLevel.unlocked = true
+    hydrate() {
+      if (this.hydrated) return
+
+      const defaults = createDefaultState()
+
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')
+        if (!saved) {
+          this.hydrated = true
+          return
+        }
+
+        if (saved.year === 'y2' || saved.year === 'y3') {
+          this.year = saved.year
+        }
+
+        this.travelerProfile = saved.travelerProfile || null
+
+        ;['y2', 'y3'].forEach((year) => {
+          const target = this[year]
+          const fallback = defaults[year]
+          const source = saved[year] || {}
+
+          target.coins = Number.isFinite(source.coins) ? source.coins : fallback.coins
+          target.currentNode = Number.isFinite(source.currentNode) ? source.currentNode : fallback.currentNode
+          target.levels = mergeLevels(fallback.levels, source.levels)
+        })
+      } catch (error) {
+        console.warn('Failed to hydrate GradQuest Vue store.', error)
+      } finally {
+        this.hydrated = true
+      }
     },
-    skipLevel(levelId) {
-      const levels = this.currentLevels
-      const level = levels.find(l => l.id === levelId)
-      if (!level || level.completed) return
-      level.skipped = true
-      const nextLevel = levels.find(l => l.id === levelId + 1)
-      if (nextLevel && !nextLevel.unlocked) nextLevel.unlocked = true
+
+    persist() {
+      if (!this.hydrated) return
+
+      try {
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            year: this.year,
+            travelerProfile: this.travelerProfile,
+            y2: this.y2,
+            y3: this.y3,
+          }),
+        )
+      } catch (error) {
+        console.warn('Failed to persist GradQuest Vue store.', error)
+      }
     },
+
+    getLevel(year, levelId) {
+      return this[year]?.levels.find((level) => level.id === levelId) ?? null
+    },
+
+    isNodeAccessible(year, levelId) {
+      const level = this.getLevel(year, levelId)
+      return Boolean(level?.unlocked || level?.completed || level?.skipped)
+    },
+
     switchYear(year) {
+      if (year !== 'y2' && year !== 'y3') return
       this.year = year
-    }
-  }
+      this.persist()
+    },
+
+    setCurrentNode(year, levelId) {
+      if (!this.getLevel(year, levelId)) return
+      this[year].currentNode = levelId
+      this.persist()
+    },
+
+    setTravelerProfile(profile) {
+      this.travelerProfile = profile || null
+      this.persist()
+    },
+
+    completeNode(year, levelId, options = {}) {
+      const level = this.getLevel(year, levelId)
+      if (!level) return
+
+      const rewardCoins = Number.isFinite(options.rewardCoins) ? options.rewardCoins : 0
+      const wasCompleted = Boolean(level.completed || level.skipped)
+
+      level.unlocked = true
+      level.completed = true
+      level.skipped = false
+      this[year].currentNode = levelId
+
+      if (!wasCompleted && rewardCoins > 0) {
+        this[year].coins += rewardCoins
+      }
+
+      if (year === 'y2' && levelId === 1 && options.profile) {
+        this.travelerProfile = options.profile
+      }
+
+      const nextLevel = this.getLevel(year, levelId + 1)
+      if (nextLevel) {
+        nextLevel.unlocked = true
+      }
+
+      this.persist()
+    },
+
+    completeLevel(levelId, rewardCoins = 50) {
+      this.completeNode(this.year, levelId, { rewardCoins })
+    },
+
+    skipLevel(levelId) {
+      const level = this.getLevel(this.year, levelId)
+      if (!level || level.completed) return
+
+      level.unlocked = true
+      level.skipped = true
+      this[this.year].currentNode = levelId
+
+      const nextLevel = this.getLevel(this.year, levelId + 1)
+      if (nextLevel) {
+        nextLevel.unlocked = true
+      }
+
+      this.persist()
+    },
+
+    redeemCurrentCurrency(cost) {
+      if (!Number.isFinite(cost) || cost <= 0) return false
+      if (this[this.year].coins < cost) return false
+
+      this[this.year].coins -= cost
+      this.persist()
+      return true
+    },
+
+    resetStore() {
+      const defaults = createDefaultState()
+
+      this.year = defaults.year
+      this.travelerProfile = defaults.travelerProfile
+      this.y2 = defaults.y2
+      this.y3 = defaults.y3
+      this.hydrated = true
+
+      try {
+        localStorage.removeItem(STORAGE_KEY)
+      } catch (error) {
+        console.warn('Failed to clear GradQuest Vue store.', error)
+      }
+    },
+  },
 })
