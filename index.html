@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GradQuest | The Ultimate Roadmap</title>
+    <link rel="icon" type="image/png" href="./favicon.png" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <style>
         * {
@@ -16,11 +17,51 @@
         html, body { height: 100%; overflow: hidden; }
 
         body {
+            position: relative;
             height: 100vh; overflow: hidden; display: flex; justify-content: center; align-items: center; padding: 20px;
-            background: linear-gradient(145deg, #c7e7fb 0%, #a9d3ec 100%);
+            background:
+                radial-gradient(circle at 14% 16%, rgba(56, 189, 248, 0.18) 0%, transparent 22%),
+                radial-gradient(circle at 82% 14%, rgba(244, 114, 182, 0.16) 0%, transparent 20%),
+                radial-gradient(circle at 74% 78%, rgba(168, 85, 247, 0.16) 0%, transparent 24%),
+                radial-gradient(circle at 24% 82%, rgba(34, 197, 94, 0.12) 0%, transparent 18%),
+                linear-gradient(160deg, #070a14 0%, #110d1e 42%, #070b12 100%);
         }
 
-        .app-shell { width: 100%; max-width: 1180px; position: relative; padding-top: 70px; }
+        body::before,
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        body::before {
+            z-index: 0;
+            opacity: 0.92;
+            background-image:
+                radial-gradient(2.2px 2.2px at 24px 36px, rgba(255,255,255,0.95), transparent 58%),
+                radial-gradient(1.8px 1.8px at 84px 118px, rgba(255,255,255,0.8), transparent 58%),
+                radial-gradient(1.9px 1.9px at 156px 58px, rgba(147,197,253,0.82), transparent 58%),
+                radial-gradient(1.7px 1.7px at 208px 174px, rgba(244,114,182,0.76), transparent 58%),
+                radial-gradient(1.4px 1.4px at 116px 196px, rgba(196,181,253,0.78), transparent 58%),
+                radial-gradient(1.6px 1.6px at 52px 162px, rgba(250,204,21,0.7), transparent 58%);
+            background-size: 220px 220px, 280px 280px, 320px 320px, 360px 360px, 260px 260px, 300px 300px;
+            background-position: 0 0, 42px 58px, 112px 36px, 180px 100px, 74px 146px, 150px 14px;
+            filter: drop-shadow(0 0 6px rgba(255,255,255,0.2));
+            animation: starTwinkle 6.5s ease-in-out infinite alternate;
+        }
+
+        body::after {
+            z-index: 0;
+            opacity: 0.5;
+            background:
+                radial-gradient(circle at 50% 50%, rgba(255,255,255,0.06) 0%, transparent 52%),
+                radial-gradient(circle at 50% -10%, rgba(79, 172, 254, 0.1) 0%, transparent 36%),
+                radial-gradient(circle at 50% 110%, rgba(236, 72, 153, 0.1) 0%, transparent 34%);
+            animation: nebulaShift 14s ease-in-out infinite alternate;
+        }
+
+        .app-shell { width: 100%; max-width: 1180px; position: relative; padding-top: 70px; z-index: 1; }
 
         .top-switcher { display: flex; gap: 10px; margin-bottom: 16px; position: absolute; top: 10px; right: 0; z-index: 50;}
 
@@ -30,6 +71,7 @@
         }
         .switch-btn.primary { background: #2c5a6e; color: #fff3c0; border: 2px solid #ffcf7a; }
         .switch-btn.secondary { background: #f6e7be; color: #2c5a6e; border: 2px solid #e3be73; }
+        .switch-btn.danger { background: #8f2f1e; color: #fff4ec; border: 2px solid #ffc1a8; }
         .switch-btn:hover { transform: translateY(-2px); }
         .switch-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.2); }
 
@@ -40,6 +82,20 @@
         }
         .board.active { display: flex; animation: fadeIn 0.4s ease;}
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes starTwinkle {
+            0% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.015); }
+            100% { opacity: 0.72; transform: scale(1.03); }
+        }
+        @keyframes mapStarTwinkle {
+            0% { opacity: 0.42; filter: brightness(0.9); }
+            50% { opacity: 0.95; filter: brightness(1.25); }
+            100% { opacity: 0.64; filter: brightness(1); }
+        }
+        @keyframes nebulaShift {
+            0% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.4; }
+            100% { transform: translate3d(0, -10px, 0) scale(1.04); opacity: 0.62; }
+        }
 
         .header {
             background: rgba(255, 250, 235, 0.85); backdrop-filter: blur(8px); padding: 16px 30px;
@@ -65,9 +121,10 @@
 
         .map-area {
             flex: 1; position: relative; overflow: hidden;
-            background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.45), transparent 20%),
-            radial-gradient(circle at 80% 30%, rgba(255,255,255,0.35), transparent 20%),
-            linear-gradient(180deg, #e8f5ea 0%, #dff0e4 100%);
+            background:
+                radial-gradient(circle at 20% 20%, rgba(255,255,255,0.14), transparent 18%),
+                radial-gradient(circle at 80% 30%, rgba(255,255,255,0.1), transparent 18%),
+                linear-gradient(180deg, #0c101a 0%, #070912 100%);
         }
         .y2.board {
             background: rgba(15, 23, 42, 0.74);
@@ -92,14 +149,45 @@
         }
         .y2 .map-area {
             background:
-                radial-gradient(circle at 50% 50%, rgba(112, 48, 160, 0.22) 0%, transparent 68%),
-                radial-gradient(circle at 10% 10%, rgba(79, 172, 254, 0.08), transparent 22%),
-                radial-gradient(circle at 85% 85%, rgba(79, 172, 254, 0.08), transparent 22%),
-                linear-gradient(180deg, #0f172a 0%, #0a0e14 100%);
+                radial-gradient(circle at 16% 18%, rgba(79, 172, 254, 0.16) 0%, transparent 18%),
+                radial-gradient(circle at 78% 16%, rgba(236, 72, 153, 0.14) 0%, transparent 18%),
+                radial-gradient(circle at 50% 54%, rgba(112, 48, 160, 0.24) 0%, transparent 34%),
+                radial-gradient(circle at 82% 82%, rgba(250, 204, 21, 0.1) 0%, transparent 18%),
+                linear-gradient(180deg, #0a1020 0%, #060913 100%);
         }
         .y2-map-shell {
             position: absolute;
             inset: 0;
+        }
+        .y2-map-shell::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.9;
+            background-image:
+                radial-gradient(2px 2px at 18px 26px, rgba(255,255,255,0.92), transparent 58%),
+                radial-gradient(1.6px 1.6px at 76px 114px, rgba(255,255,255,0.72), transparent 58%),
+                radial-gradient(1.7px 1.7px at 138px 54px, rgba(147,197,253,0.8), transparent 58%),
+                radial-gradient(1.6px 1.6px at 212px 88px, rgba(244,114,182,0.72), transparent 58%),
+                radial-gradient(1.5px 1.5px at 112px 172px, rgba(196,181,253,0.76), transparent 58%);
+            background-size: 180px 180px, 240px 240px, 280px 280px, 320px 320px, 220px 220px;
+            background-position: 0 0, 30px 48px, 100px 26px, 148px 92px, 66px 132px;
+            filter: drop-shadow(0 0 6px rgba(255,255,255,0.16));
+            animation: mapStarTwinkle 5.6s ease-in-out infinite alternate;
+        }
+        .y2-map-shell::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.45;
+            background:
+                radial-gradient(circle at 50% 48%, rgba(168, 85, 247, 0.14) 0%, transparent 30%),
+                radial-gradient(circle at 28% 78%, rgba(96, 165, 250, 0.08) 0%, transparent 18%),
+                radial-gradient(circle at 76% 76%, rgba(250, 204, 21, 0.08) 0%, transparent 18%);
         }
         .y2-orb {
             position: absolute;
@@ -108,12 +196,12 @@
             border-radius: 50%;
             pointer-events: none;
             filter: blur(120px);
-            opacity: 0.14;
+            opacity: 0.18;
             z-index: 0;
-            background: #7030a0;
+            background: #8b5cf6;
         }
         .y2-orb.top-left { top: -80px; left: -80px; }
-        .y2-orb.bottom-right { right: -80px; bottom: -80px; background: #4facfe; opacity: 0.1; }
+        .y2-orb.bottom-right { right: -80px; bottom: -80px; background: #ec4899; opacity: 0.14; }
         .y2-magic-svg {
             position: absolute;
             inset: 0;
@@ -195,20 +283,149 @@
 
         .star-svg, .path-svg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
 
+        .y3.board {
+            background: rgba(18, 16, 28, 0.82);
+            border-color: rgba(255, 187, 166, 0.2);
+            box-shadow: 0 0 60px rgba(0,0,0,0.68), inset 0 0 40px rgba(249, 115, 22, 0.14);
+        }
+        .y3 .header {
+            background: linear-gradient(to bottom, rgba(255, 186, 138, 0.1), transparent);
+            border-bottom: 1px solid rgba(255, 187, 166, 0.16);
+        }
+        .y3 .header h1 {
+            color: #ffd9ba;
+            text-shadow: 0 0 12px rgba(255, 186, 138, 0.35);
+        }
+        .y3 .btn-action {
+            background: rgba(255,255,255,0.06);
+            color: #fff2e8;
+            border-color: rgba(255, 187, 166, 0.3);
+            box-shadow: 0 4px 0 rgba(28, 10, 8, 0.45);
+        }
+        .y3 .coin-panel {
+            background: rgba(138, 42, 22, 0.45);
+            color: #ffe7da;
+            border-color: #ffbba6;
+            box-shadow: 0 0 18px rgba(255, 187, 166, 0.18);
+        }
+        .y3 .map-area {
+            background:
+                radial-gradient(circle at 16% 20%, rgba(96, 165, 250, 0.14) 0%, transparent 18%),
+                radial-gradient(circle at 78% 18%, rgba(244, 63, 94, 0.16) 0%, transparent 20%),
+                radial-gradient(circle at 50% 50%, rgba(249, 115, 22, 0.22) 0%, transparent 32%),
+                radial-gradient(circle at 76% 78%, rgba(250, 204, 21, 0.12) 0%, transparent 18%),
+                radial-gradient(circle at 28% 80%, rgba(168, 85, 247, 0.12) 0%, transparent 18%),
+                linear-gradient(180deg, #120c1c 0%, #060810 100%);
+        }
+        .y3-map-shell {
+            position: absolute;
+            inset: 0;
+        }
+        .y3-map-shell::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.9;
+            background-image:
+                radial-gradient(2px 2px at 24px 30px, rgba(255,255,255,0.94), transparent 58%),
+                radial-gradient(1.6px 1.6px at 88px 126px, rgba(255,255,255,0.72), transparent 58%),
+                radial-gradient(1.8px 1.8px at 154px 60px, rgba(196,181,253,0.8), transparent 58%),
+                radial-gradient(1.7px 1.7px at 210px 96px, rgba(250,204,21,0.68), transparent 58%),
+                radial-gradient(1.5px 1.5px at 110px 176px, rgba(96,165,250,0.74), transparent 58%);
+            background-size: 185px 185px, 245px 245px, 295px 295px, 330px 330px, 225px 225px;
+            background-position: 0 0, 38px 56px, 110px 34px, 160px 96px, 72px 136px;
+            filter: drop-shadow(0 0 6px rgba(255,255,255,0.16));
+            animation: mapStarTwinkle 5.2s ease-in-out infinite alternate-reverse;
+        }
+        .y3-map-shell::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.42;
+            background:
+                radial-gradient(circle at 50% 48%, rgba(249, 115, 22, 0.12) 0%, transparent 28%),
+                radial-gradient(circle at 24% 76%, rgba(168, 85, 247, 0.08) 0%, transparent 18%),
+                radial-gradient(circle at 78% 78%, rgba(56, 189, 248, 0.08) 0%, transparent 18%);
+        }
+        .y3-orb {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            pointer-events: none;
+            filter: blur(120px);
+            opacity: 0.18;
+            z-index: 0;
+            background: #fb7185;
+        }
+        .y3-orb.top-left { top: -90px; left: -80px; background: #8b5cf6; }
+        .y3-orb.bottom-right { right: -90px; bottom: -90px; background: #22d3ee; opacity: 0.14; }
+        .y3-orb.center { left: 50%; top: 50%; width: 360px; height: 360px; transform: translate(-50%, -50%); background: #f97316; opacity: 0.1; }
+
         /* Year 3 Roads */
-        .star-glow { fill: none; stroke: #8fd5ff; stroke-width: 82; stroke-linejoin: round; stroke-linecap: round; filter: blur(4px); }
-        .star-road { fill: none; stroke: #479fdc; stroke-width: 38; stroke-linejoin: round; stroke-linecap: round; }
+        .star-svg {
+            filter: drop-shadow(0 0 22px rgba(249, 115, 22, 0.24));
+        }
+        .star-underlay {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.04);
+            stroke-width: 92;
+            stroke-linejoin: round;
+            stroke-linecap: round;
+        }
+        .star-glow {
+            fill: none;
+            stroke: #f97316;
+            stroke-width: 34;
+            stroke-linejoin: round;
+            stroke-linecap: round;
+            opacity: 0.38;
+            filter: blur(12px);
+        }
+        .star-road {
+            fill: none;
+            stroke: url(#y3StarGradient);
+            stroke-width: 16;
+            stroke-linejoin: round;
+            stroke-linecap: round;
+            stroke-dasharray: 20 18;
+            animation: y3Flow 20s linear infinite;
+        }
+        .star-core {
+            fill: none;
+            stroke: rgba(255, 237, 213, 0.24);
+            stroke-width: 6;
+            stroke-linejoin: round;
+            stroke-linecap: round;
+        }
+        @keyframes y3Flow {
+            from { stroke-dashoffset: 320; }
+            to { stroke-dashoffset: 0; }
+        }
 
-        /* Year 2 Roads */
-        .road { fill: none; stroke: #6ec1ff; stroke-width: 45; stroke-linecap: round; stroke-linejoin: round; filter: blur(3px); }
-        .road-core { fill: none; stroke: #4aa3df; stroke-width: 22; stroke-linecap: round; stroke-linejoin: round; }
-        .road, .road-core { transform: scale(1.65, 1.45) translate(35px, 28px); transform-origin: center; }
-
-        .node {
-            position: absolute; z-index: 15; width: 68px; height: 68px; border-radius: 50%;
-            display: flex; justify-content: center; align-items: center; background: #1f2b33;
-            border: 3px solid #f7d38b; color: #fff; font-size: 1.55rem; box-shadow: 0 6px 0 #101920;
-            cursor: pointer; transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        .y3 .node {
+            --y3-node-size: 56px;
+            --y3-node-offset: 28px;
+            position: absolute;
+            z-index: 15;
+            width: var(--y3-node-size);
+            height: var(--y3-node-size);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(15, 23, 42, 0.92);
+            border: 3px solid #ffd7a1;
+            color: #fff7ed;
+            font-size: 1.35rem;
+            box-shadow: 0 0 18px rgba(255, 166, 92, 0.22);
+            cursor: pointer;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease, background 0.2s ease;
+            backdrop-filter: blur(6px);
         }
         .node-icon-stack {
             position: relative;
@@ -231,50 +448,84 @@
             color: #ffe08a;
             text-shadow: 0 0 4px rgba(255, 224, 138, 0.65);
         }
-        .node:hover { transform: translateY(-4px) scale(1.04); box-shadow: 0 10px 0 #101920; border-color: #fff;}
-
-        .y3 .node { background: #4a1911; border-color: #ffbba6; box-shadow: 0 6px 0 #2a0b06; }
-        .y3 .node:hover { box-shadow: 0 10px 0 #2a0b06; }
-        .y3 .node.final { background: #eab308; border-color: #fff; }
-        .y2 .node.final { background: #0284c7; border-color: #7dd3fc; }
-
-        .node.final i, .node.final .fa-star { color: #ffdf7b; filter: drop-shadow(0 0 4px gold); animation: pulseStar 1.4s infinite; }
+        .y3 .node:hover {
+            transform: translateY(-4px) scale(1.04);
+            border-color: #ffe6ba;
+            box-shadow: 0 0 24px rgba(255, 183, 77, 0.44);
+        }
+        .y3 .node i,
+        .y3 .node .icon-base {
+            color: #ffd7a1;
+        }
+        .y3 .node .icon-top {
+            color: #ffe9a8;
+            text-shadow: 0 0 6px rgba(255, 224, 138, 0.7);
+        }
+        .y3 .node.final {
+            border-width: 4px;
+            border-color: #ffe08a;
+            box-shadow: 0 0 26px rgba(255, 224, 138, 0.45);
+        }
+        .y3 .node.final i,
+        .y3 .node.final .fa-star,
+        .y3 .node.final .icon-base {
+            color: #ffe08a;
+            filter: drop-shadow(0 0 6px rgba(255, 224, 138, 0.76));
+            animation: pulseStar 1.4s infinite;
+        }
         @keyframes pulseStar { 0% { transform: scale(1); opacity: 0.92; } 50% { transform: scale(1.2); opacity: 1; text-shadow: 0 0 5px gold;} 100% { transform: scale(1); opacity: 0.92; } }
-        .node.completed {
-            background: #2f855a;
-            border-color: #b9f6ca;
-            box-shadow: 0 6px 0 #1f5b3d;
-        }
         .y3 .node.completed {
-            background: #c2410c;
-            border-color: #fed7aa;
-            box-shadow: 0 6px 0 #7c2d12;
+            background: #1b2336;
+            border-color: #fbbf24;
+            box-shadow: 0 0 24px rgba(251, 191, 36, 0.42);
         }
-        .node.locked {
+        .y3 .node.completed i,
+        .y3 .node.completed .icon-base,
+        .y3 .node.completed .icon-top {
+            color: #fcd34d;
+        }
+        .y3 .node.locked {
             filter: grayscale(0.9);
-            opacity: 0.58;
+            opacity: 0.62;
             cursor: not-allowed;
         }
-        .node.locked:hover {
+        .y3 .node.locked:hover {
             transform: none;
-            border-color: inherit;
-            box-shadow: 0 6px 0 #101920;
+            border-color: #ffbba6;
+            box-shadow: 0 0 18px rgba(255, 166, 92, 0.18);
         }
-        .y3 .node.locked:hover { box-shadow: 0 6px 0 #2a0b06; }
 
-        .node-label {
-            position: absolute; top: 74px; left: 50%; transform: translateX(-50%); min-width: 140px;
-            text-align: center; font-size: 0.8rem; font-weight: 900; color: #224d61;
-            background: rgba(255, 251, 235, 0.95); border-radius: 999px; padding: 5px 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1); white-space: nowrap; pointer-events: none; border: 1px solid #f3cf9a;
+        .y3 .node-label {
+            position: absolute;
+            top: calc(var(--y3-node-size) + 12px);
+            left: 50%;
+            transform: translateX(-50%);
+            min-width: 140px;
+            text-align: center;
+            font-size: 0.82rem;
+            font-weight: 900;
+            color: #f8fafc;
+            background: none;
+            border: none;
+            padding: 0;
+            box-shadow: none;
+            white-space: nowrap;
+            pointer-events: none;
+            text-shadow: 0 0 10px rgba(0,0,0,0.85);
         }
-        .y3 .node-label { color: #8a2a16; background: rgba(255, 240, 235, 0.95); border-color: #ffbba6;}
 
-        .y3 .n1 { left: 45.5%; top: 6.5%; } .y3 .n2 { left: 66.5%; top: 18.5%; } .y3 .n3 { left: 78.5%; top: 44%; } .y3 .n4 { left: 66.5%; top: 69.5%; }
-        .y3 .n5 { left: 45.5%; top: 81.5%; } .y3 .n6 { left: 24.5%; top: 69.5%; } .y3 .n7 { left: 12.5%; top: 44%; } .y3 .n8 { left: 24.5%; top: 18.5%; }
-
-        .y2 .n1 { top: 10%; left: 24%; } .y2 .n2 { top: 26%; left: 10%; } .y2 .n3 { top: 46%; left: 24%; } .y2 .n4 { top: 68%; left: 40%; }
-        .y2 .n5 { top: 66%; left: 66%; } .y2 .n6 { top: 42%; left: 74%; } .y2 .n7 { top: 18%; left: 58%; }
+        .y3 .n1 { left: calc(48.71% - var(--y3-node-offset)); top: calc(4.31% - var(--y3-node-offset)); }
+        .y3 .n2 { left: calc(67.47% - var(--y3-node-offset)); top: calc(17.34% - var(--y3-node-offset)); }
+        .y3 .n3 { left: calc(75.23% - var(--y3-node-offset)); top: calc(48.82% - var(--y3-node-offset)); }
+        .y3 .n4 { left: calc(67.47% - var(--y3-node-offset)); top: calc(80.30% - var(--y3-node-offset)); }
+        .y3 .n5 { left: calc(48.71% - var(--y3-node-offset)); top: calc(93.33% - var(--y3-node-offset)); }
+        .y3 .n6 { left: calc(29.96% - var(--y3-node-offset)); top: calc(80.30% - var(--y3-node-offset)); }
+        .y3 .n7 { left: calc(22.19% - var(--y3-node-offset)); top: calc(48.82% - var(--y3-node-offset)); }
+        .y3 .n8 { left: calc(29.96% - var(--y3-node-offset)); top: calc(17.34% - var(--y3-node-offset)); }
+        .y3 .n5 .node-label {
+            top: auto;
+            bottom: calc(var(--y3-node-size) + 12px);
+        }
 
         /* Traveler Character */
         .traveler {
@@ -282,9 +533,8 @@
             transition: left 0.8s cubic-bezier(0.22, 1, 0.36, 1), top 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.25s ease;
             transform: translate(-50%, -92%);
             --traveler-hair: #3a2a25;
-            --traveler-outfit: #7dc6ff;
+            --traveler-outfit: #ffd46d;
         }
-        .y2 .traveler { --traveler-outfit: #ffd46d; }
         .traveler.hidden { display: none; }
         .traveler.walking { animation: bobWalk 0.55s ease-in-out infinite; }
         @keyframes bobWalk { 0% { transform: translate(-50%, -92%) rotate(-1deg); } 50% { transform: translate(-50%, -96%) rotate(1deg); } 100% { transform: translate(-50%, -92%) rotate(-1deg); } }
@@ -406,6 +656,53 @@
         }
         .shop-note { margin-top: 15px; text-align: center; color: #7a6a54; font-size: 0.85rem; font-style: italic;}
 
+        .confirm-modal-content {
+            background: #fffcf4;
+            width: 92%;
+            max-width: 520px;
+            border-radius: 26px;
+            padding: 30px;
+            border: 3px solid #e2bc7c;
+            box-shadow: 0 20px 32px rgba(0,0,0,0.32);
+        }
+        .confirm-modal-content h2 {
+            margin: 0 0 12px;
+            color: #7c2d12;
+            font-family: "Georgia", serif;
+            font-size: 1.6rem;
+        }
+        .confirm-modal-content p {
+            margin: 0 0 22px;
+            color: #6b4f43;
+            line-height: 1.6;
+            font-size: 1rem;
+        }
+        .confirm-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .confirm-btn {
+            border: none;
+            border-radius: 999px;
+            padding: 12px 18px;
+            font-weight: 900;
+            cursor: pointer;
+            transition: 0.18s;
+        }
+        .confirm-btn:hover { transform: translateY(-2px); }
+        .confirm-btn.cancel {
+            background: rgba(30, 41, 59, 0.08);
+            color: #334155;
+            border: 2px solid rgba(148, 163, 184, 0.28);
+        }
+        .confirm-btn.reset {
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
+            color: #fff;
+            box-shadow: 0 8px 18px rgba(185, 28, 28, 0.22);
+        }
+
         @media (max-width: 960px) {
             .board { max-height: 720px; }
             .node { width: 60px; height: 60px; font-size: 1.35rem; }
@@ -421,6 +718,7 @@
     <div class="top-switcher">
         <button class="switch-btn secondary" id="btnY2" onclick="switchBoard('year2')"><i class="fas fa-map"></i> Year 2</button>
         <button class="switch-btn primary" id="btnY3" onclick="switchBoard('year3')"><i class="fas fa-fire"></i> Year 3</button>
+        <button class="switch-btn danger" id="btnReset" onclick="openResetModal()"><i class="fas fa-rotate-left"></i> Reset</button>
     </div>
 
     <div class="board y2 active" id="year2Board">
@@ -490,7 +788,7 @@
                 </svg>
             </div>
 
-            <div id="travelerY2" class="traveler hidden">
+            <div id="travelerY2" class="traveler">
                 <div class="traveler-shadow"></div>
                 <div class="traveler-body">
                     <div class="traveler-hair"></div>
@@ -517,51 +815,66 @@
         </div>
 
         <div class="map-area">
-            <svg class="star-svg" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet">
-                <path class="star-glow" d="M284 351.5 388.257 259.513 383.437 124.872 526.06 129.423 623.5 31 720.94 129.423 863.563 124.872 858.743 259.513 963 351.5 858.743 443.487 863.563 578.128 720.94 573.577 623.5 672 526.06 573.577 383.437 578.128 388.257 443.487Z" />
-                <path class="star-road" d="M284 351.5 388.257 259.513 383.437 124.872 526.06 129.423 623.5 31 720.94 129.423 863.563 124.872 858.743 259.513 963 351.5 858.743 443.487 863.563 578.128 720.94 573.577 623.5 672 526.06 573.577 383.437 578.128 388.257 443.487Z" />
-            </svg>
+            <div class="y3-map-shell">
+                <div class="y3-orb top-left"></div>
+                <div class="y3-orb bottom-right"></div>
+                <div class="y3-orb center"></div>
 
-            <div id="travelerY3" class="traveler">
-                <div class="traveler-shadow"></div>
-                <div class="traveler-body">
-                    <div class="traveler-hair"></div>
-                    <div class="traveler-face">
-                        <span class="eye left"></span><span class="eye right"></span>
-                        <span class="blush left"></span><span class="blush right"></span>
-                        <span class="mouth"></span>
+                <svg class="star-svg" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet">
+                    <defs>
+                        <linearGradient id="y3StarGradient" x1="14%" y1="0%" x2="86%" y2="100%">
+                            <stop offset="0%" stop-color="#60a5fa"></stop>
+                            <stop offset="45%" stop-color="#fb7185"></stop>
+                            <stop offset="100%" stop-color="#fbbf24"></stop>
+                        </linearGradient>
+                    </defs>
+                    <path class="star-underlay" d="M284 351.5 388.257 259.513 383.437 124.872 526.06 129.423 623.5 31 720.94 129.423 863.563 124.872 858.743 259.513 963 351.5 858.743 443.487 863.563 578.128 720.94 573.577 623.5 672 526.06 573.577 383.437 578.128 388.257 443.487Z" />
+                    <path class="star-glow" d="M284 351.5 388.257 259.513 383.437 124.872 526.06 129.423 623.5 31 720.94 129.423 863.563 124.872 858.743 259.513 963 351.5 858.743 443.487 863.563 578.128 720.94 573.577 623.5 672 526.06 573.577 383.437 578.128 388.257 443.487Z" />
+                    <path class="star-road" d="M284 351.5 388.257 259.513 383.437 124.872 526.06 129.423 623.5 31 720.94 129.423 863.563 124.872 858.743 259.513 963 351.5 858.743 443.487 863.563 578.128 720.94 573.577 623.5 672 526.06 573.577 383.437 578.128 388.257 443.487Z" />
+                    <path class="star-core" d="M284 351.5 388.257 259.513 383.437 124.872 526.06 129.423 623.5 31 720.94 129.423 863.563 124.872 858.743 259.513 963 351.5 858.743 443.487 863.563 578.128 720.94 573.577 623.5 672 526.06 573.577 383.437 578.128 388.257 443.487Z" />
+                </svg>
+
+                <div id="travelerY3" class="traveler">
+                    <div class="traveler-shadow"></div>
+                    <div class="traveler-body">
+                        <div class="traveler-hair"></div>
+                        <div class="traveler-face">
+                            <span class="eye left"></span><span class="eye right"></span>
+                            <span class="blush left"></span><span class="blush right"></span>
+                            <span class="mouth"></span>
+                        </div>
+                        <div class="traveler-arm left"></div><div class="traveler-arm right"></div>
+                        <div class="traveler-leg left"></div><div class="traveler-leg right"></div>
                     </div>
-                    <div class="traveler-arm left"></div><div class="traveler-arm right"></div>
-                    <div class="traveler-leg left"></div><div class="traveler-leg right"></div>
                 </div>
-            </div>
 
-            <div class="node n1" onclick="handleNodeClick('y3', 1, 'year3_1.html', 'Y3-1: Crucible of Truth')">
-                <i class="fas fa-hourglass-half"></i><div class="node-label">1. Timeline</div>
-            </div>
-            <div class="node n2" onclick="handleNodeClick('y3', 2, 'year3_2.html', 'Y3-2: Bureau of Magic')">
-                <i class="fas fa-cubes"></i><div class="node-label">2. Material Types</div>
-            </div>
-            <div class="node n3" onclick="handleNodeClick('y3', 3, 'year3_3.html', 'Y3-3: Clinic of Truth')">
-                <i class="fas fa-microscope"></i><div class="node-label">3. CV Surgery</div>
-            </div>
-            <div class="node n4" onclick="handleNodeClick('y3', 4, 'year3_4.html', 'Y3-4: Constellation of Memories')">
-                <span class="node-icon-stack" aria-hidden="true">
-                    <i class="fas fa-book-open icon-base"></i>
-                    <i class="fas fa-pen-nib icon-top"></i>
-                </span><div class="node-label">4. PS Weaving</div>
-            </div>
-            <div class="node n5" onclick="handleNodeClick('y3', 5, 'year3_5.html', 'Y3-5: Tsundere Mentor')">
-                <i class="fas fa-cat"></i><div class="node-label">5. Recommendation</div>
-            </div>
-            <div class="node n6" onclick="handleNodeClick('y3', 6, 'year3_6.html', 'Y3-6: The Dark Citadel')">
-                <i class="fas fa-calendar-alt"></i><div class="node-label">6. Exam Combat</div>
-            </div>
-            <div class="node n7" onclick="handleNodeClick('y3', 7, 'year3_7.html', 'Y3-7: DIY Bog Sweeper')">
-                <i class="fas fa-biohazard"></i><div class="node-label">7. Evade Traps</div>
-            </div>
-            <div class="node n8 final" onclick="handleNodeClick('y3', 8, 'year3_8.html', 'Y3-8: The Astral Coronation Hall')">
-                <i class="fas fa-crown"></i><div class="node-label">8. Coronation</div>
+                <div class="node n1" onclick="handleNodeClick('y3', 1, 'year3_1.html', 'Y3-1: Crucible of Truth')">
+                    <i class="fas fa-hourglass-half"></i><div class="node-label">1. Timeline</div>
+                </div>
+                <div class="node n2" onclick="handleNodeClick('y3', 2, 'year3_2.html', 'Y3-2: Bureau of Magic')">
+                    <i class="fas fa-cubes"></i><div class="node-label">2. Material Types</div>
+                </div>
+                <div class="node n3" onclick="handleNodeClick('y3', 3, 'year3_3.html', 'Y3-3: Clinic of Truth')">
+                    <i class="fas fa-microscope"></i><div class="node-label">3. CV Surgery</div>
+                </div>
+                <div class="node n4" onclick="handleNodeClick('y3', 4, 'year3_4.html', 'Y3-4: Constellation of Memories')">
+                    <span class="node-icon-stack" aria-hidden="true">
+                        <i class="fas fa-book-open icon-base"></i>
+                        <i class="fas fa-pen-nib icon-top"></i>
+                    </span><div class="node-label">4. PS Weaving</div>
+                </div>
+                <div class="node n5" onclick="handleNodeClick('y3', 5, 'year3_5.html', 'Y3-5: Tsundere Mentor')">
+                    <i class="fas fa-cat"></i><div class="node-label">5. Recommendation</div>
+                </div>
+                <div class="node n6" onclick="handleNodeClick('y3', 6, 'year3_6.html', 'Y3-6: The Dark Citadel')">
+                    <i class="fas fa-calendar-alt"></i><div class="node-label">6. Exam Combat</div>
+                </div>
+                <div class="node n7" onclick="handleNodeClick('y3', 7, 'year3_7.html', 'Y3-7: DIY Bog Sweeper')">
+                    <i class="fas fa-biohazard"></i><div class="node-label">7. Evade Traps</div>
+                </div>
+                <div class="node n8 final" onclick="handleNodeClick('y3', 8, 'year3_8.html', 'Y3-8: The Astral Coronation Hall')">
+                    <i class="fas fa-crown"></i><div class="node-label">8. Coronation</div>
+                </div>
             </div>
         </div>
     </div>
@@ -631,6 +944,17 @@
     </div>
 </div>
 
+<div class="modal-overlay" id="resetModal">
+    <div class="confirm-modal-content">
+        <h2><i class="fas fa-triangle-exclamation"></i> Reset Game?</h2>
+        <p>This will clear both Year 2 and Year 3 progress, currency, avatar settings, and unlocked nodes. This action cannot be undone.</p>
+        <div class="confirm-actions">
+            <button class="confirm-btn cancel" onclick="closeResetModal()">Cancel</button>
+            <button class="confirm-btn reset" onclick="confirmResetGame()">Yes, Reset Everything</button>
+        </div>
+    </div>
+</div>
+
 <script>
     function createCompletedNodes(total, completedUpTo = 0) {
         const progress = {};
@@ -652,12 +976,16 @@
         return progress;
     }
 
+    function createDefaultStoreState() {
+        return {
+            activeBoard: "year2",
+            y2: { coins: 120, currentNode: 1, identityUnlocked: false, identityProfile: null, completedNodes: createCompletedNodes(7) },
+            y3: { coins: 80, currentNode: 1, completedNodes: createCompletedNodes(8) }
+        };
+    }
+
     // State Store
-    const store = {
-        activeBoard: "year2",
-        y2: { coins: 120, currentNode: 1, identityUnlocked: false, identityProfile: null, completedNodes: createCompletedNodes(7) },
-        y3: { coins: 80, currentNode: 1, completedNodes: createCompletedNodes(8) }
-    };
+    const store = createDefaultStoreState();
 
     const STORAGE_KEY = "gradquest-map-store";
 
@@ -707,18 +1035,69 @@
         }
     }
 
+    function openResetModal() {
+        document.getElementById("resetModal").classList.add("active");
+    }
+
+    function closeResetModal() {
+        document.getElementById("resetModal").classList.remove("active");
+    }
+
+    function closeTransientUi() {
+        closeResetModal();
+        closePrizeShop();
+        closeHealingSandbox();
+        closeGame();
+
+        const redeemLog = document.getElementById("redeemLog");
+        if (redeemLog) {
+            redeemLog.style.display = "none";
+            redeemLog.innerHTML = "";
+        }
+    }
+
+    function resetStoreData() {
+        const defaults = createDefaultStoreState();
+        store.activeBoard = defaults.activeBoard;
+        store.y2 = defaults.y2;
+        store.y3 = defaults.y3;
+    }
+
+    function confirmResetGame() {
+        closeTransientUi();
+        resetStoreData();
+
+        try {
+            localStorage.removeItem(STORAGE_KEY);
+        } catch (error) {
+            console.warn("Failed to clear stored map state.", error);
+        }
+
+        applyTravelerProfile(null);
+        syncCoinDisplays();
+        applyNodeStates();
+        switchBoard("year2");
+        updateYear2TravelerVisibility();
+        moveTravelerToNode(store.y3.currentNode, "y3");
+        saveStore();
+    }
+
     function syncCoinDisplays() {
         document.getElementById("coinDisplayY2").innerText = store.y2.coins;
         document.getElementById("coinDisplayY3").innerText = store.y3.coins;
     }
 
-    function applyYear2AvatarProfile(profile) {
-        const traveler = document.getElementById("travelerY2");
-        if (!traveler) return;
-
+    function applyTravelerProfile(profile) {
         const avatar = profile && profile.avatar ? profile.avatar : null;
-        traveler.style.setProperty("--traveler-hair", avatar && avatar.hairColor ? avatar.hairColor : "#3a2a25");
-        traveler.style.setProperty("--traveler-outfit", avatar && avatar.outfitColor ? avatar.outfitColor : "#ffd46d");
+        const hairColor = avatar && avatar.hairColor ? avatar.hairColor : "#3a2a25";
+        const outfitColor = avatar && avatar.outfitColor ? avatar.outfitColor : "#ffd46d";
+
+        ["travelerY2", "travelerY3"].forEach((id) => {
+            const traveler = document.getElementById(id);
+            if (!traveler) return;
+            traveler.style.setProperty("--traveler-hair", hairColor);
+            traveler.style.setProperty("--traveler-outfit", outfitColor);
+        });
     }
 
     function getNodeElement(year, nodeId) {
@@ -773,7 +1152,7 @@
         if (year === "y2" && nodeId === 1) {
             yearStore.identityUnlocked = true;
             yearStore.identityProfile = options.profile || yearStore.identityProfile || null;
-            applyYear2AvatarProfile(yearStore.identityProfile);
+            applyTravelerProfile(yearStore.identityProfile);
         }
 
         syncCoinDisplays();
@@ -791,11 +1170,8 @@
         const traveler = document.getElementById("travelerY2");
         if (!traveler) return;
 
-        traveler.classList.toggle("hidden", !store.y2.identityUnlocked);
-
-        if (store.y2.identityUnlocked) {
-            moveTravelerToNode(store.y2.currentNode, "y2");
-        }
+        traveler.classList.remove("hidden");
+        moveTravelerToNode(Math.max(1, store.y2.currentNode || 1), "y2");
     }
 
     function unlockYear2Identity(profile) {
@@ -804,7 +1180,7 @@
         store.y2.currentNode = Math.max(1, store.y2.currentNode);
         store.y2.completedNodes[1] = true;
         saveStore();
-        applyYear2AvatarProfile(store.y2.identityProfile);
+        applyTravelerProfile(store.y2.identityProfile);
         applyNodeStates();
         updateYear2TravelerVisibility();
     }
@@ -940,9 +1316,7 @@
 
         if(year === 'y2') {
             store.y2.currentNode = nodeId;
-            if (store.y2.identityUnlocked) {
-                moveTravelerToNode(nodeId, "y2");
-            }
+            moveTravelerToNode(nodeId, "y2");
         } else {
             store.y3.currentNode = nodeId;
             moveTravelerToNode(nodeId, "y3");
@@ -1103,6 +1477,18 @@
         if (e.target === tray) hideHealingBubble();
     });
 
+    document.getElementById("resetModal").addEventListener("click", function (event) {
+        if (event.target === event.currentTarget) {
+            closeResetModal();
+        }
+    });
+
+    window.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+            closeResetModal();
+        }
+    });
+
     /* =========================
        Prize Shop
     ========================= */
@@ -1208,7 +1594,7 @@
         loadStore();
         repairCorruptedCopy();
         syncCoinDisplays();
-        applyYear2AvatarProfile(store.y2.identityProfile);
+        applyTravelerProfile(store.y2.identityProfile);
         applyNodeStates();
         switchBoard(store.activeBoard || "year2");
         updateYear2TravelerVisibility();
