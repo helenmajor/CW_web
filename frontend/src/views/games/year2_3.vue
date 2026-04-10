@@ -1,416 +1,446 @@
-<template>
-  <GameLevelScaffold
-    title="选校天平 / School Tiering"
-    subtitle="把学校放进 Reach、Match、Safety，不是在机械排序，而是在练真实申请名单的风险控制。/ Reach-target-safety tiering is risk management, not ranking worship."
-    :guide="guide"
-    tone="violet"
-    :tags="['风险分布 / Risk distribution', '选校分层 / Tier planning']"
-    status-label="完成度 / Completion"
-    :status-text="`${assignedCount} / ${schools.length} 所学校已分层 / schools placed`"
-  >
-    <section class="profile-box">
-      <strong>当前路线提示 / Current route cue</strong>
-      <span>{{ profileCue }}</span>
-    </section>
+﻿<template>
+  <div class="tier-game">
+    <section class="balance-room">
+      <div class="header">
+        <h2><i class="fas fa-balance-scale-right"></i> Scales of Destiny</h2>
+        <p>For a STEM / CS applicant with GPA 82 and one ordinary internship, place every academy into a realistic tier.</p>
+        <div class="user-profile">
+          <i class="fas fa-user-graduate"></i> Current Avatar: GPA 82/100 | STEM/CS Track | 1 Ordinary Internship
+        </div>
+      </div>
 
-    <section v-if="validationMessage" class="validation-box">
-      <i class="fas fa-triangle-exclamation"></i>
-      <span>{{ validationMessage }}</span>
-    </section>
+      <div class="card-deck" :class="{ selecting: selectedCardId }" @dragover.prevent @drop="dropOn('deck')">
+        <SchoolCard
+          v-for="card in cardsIn('deck')"
+          :key="card.id"
+          :card="card"
+          :selected="selectedCardId === card.id"
+          draggable="true"
+          @click="selectCard(card.id)"
+          @dragstart="startDrag($event, card.id)"
+          @dragend="draggingCardId = null"
+        />
+      </div>
 
-    <section class="school-grid">
-      <article v-for="school in schools" :key="school.id" class="school-card">
-        <div class="school-head">
-          <div class="icon">{{ school.icon }}</div>
-          <div>
-            <h2>{{ school.name }}</h2>
-            <p>{{ school.tag }}</p>
+      <div class="tiers">
+        <section
+          v-for="tier in tiers"
+          :key="tier.id"
+          class="tier-zone"
+          :class="[tier.id, { active: selectedCardId }]"
+          @click="placeSelected(tier.id)"
+          @dragover.prevent
+          @drop="dropOn(tier.id)"
+        >
+          <div class="tier-header"><i class="fas" :class="tier.icon"></i> {{ tier.label }}</div>
+          <SchoolCard
+            v-for="card in cardsIn(tier.id)"
+            :key="card.id"
+            :card="card"
+            :selected="selectedCardId === card.id"
+            compact
+            draggable="true"
+            @click.stop="selectCard(card.id)"
+            @dragstart="startDrag($event, card.id)"
+            @dragend="draggingCardId = null"
+          />
+        </section>
+      </div>
+
+      <div class="controls">
+        <button type="button" class="btn-predict" @click="evaluateTiers">
+          <i class="fas fa-crystal-ball"></i> Divinate the Scales
+        </button>
+      </div>
+
+      <section v-if="feedback.length" class="feedback-panel">
+        <div class="fb-title">
+          <span><i class="fas fa-scroll"></i> Prophecy of Tiers</span>
+          <span class="fb-score">+{{ score }} <i class="fas fa-coins"></i></span>
+        </div>
+
+        <div v-for="item in feedback" :key="item.title" class="fb-item" :class="item.status">
+          <div class="fb-icon"><i class="fas" :class="item.icon"></i></div>
+          <div class="fb-text">
+            <h4>{{ item.title }}</h4>
+            <p>{{ item.text }}</p>
           </div>
         </div>
-        <div class="tier-actions">
-          <button
-            v-for="tier in tiers"
-            :key="tier.id"
-            type="button"
-            class="tier-btn"
-            :class="[tier.id, { active: assignments[school.id] === tier.id }]"
-            @click="assignments[school.id] = tier.id"
-          >
-            {{ tier.labelZh }} / {{ tier.label }}
-          </button>
-        </div>
-      </article>
+
+        <button type="button" class="btn-complete" @click="emit('complete')">Seal This Tier Plan & Return</button>
+      </section>
     </section>
-
-    <section class="panel">
-      <div class="legend">
-        <div><strong>Reach / 冲刺</strong><span>高风险但值得冲一冲</span></div>
-        <div><strong>Match / 主申</strong><span>更接近现实主申区间</span></div>
-        <div><strong>Safety / 保底</strong><span>用于兜底，不等于“随便选”</span></div>
-      </div>
-      <div class="actions">
-        <button class="secondary" @click="resetAssignments">重新分层 / Reset</button>
-        <button class="primary" @click="evaluatePlan">提交分层 / Evaluate Tier Plan</button>
-      </div>
-    </section>
-
-    <section v-if="feedbackItems.length" class="feedback-panel">
-      <div class="feedback-head">
-        <h2>分层反馈 / Tier Feedback</h2>
-        <span>+{{ rewardPreview }} 金币 / learning reward</span>
-      </div>
-
-      <article
-        v-for="item in feedbackItems"
-        :key="item.title"
-        class="feedback-item"
-        :class="item.tone"
-      >
-        <strong>{{ item.title }}</strong>
-        <p>{{ item.body }}</p>
-      </article>
-
-      <div class="actions">
-        <button class="secondary" @click="resetAssignments">重新练习 / Rework Plan</button>
-        <button class="primary" @click="completeLevel">锁定分层 / Save Tier Plan</button>
-      </div>
-    </section>
-  </GameLevelScaffold>
+  </div>
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
-import GameLevelScaffold from '@/components/GameLevelScaffold.vue'
-import { useGameStore } from '@/stores/game'
-import { useLevelGuide } from '@/composables/useLevelGuide'
+import { computed, defineComponent, h, reactive, ref } from 'vue'
 
-const emit = defineEmits(['complete'])
-const store = useGameStore()
-store.hydrate()
+const emit = defineEmits(['complete', 'close'])
 
-const { guide, rewardCoins } = useLevelGuide('y2', 3)
+const SchoolCard = defineComponent({
+  props: {
+    card: { type: Object, required: true },
+    selected: { type: Boolean, default: false },
+    compact: { type: Boolean, default: false },
+  },
+  emits: ['click', 'dragstart', 'dragend'],
+  setup(props, { emit }) {
+    return () => h('article', {
+      class: ['school-card', { selected: props.selected, compact: props.compact }],
+      draggable: true,
+      onClick: () => emit('click'),
+      onDragstart: (event) => emit('dragstart', event),
+      onDragend: () => emit('dragend'),
+    }, [
+      h('div', { class: 'school-icon' }, props.card.icon),
+      h('div', { class: 'school-name' }, props.card.name),
+      h('div', { class: 'school-tag' }, props.card.tag),
+    ])
+  },
+})
 
-const schools = [
-  { id: 'ic', name: 'Imperial College', tag: 'QS Top 10', icon: '👑' },
-  { id: 'ucl', name: 'UCL', tag: 'QS Top 10', icon: '🏛️' },
-  { id: 'kcl', name: "King's College", tag: 'QS Top 40', icon: '🦁' },
-  { id: 'soton', name: 'Southampton', tag: 'QS Top 80', icon: '⚓' },
-  { id: 'cardiff', name: 'Cardiff', tag: 'QS 150+', icon: '🐉' },
+const schoolCards = [
+  { id: 'ic', icon: '👑', name: 'Imperial College', tag: 'QS Top 10' },
+  { id: 'ucl', icon: '🏛️', name: 'UCL', tag: 'QS Top 10' },
+  { id: 'kcl', icon: '🦁', name: "King's College", tag: 'QS Top 40' },
+  { id: 'soton', icon: '⚓', name: 'Southampton', tag: 'QS Top 80' },
+  { id: 'cardiff', icon: '🐉', name: 'Cardiff Univ.', tag: 'QS 150+' },
 ]
 
 const tiers = [
-  { id: 'reach', label: 'Reach', labelZh: '冲刺' },
-  { id: 'match', label: 'Match', labelZh: '主申' },
-  { id: 'safety', label: 'Safety', labelZh: '保底' },
+  { id: 'reach', label: 'Reach / Miracle', icon: 'fa-fire' },
+  { id: 'match', label: 'Match / Battleground', icon: 'fa-bullseye' },
+  { id: 'safety', label: 'Safety / Sanctuary', icon: 'fa-shield-alt' },
 ]
 
-const assignments = reactive(
-  schools.reduce((accumulator, school) => {
-    accumulator[school.id] = ''
-    return accumulator
-  }, {}),
-)
+const locations = reactive(Object.fromEntries(schoolCards.map((card) => [card.id, 'deck'])))
+const selectedCardId = ref('')
+const draggingCardId = ref('')
+const feedback = ref([])
+const score = ref(50)
 
-const validationMessage = ref('')
-const feedbackItems = ref([])
-const rewardPreview = ref(rewardCoins)
+const cardById = computed(() => Object.fromEntries(schoolCards.map((card) => [card.id, card])))
 
-const assignedCount = computed(() => Object.values(assignments).filter(Boolean).length)
-
-const profileCue = computed(() => {
-  const route = store.applicationProfile.preferredRoute
-  if (!route) {
-    return '默认示例画像：GPA 82/100，STEM/CS 方向，1 段普通实习。先学习分层逻辑，再把它迁移到你自己的背景。/ Default sample profile: GPA 82/100, STEM/CS direction, one ordinary internship.'
-  }
-
-  return `你上一关偏向 ${route.labelZh} / ${route.label} 路线，但无论去哪个地区，都需要 reach / match / safety 结构来分散风险。`
-})
-
-function resetAssignments() {
-  validationMessage.value = ''
-  feedbackItems.value = []
-  schools.forEach((school) => {
-    assignments[school.id] = ''
-  })
+function cardsIn(location) {
+  return schoolCards.filter((card) => locations[card.id] === location)
 }
 
-function evaluatePlan() {
-  if (assignedCount.value < schools.length) {
-    validationMessage.value = '你还没有完成院校分层 / You have not finished the school tiering yet。请先给每所学校一个 Reach、Match 或 Safety 位置。'
-    feedbackItems.value = []
+function selectCard(cardId) {
+  selectedCardId.value = selectedCardId.value === cardId ? '' : cardId
+}
+
+function moveCard(cardId, location) {
+  if (!cardId) return
+  locations[cardId] = location
+  selectedCardId.value = ''
+  feedback.value = []
+}
+
+function placeSelected(location) {
+  moveCard(selectedCardId.value, location)
+}
+
+function startDrag(event, cardId) {
+  draggingCardId.value = cardId
+  selectedCardId.value = cardId
+  event.dataTransfer.effectAllowed = 'move'
+  event.dataTransfer.setData('text/plain', cardId)
+}
+
+function dropOn(location) {
+  moveCard(draggingCardId.value || selectedCardId.value, location)
+  draggingCardId.value = null
+}
+
+function idsIn(location) {
+  return Object.keys(locations).filter((id) => locations[id] === location)
+}
+
+function addFeedback(status, icon, title, text) {
+  feedback.value.push({ status, icon, title, text })
+}
+
+function evaluateTiers() {
+  if (cardsIn('deck').length) {
+    window.alert('The Seer warns: distribute all Academy Cards before divination.')
     return
   }
 
-  validationMessage.value = ''
-  const reaches = schools.filter((school) => assignments[school.id] === 'reach').map((school) => school.id)
-  const matches = schools.filter((school) => assignments[school.id] === 'match').map((school) => school.id)
-  const safeties = schools.filter((school) => assignments[school.id] === 'safety').map((school) => school.id)
-  const items = []
-  let points = rewardCoins
-  let allPerfect = true
+  feedback.value = []
+  score.value = 50
+  const reaches = idsIn('reach')
+  const matches = idsIn('match')
+  const safeties = idsIn('safety')
 
   if (matches.includes('ic') || safeties.includes('ic')) {
-    items.push({
-      tone: 'error',
-      title: 'Imperial 不应被当成主申或保底 / Imperial is not a target or safety here',
-      body: '对这个示例背景来说，Imperial 更接近高风险冲刺。把它放低会制造虚假的安全感，现实里容易导致名单整体风险判断失真。',
-    })
-    points -= 10
-    allPerfect = false
+    addFeedback('danger', 'fa-skull-crossbones', 'Fatal Hubris: IC as Match / Safety', 'With GPA 82 in STEM, Imperial is an extreme gamble. Treat it as a fantasy-level reach, not a secure slot.')
+    score.value -= 10
   }
 
   if (matches.includes('ucl') || safeties.includes('ucl')) {
-    items.push({
-      tone: 'error',
-      title: 'UCL 也更接近 Reach / UCL is closer to Reach',
-      body: '对 GPA 82 的工科/计算机背景来说，UCL 往往不是稳定主申。若把它当作主申或保底，你会高估自己的稳妥选项。',
-    })
-    points -= 10
-    allPerfect = false
+    addFeedback('danger', 'fa-exclamation-triangle', 'Blind Optimism: UCL Ranked Too Low', 'UCL engineering / CS can be a bloodbath. A realistic plan places it as a reach for this profile.')
+    score.value -= 10
   } else if (reaches.includes('ucl')) {
-    items.push({
-      tone: 'success',
-      title: 'UCL 放在 Reach 更合理 / UCL as Reach makes sense',
-      body: '这说明你理解了高竞争项目应被放在冲刺层，主申和保底要留给更现实的学校。',
-    })
+    addFeedback('perfect', 'fa-check-circle', 'Perfect Trajectory: UCL as Reach', 'This is a rational high-ceiling option. Keep it exciting, but do not let it replace match and safety schools.')
   }
 
   if (reaches.includes('kcl') || reaches.includes('soton')) {
-    items.push({
-      tone: 'warning',
-      title: '主申被抬得太高 / You lifted some target schools too high',
-      body: 'KCL 或 Southampton 放进 Reach 说明你过度保守，现实里会压缩你真正向上探索的空间。',
-    })
-    points -= 10
-    allPerfect = false
+    addFeedback('waste', 'fa-arrow-down', 'Excessive Timidity', 'KCL / Southampton can function as match-style battlefields here. If every workable option is pushed into Reach, the list becomes too conservative.')
+    score.value -= 10
   } else if (safeties.includes('kcl')) {
-    items.push({
-      tone: 'error',
-      title: 'KCL 不是真保底 / KCL is not a true safety',
-      body: '把 KCL 当保底会让名单过于脆弱。若竞争强度波动，你的“保底”可能根本不稳。',
-    })
-    allPerfect = false
+    addFeedback('danger', 'fa-exclamation', 'Match as Safety: Fragile Defense', 'KCL is attractive, but it is not a guaranteed backup for this profile. Do not build a safety net out of match schools.')
   }
 
   if (reaches.includes('cardiff') || matches.includes('cardiff')) {
-    items.push({
-      tone: 'warning',
-      title: 'Cardiff 更适合保底 / Cardiff should stabilize the list',
-      body: '保底学校的真实作用是兜底，而不是继续承担风险。把 Cardiff 放太高会削弱名单的缓冲能力。',
-    })
-    points -= 10
-    allPerfect = false
+    addFeedback('waste', 'fa-arrow-down', 'Severe Self-Doubt', 'Cardiff is closer to a safety role for this profile. Raising it too high leaves your real safety layer empty.')
+    score.value -= 10
   } else if (safeties.includes('cardiff')) {
-    items.push({
-      tone: 'success',
-      title: '保底层有效 / Safety layer is doing its job',
-      body: '这类学校让名单拥有真实落点，避免所有希望都压在高风险项目上。',
-    })
+    addFeedback('perfect', 'fa-shield-alt', 'Indestructible Sanctuary', 'A real safety lets you take controlled risks elsewhere. This is what a bottom layer is for.')
   }
 
-  if (items.length === 0) {
-    items.push({
-      tone: 'warning',
-      title: '结构还需要更清晰 / The structure still needs sharpening',
-      body: '继续问自己：哪些是高风险冲刺、哪些是主申、哪些是真正兜底。分层的重点是概率和风险，而不是单纯看排名。',
-    })
+  if (!feedback.value.length) {
+    addFeedback('waste', 'fa-question-circle', 'Chaotic Formation', 'Your list is complete, but the hierarchy still needs a clearer reach / match / safety logic.')
   }
 
-  if (allPerfect) {
-    items.push({
-      tone: 'success',
-      title: '整体策略健康 / Balanced list',
-      body: '你的名单已经更接近真实可用的申请结构：有上探空间，也有主申密度和保底缓冲。',
-    })
-  }
-
-  feedbackItems.value = items
-  rewardPreview.value = Math.max(10, points)
-}
-
-function completeLevel() {
-  emit('complete', {
-    rewardCoins: rewardPreview.value,
-    preferences: {
-      schoolStrategy: '使用 reach / match / safety 结构做选校分层。/ Use reach-match-safety logic to distribute school risk.',
-      latestTakeaway: '选校不是把学校按排名排队，而是在做风险分布。/ School tiering is risk distribution, not just ranking worship.',
-    },
-  })
+  score.value = Math.max(10, score.value)
 }
 </script>
 
 <style scoped>
-.profile-box,
-.panel,
-.feedback-panel,
-.validation-box,
-.school-card,
-.feedback-item {
-  border-radius: 22px;
-  background: rgba(15, 23, 42, 0.74);
-  border: 1px solid rgba(148, 163, 184, 0.16);
+.tier-game {
+  min-height: 100%;
+  padding: 24px;
   color: #e2e8f0;
-}
-
-.profile-box,
-.panel,
-.feedback-panel,
-.validation-box {
-  padding: 16px 18px;
-}
-
-.profile-box {
+  background: radial-gradient(circle at top, #1c2331 0%, #0b0f19 100%);
   display: grid;
-  gap: 6px;
+  place-items: start center;
+  overflow: auto;
 }
 
-.validation-box {
+.balance-room {
+  width: min(1050px, 100%);
+  padding: 30px;
+  background: rgba(15, 23, 42, 0.78);
+  border: 2px solid #3b82f6;
+  border-radius: 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(59, 130, 246, 0.18);
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.header h2 {
+  margin: 0;
+  color: #60a5fa;
+  font-size: 2.1rem;
+  font-family: Georgia, serif;
+}
+
+.header p {
+  color: #a9b6ca;
+  line-height: 1.55;
+  font-family: Georgia, serif;
+}
+
+.user-profile {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 10px 18px;
+  border-left: 4px solid #f59e0b;
+  border-radius: 8px;
+  background: linear-gradient(90deg, rgba(30, 58, 138, 0.5), rgba(17, 24, 39, 0.5));
+  color: #fbbf24;
+  font-weight: 900;
+}
+
+.card-deck,
+.tier-zone {
+  border: 2px dashed #475569;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.36);
+}
+
+.card-deck {
+  min-height: 125px;
+  padding: 20px;
   display: flex;
-  gap: 10px;
-  color: #fee2e2;
-  border-color: rgba(248, 113, 113, 0.28);
-  background: rgba(127, 29, 29, 0.24);
+  gap: 15px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
-.school-grid {
+.tiers {
+  margin-top: 24px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
 }
+
+.tier-zone {
+  min-height: 270px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  transition: 0.2s;
+}
+
+.tier-zone.active {
+  box-shadow: inset 0 0 24px rgba(255, 255, 255, 0.07);
+}
+
+.tier-header {
+  margin-bottom: 8px;
+  font-size: 1rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.reach { border-color: #ef4444; }
+.reach .tier-header { color: #fca5a5; }
+.match { border-color: #3b82f6; }
+.match .tier-header { color: #93c5fd; }
+.safety { border-color: #10b981; }
+.safety .tier-header { color: #6ee7b7; }
 
 .school-card {
-  padding: 18px;
-  display: grid;
-  gap: 16px;
+  width: 140px;
+  min-height: 126px;
+  padding: 14px 10px;
+  text-align: center;
+  cursor: grab;
+  background: linear-gradient(145deg, #1e293b, #0f172a);
+  border: 2px solid #64748b;
+  border-radius: 12px;
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
 }
 
-.school-head {
-  display: flex;
-  gap: 12px;
+.school-card:hover,
+.school-card.selected {
+  transform: translateY(-4px);
+  border-color: #fbbf24;
+  box-shadow: 0 10px 20px rgba(251, 191, 36, 0.28);
+}
+
+.school-card.compact {
+  width: 100%;
+  min-height: 78px;
+  padding: 9px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: "icon name" "icon tag";
+  column-gap: 10px;
   align-items: center;
+  text-align: left;
 }
 
-.school-head .icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 16px;
-  display: grid;
-  place-items: center;
-  font-size: 1.5rem;
-  background: rgba(255, 255, 255, 0.08);
+.school-icon {
+  grid-area: icon;
+  font-size: 2rem;
 }
 
-.school-head h2 {
-  margin: 0;
-  font-size: 1rem;
+.school-name {
+  grid-area: name;
   color: #f8fafc;
+  font-size: 0.88rem;
+  font-weight: 900;
+  line-height: 1.2;
 }
 
-.school-head p {
-  margin: 4px 0 0;
-  color: #94a3b8;
-}
-
-.tier-actions {
-  display: grid;
-  gap: 10px;
-}
-
-.tier-btn {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
-  padding: 10px 12px;
-  background: rgba(15, 23, 42, 0.72);
-  color: #e2e8f0;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.tier-btn.active.reach {
-  background: rgba(239, 68, 68, 0.18);
-  border-color: rgba(239, 68, 68, 0.4);
-}
-
-.tier-btn.active.match {
-  background: rgba(59, 130, 246, 0.18);
-  border-color: rgba(59, 130, 246, 0.4);
-}
-
-.tier-btn.active.safety {
-  background: rgba(16, 185, 129, 0.18);
-  border-color: rgba(16, 185, 129, 0.4);
-}
-
-.legend {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px;
-}
-
-.legend div {
-  padding: 12px 14px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.05);
-  display: grid;
-  gap: 4px;
-}
-
-.actions {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-top: 16px;
-}
-
-.actions button {
-  border: none;
+.school-tag {
+  grid-area: tag;
+  margin-top: 6px;
+  color: #cbd5e1;
+  font-size: 0.72rem;
+  background: #334155;
+  padding: 2px 7px;
   border-radius: 999px;
-  padding: 12px 18px;
+  justify-self: start;
+}
+
+.controls {
+  margin-top: 28px;
+  text-align: center;
+}
+
+.btn-predict,
+.btn-complete {
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
   font-weight: 900;
   cursor: pointer;
 }
 
-.primary {
+.btn-predict {
+  padding: 15px 38px;
   background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-  color: #fff;
-}
-
-.secondary {
-  background: rgba(255, 255, 255, 0.08);
-  color: #e2e8f0;
+  font-size: 1.08rem;
+  box-shadow: 0 10px 20px rgba(99, 102, 241, 0.32);
 }
 
 .feedback-panel {
-  display: grid;
-  gap: 14px;
+  margin-top: 24px;
+  padding: 25px;
+  background: rgba(15, 23, 42, 0.92);
+  border: 2px solid #8b5cf6;
+  border-radius: 16px;
 }
 
-.feedback-head {
+.fb-title {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  color: #f8fafc;
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+  border-bottom: 1px dashed #6d28d9;
+  color: #c4b5fd;
+  font-size: 1.25rem;
+  font-weight: 900;
 }
 
-.feedback-item {
-  padding: 16px;
+.fb-score { color: #f59e0b; white-space: nowrap; }
+
+.fb-item {
+  margin-bottom: 13px;
+  padding: 13px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.055);
+  display: flex;
+  gap: 12px;
 }
 
-.feedback-item.success {
-  border-left: 4px solid #22c55e;
+.fb-icon { font-size: 1.45rem; }
+.fb-item.danger { border-left: 4px solid #ef4444; }
+.fb-item.waste { border-left: 4px solid #f59e0b; }
+.fb-item.perfect { border-left: 4px solid #10b981; }
+
+.fb-text h4 {
+  margin: 0 0 5px;
+  color: #f1f5f9;
+  font-family: Georgia, serif;
 }
 
-.feedback-item.warning {
-  border-left: 4px solid #f59e0b;
+.fb-text p {
+  margin: 0;
+  color: #a9b6ca;
+  line-height: 1.55;
+  font-family: Georgia, serif;
 }
 
-.feedback-item.error {
-  border-left: 4px solid #ef4444;
+.btn-complete {
+  width: 100%;
+  margin-top: 16px;
+  padding: 13px 18px;
+  background: linear-gradient(135deg, #22c55e, #15803d);
 }
 
-.feedback-item strong {
-  display: block;
-  margin-bottom: 6px;
-  color: #f8fafc;
+@media (max-width: 820px) {
+  .tiers { grid-template-columns: 1fr; }
+  .tier-zone { min-height: 170px; }
 }
 </style>
