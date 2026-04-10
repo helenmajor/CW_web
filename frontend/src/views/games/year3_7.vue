@@ -1,263 +1,465 @@
 <template>
-  <GameLevelScaffold
-    title="DIY 避坑沼泽 / DIY Risk Bog"
-    subtitle="这里的每个陷阱都是真实 DIY 申请里常见的错误。你要判断它到底是致命、严重，还是影响印象。/ Classify each DIY mistake by real severity."
-    :guide="guide"
-    tone="emerald"
-    :tags="['DIY 风险 / DIY risks', '错误分级 / Severity judgment']"
-    status-label="净化进度 / Purification Progress"
-    :status-text="completed ? '避坑完成 / Bog cleared' : `${currentIndex} / ${traps.length} | Shield ${hearts}`"
-  >
-    <section class="legend-box">
-      <strong>判定标准 / Severity Guide</strong>
-      <p><b>致命 / Fatal</b> = 可能直接出局；<b>严重 / Severe</b> = 容易导致延误或审核问题；<b>轻度 / Minor</b> = 不一定淘汰，但明显伤害专业印象。</p>
-    </section>
+  <div class="bog-game" :class="{ hit: damageFlash }">
+    <button class="close-btn" type="button" @click="$emit('close')">Back to Map</button>
 
-    <section v-if="!completed" class="bog-card">
-      <div class="mine-orb">
-        <div class="warning">⚠️</div>
-        <div class="mine-text">{{ currentTrap.textZh }}</div>
-      </div>
-
-      <div class="spell-grid">
-        <button class="spell-btn fatal" @click="judge('fatal')">
-          <strong>致命 / Fatal</strong>
-          <span>可能直接被系统或门槛淘汰</span>
-        </button>
-        <button class="spell-btn severe" @click="judge('severe')">
-          <strong>严重 / Severe</strong>
-          <span>会造成延误、退回或大问题</span>
-        </button>
-        <button class="spell-btn minor" @click="judge('minor')">
-          <strong>轻度 / Minor</strong>
-          <span>主要伤害专业印象与细节体验</span>
-        </button>
+    <section class="bog-header">
+      <p class="eyebrow">Y3-7 DIY Bog Sweeper</p>
+      <h1>Hidden Mine Casting</h1>
+      <p class="intro">
+        Identify each DIY/application blind spot. Fatal mines require Lethal Dispel; severe mines
+        need Bog Purge; minor mines need Thorn Pruning.
+      </p>
+      <div class="status-row">
+        <span>Mine {{ Math.min(currentIndex + 1, mines.length) }} / {{ mines.length }}</span>
+        <span>Shield {{ hp }} / {{ maxHp }}</span>
       </div>
     </section>
 
-    <section v-else class="clear-card">
-      <h2>避坑图鉴已更新 / DIY risk guide updated</h2>
-      <p>你已经把常见 DIY 雷区按严重度分清了。真正的收获是：看到错误时，能马上判断它是“会不会直接出局”“会不会造成严重延误”“还是主要影响专业印象”。</p>
-      <div class="actions">
-        <button class="secondary" @click="restart">重新排雷 / Retry</button>
-        <button class="primary" @click="completeLevel">保存避坑总结 / Save Risk Takeaway</button>
-      </div>
-    </section>
+    <main class="mine-arena">
+      <article v-if="currentMine" class="mine-orb" :class="{ solved: feedback.show && feedback.correct }">
+        <span class="mine-number">{{ currentIndex + 1 }}</span>
+        <p>{{ currentMine.text }}</p>
+      </article>
 
-    <LevelResultDialog
-      v-model="showDialog"
-      :tone="dialogTone"
-      :icon="dialogIcon"
-      :title="dialogTitle"
-      :description="dialogMessage"
-      :primary-text="dialogPrimary"
-      @primary="handleDialogPrimary"
-    />
-  </GameLevelScaffold>
+      <div class="spell-panel">
+        <button class="spell-btn fatal" type="button" @click="castSpell('fatal')">
+          <b>Lethal Dispel</b>
+          <small>Deadline / hard threshold / immediate application-killer</small>
+        </button>
+        <button class="spell-btn severe" type="button" @click="castSpell('severe')">
+          <b>Bog Purge</b>
+          <small>High-risk process, agency, contract, language or document issue</small>
+        </button>
+        <button class="spell-btn minor" type="button" @click="castSpell('minor')">
+          <b>Thorn Pruning</b>
+          <small>Professionalism / efficiency problem that should still be fixed</small>
+        </button>
+      </div>
+
+      <p class="hint-line" aria-live="polite">{{ hint }}</p>
+    </main>
+
+    <div class="feedback-layer" :class="{ show: feedback.show }">
+      <section class="feedback-card" :class="{ correct: feedback.correct }">
+        <h2>{{ feedback.title }}</h2>
+        <p>{{ feedback.desc }}</p>
+        <button class="next-btn" type="button" @click="nextAfterFeedback">
+          {{ feedback.nextText }}
+        </button>
+      </section>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
-import GameLevelScaffold from '@/components/GameLevelScaffold.vue'
-import LevelResultDialog from '@/components/LevelResultDialog.vue'
-import { useLevelGuide } from '@/composables/useLevelGuide'
+import { computed, reactive, ref } from 'vue'
 
-const emit = defineEmits(['complete'])
-const { guide, rewardCoins } = useLevelGuide('y3', 7)
+const emit = defineEmits(['complete', 'close'])
 
-const traps = [
+const maxHp = 6
+const mines = [
   {
-    textZh: '错过正式申请 deadline',
+    text: 'Missing the application deadline',
     type: 'fatal',
-    explanation: '大多数学校系统会在截止时间后直接关闭。现实中这是最典型的“直接出局”错误。',
+    title: 'Lethal Blunder',
+    desc: 'Most university systems close automatically when the deadline passes. There may be no appeal path.'
   },
   {
-    textZh: '推荐信缺少抬头纸和签名',
+    text: 'Recommendation letter is missing letterhead and signature',
     type: 'severe',
-    explanation: '这往往不会像错过 deadline 那样立即出局，但很可能导致材料被退回、审核延误，甚至错过更早轮次。',
+    title: 'Severe Document Wound',
+    desc: 'The school may request a re-upload and delay review. Check letter format before submission.'
   },
   {
-    textZh: 'IELTS 单项分数比要求低 0.5',
+    text: 'IELTS sub-score is 0.5 below the program requirement',
     type: 'fatal',
-    explanation: '对不少英国和香港项目来说，语言是硬门槛。单项没达标常常会触发自动筛选，属于致命问题。',
+    title: 'Language Threshold Trap',
+    desc: 'Overall score is not enough when a program sets minimum writing, speaking or other sub-score requirements.'
   },
   {
-    textZh: '把所有文件都命名成 1.pdf',
-    type: 'minor',
-    explanation: '它不一定让你立刻出局，但会显著拉低专业感，也容易让招生官在处理材料时产生负面印象。',
+    text: 'Only checking overall IELTS/TOEFL score and ignoring Writing/Speaking minimums',
+    type: 'fatal',
+    title: 'Sub-score Mine',
+    desc: 'Read the official program page and verify total score, every sub-score, accepted tests and waiver policy.'
   },
+  {
+    text: 'Using a language score that expires before enrollment registration',
+    type: 'fatal',
+    title: 'Expired Scroll',
+    desc: 'IELTS/TOEFL scores are usually valid for two years from test date. Plan around enrollment, not only submission.'
+  },
+  {
+    text: 'Waiting until late October for your first language test attempt',
+    type: 'severe',
+    title: 'Timing Wound',
+    desc: 'Aim for a qualifying result before summer ends; reserve September-October for retakes and score delivery time.'
+  },
+  {
+    text: 'Trusting an agency screenshot instead of reading official program requirements',
+    type: 'severe',
+    title: 'Borrowed Eyes Curse',
+    desc: 'Admissions pages are the source of truth. Requirements vary by university, program and even track.'
+  },
+  {
+    text: 'Assuming an English-taught degree automatically waives language tests',
+    type: 'severe',
+    title: 'Waiver Mirage',
+    desc: 'Waiver policies differ. Confirm the exact rule before deleting IELTS/TOEFL from your plan.'
+  },
+  {
+    text: 'Agency promises guaranteed Top 10 admission or a private deal with admissions officers',
+    type: 'severe',
+    title: 'Agency Siren Song',
+    desc: 'No consultant can guarantee an offer. Treat guarantee language and insider-deal claims as red flags.'
+  },
+  {
+    text: 'Signing with an agency that refuses to share application email, account or password',
+    type: 'severe',
+    title: 'Locked Account Trap',
+    desc: 'You are the owner of the application. Keep portal access, submitted forms and final review power.'
+  },
+  {
+    text: "Contract says 'premium service' but skips school list, advisor name, revision limit and refund rules",
+    type: 'severe',
+    title: 'Foggy Contract',
+    desc: 'Make the contract concrete: program list, shared accounts, named advisor, revision rules, staged payment, refunds and extra fees.'
+  },
+  {
+    text: 'Paying the entire agency fee on day one',
+    type: 'severe',
+    title: 'Payment Lock',
+    desc: 'Prefer milestone payment. Do not give away all leverage before essay drafting, submission and result follow-up.'
+  },
+  {
+    text: 'All sample essays from an agency sound like the same polished stranger',
+    type: 'minor',
+    title: 'Template Smell',
+    desc: 'Template writing weakens the PS. Keep brainstorming, evidence, editing and final review in your hands.'
+  },
+  {
+    text: 'Choosing an agency only from its own success posters',
+    type: 'minor',
+    title: 'Reputation Blind Spot',
+    desc: 'Search outside reviews and talk to previous students when possible. Success posters are advertising, not due diligence.'
+  },
+  {
+    text: 'Buying random test-prep packages but skipping official guides, Cambridge IELTS papers and TOEFL TPO-style practice',
+    type: 'minor',
+    title: 'Resource Detour',
+    desc: 'Use core official-style prep, timed practice and error analysis before paying for shortcut promises.'
+  },
+  {
+    text: "Naming all documents '1.pdf'",
+    type: 'minor',
+    title: 'Impression Blunder',
+    desc: 'A messy attachment pile looks careless. Use predictable names such as Name_Program_CV.pdf.'
+  }
 ]
 
 const currentIndex = ref(0)
-const shield = ref(3)
-const completed = ref(false)
-const showDialog = ref(false)
-const dialogTone = ref('success')
-const dialogIcon = ref('✨')
-const dialogTitle = ref('')
-const dialogMessage = ref('')
-const dialogPrimary = ref('继续 / Continue')
-const pendingAction = ref('advance')
+const hp = ref(maxHp)
+const damageFlash = ref(false)
+const hint = ref('Choose the spell that matches the risk level.')
+const feedback = reactive({
+  show: false,
+  correct: true,
+  title: '',
+  desc: '',
+  nextText: 'Continue Purging'
+})
 
-const currentTrap = computed(() => traps[currentIndex.value] || traps[traps.length - 1])
-const hearts = computed(() => `${'❤️'.repeat(shield.value)}${'🖤'.repeat(3 - shield.value)}`)
+const currentMine = computed(() => mines[currentIndex.value])
 
-function judge(type) {
-  if (completed.value) return
+function castSpell(spellType) {
+  if (!currentMine.value || feedback.show) return
 
-  if (type === currentTrap.value.type) {
-    dialogTone.value = 'success'
-    dialogIcon.value = '🧭'
-    dialogTitle.value = '判断正确 / Correct classification'
-    dialogMessage.value = currentTrap.value.explanation
-    dialogPrimary.value = currentIndex.value === traps.length - 1 ? '完成净化 / Finish Purge' : '继续排雷 / Continue'
-    pendingAction.value = currentIndex.value === traps.length - 1 ? 'finish' : 'advance'
-    showDialog.value = true
+  if (spellType === currentMine.value.type) {
+    feedback.correct = true
+    feedback.title = currentMine.value.title
+    feedback.desc = currentMine.value.desc
+    feedback.nextText = currentIndex.value === mines.length - 1 ? 'Proceed to Coronation' : 'Continue Purging'
+    feedback.show = true
     return
   }
 
-  shield.value = Math.max(0, shield.value - 1)
-  dialogTone.value = 'error'
-  dialogIcon.value = shield.value <= 0 ? '💀' : '⚠️'
-  dialogTitle.value = shield.value <= 0 ? '护盾破碎 / Shield broken' : '分级错误 / Misjudged severity'
-  dialogMessage.value = `更合理的判断是：${severityLabel(currentTrap.value.type)}。${currentTrap.value.explanation}`
-  dialogPrimary.value = shield.value <= 0 ? '重新开始 / Retry Trial' : '再判断一次 / Try Again'
-  pendingAction.value = shield.value <= 0 ? 'restart' : 'retry'
-  showDialog.value = true
+  hp.value -= 1
+  hint.value = `Wrong spell. This mine is not "${spellType}". Shield remaining: ${hp.value}.`
+  damageFlash.value = true
+  window.setTimeout(() => {
+    damageFlash.value = false
+  }, 260)
+
+  if (hp.value <= 0) {
+    feedback.correct = false
+    feedback.title = 'Shield Shattered'
+    feedback.desc = 'You stepped on too many hidden mines. Restart the trial and classify the risk before clicking.'
+    feedback.nextText = 'Retry Trial'
+    feedback.show = true
+  }
 }
 
-function severityLabel(type) {
-  if (type === 'fatal') return '致命 / Fatal'
-  if (type === 'severe') return '严重 / Severe'
-  return '轻度 / Minor'
-}
-
-function handleDialogPrimary() {
-  showDialog.value = false
-
-  if (pendingAction.value === 'advance') {
-    currentIndex.value += 1
+function nextAfterFeedback() {
+  if (!feedback.correct) {
+    hp.value = maxHp
+    currentIndex.value = 0
+    hint.value = 'Shield restored. Read the risk carefully before casting.'
+    feedback.show = false
     return
   }
 
-  if (pendingAction.value === 'finish') {
-    completed.value = true
-    return
+  feedback.show = false
+  currentIndex.value += 1
+
+  if (currentIndex.value >= mines.length) {
+    emit('complete', { game: 'bog-sweeper', hpLeft: hp.value })
+  } else {
+    hint.value = 'Mine purged. Continue scanning.'
   }
-
-  if (pendingAction.value === 'restart') {
-    restart()
-  }
-}
-
-function restart() {
-  currentIndex.value = 0
-  shield.value = 3
-  completed.value = false
-}
-
-function completeLevel() {
-  emit('complete', {
-    rewardCoins,
-    preferences: {
-      latestTakeaway: 'DIY 申请里最重要的能力之一，是看到错误就能判断它到底会造成多大真实后果。/ One of the most useful DIY skills is judging the real severity of each mistake.',
-    },
-  })
 }
 </script>
 
 <style scoped>
-.legend-box,
-.bog-card,
-.clear-card {
-  border-radius: 24px;
-  background: rgba(15, 23, 42, 0.78);
-  border: 1px solid rgba(52, 211, 153, 0.22);
-  color: #f8fafc;
-  padding: 20px;
+.bog-game {
+  min-height: 100%;
+  padding: clamp(18px, 4vw, 64px);
+  color: #ecfeff;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(20, 184, 166, 0.22), transparent 36%),
+    linear-gradient(180deg, #042f2e, #052e16 55%, #020617);
+  transition: filter 0.2s ease;
 }
 
-.legend-box p,
-.clear-card p {
-  margin: 10px 0 0;
-  line-height: 1.8;
+.bog-game.hit {
+  filter: saturate(1.6) brightness(1.15);
 }
 
-.bog-card {
+.close-btn,
+.spell-btn,
+.next-btn {
+  border-radius: 8px;
+  font: inherit;
+}
+
+.close-btn {
+  padding: 10px 14px;
+  color: #ccfbf1;
+  background: rgba(2, 6, 23, 0.86);
+  border: 1px solid rgba(94, 234, 212, 0.5);
+  cursor: pointer;
+}
+
+.bog-header,
+.mine-arena {
+  width: min(1180px, 100%);
+  margin: 0 auto;
+}
+
+.bog-header {
+  margin-top: 22px;
+  text-align: center;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  margin-top: 8px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2.4rem, 8vw, 8rem);
+  line-height: 0.86;
+  color: #ccfbf1;
+}
+
+.eyebrow {
+  color: #5eead4;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+.intro {
+  max-width: 820px;
+  margin: 18px auto 0;
+  color: #cbd5e1;
+  line-height: 1.65;
+}
+
+.status-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.status-row span {
+  padding: 10px 14px;
+  border-radius: 8px;
+  color: #111827;
+  background: #5eead4;
+  font-weight: 1000;
+}
+
+.mine-arena {
   display: grid;
-  gap: 22px;
+  gap: 24px;
+  margin-top: 30px;
 }
 
 .mine-orb {
-  min-height: 260px;
+  min-height: clamp(320px, 46vw, 620px);
+  display: grid;
+  place-content: center;
+  gap: 24px;
+  padding: clamp(22px, 6vw, 90px);
+  text-align: center;
   border-radius: 50%;
-  background: radial-gradient(circle at 40% 40%, #1e293b, #0f172a);
-  border: 2px solid #475569;
+  color: #022c22;
+  background:
+    radial-gradient(circle at 35% 28%, #fff 0 8%, transparent 16%),
+    radial-gradient(circle, #99f6e4, #14b8a6 62%, #115e59);
+  box-shadow: 0 36px 90px rgba(0, 0, 0, 0.42);
+}
+
+.mine-orb.solved {
+  background:
+    radial-gradient(circle at 35% 28%, #fff 0 8%, transparent 16%),
+    radial-gradient(circle, #dcfce7, #22c55e 62%, #166534);
+}
+
+.mine-number {
+  justify-self: center;
+  width: 72px;
+  height: 72px;
   display: grid;
   place-items: center;
-  text-align: center;
-  padding: 30px;
+  border-radius: 50%;
+  color: #ccfbf1;
+  background: #022c22;
+  font-weight: 1000;
 }
 
-.warning {
-  font-size: 2.5rem;
+.mine-orb p {
+  max-width: 760px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.4rem, 4.5vw, 5rem);
+  line-height: 1.04;
 }
 
-.mine-text {
-  font-size: 1.25rem;
-  font-weight: 900;
-  line-height: 1.6;
-}
-
-.spell-grid {
+.spell-panel {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
 
 .spell-btn {
-  border: 2px solid transparent;
-  border-radius: 18px;
-  padding: 16px;
-  background: #1e293b;
-  color: #fff;
+  min-height: 150px;
+  padding: 18px;
+  color: #e5e7eb;
+  background: rgba(2, 6, 23, 0.86);
+  border: 1px solid rgba(94, 234, 212, 0.38);
   cursor: pointer;
   text-align: left;
+}
+
+.spell-btn:hover {
+  transform: translateY(-5px);
+}
+
+.spell-btn b,
+.spell-btn small {
+  display: block;
+}
+
+.spell-btn small {
+  margin-top: 12px;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+.spell-btn.fatal {
+  border-color: #fb7185;
+}
+
+.spell-btn.severe {
+  border-color: #facc15;
+}
+
+.hint-line {
+  min-height: 56px;
+  padding: 14px;
+  border-radius: 8px;
+  color: #ccfbf1;
+  background: rgba(2, 6, 23, 0.82);
+  text-align: center;
+}
+
+.feedback-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  display: none;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.feedback-layer.show {
   display: grid;
-  gap: 6px;
 }
 
-.spell-btn.fatal:hover { border-color: #ef4444; }
-.spell-btn.severe:hover { border-color: #f59e0b; }
-.spell-btn.minor:hover { border-color: #3b82f6; }
-
-.clear-card h2 {
-  margin: 0;
-  font-family: Georgia, serif;
+.feedback-card {
+  width: min(640px, 100%);
+  padding: clamp(22px, 5vw, 60px);
+  border-radius: 8px;
+  text-align: center;
+  color: #e5e7eb;
+  background: #111827;
+  border: 2px solid #fb7185;
 }
 
-.actions {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
+.feedback-card.correct {
+  border-color: #5eead4;
+}
+
+.feedback-card h2 {
+  color: #fff;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2rem, 6vw, 5rem);
+  line-height: 0.9;
+}
+
+.feedback-card p {
   margin-top: 18px;
+  color: #cbd5e1;
+  line-height: 1.65;
 }
 
-.actions button {
-  border: none;
-  border-radius: 999px;
-  padding: 12px 18px;
-  font-weight: 900;
+.next-btn {
+  width: 100%;
+  margin-top: 24px;
+  padding: 15px 18px;
+  border: 0;
+  color: #022c22;
+  background: #5eead4;
+  font-weight: 1000;
   cursor: pointer;
 }
 
-.primary {
-  background: linear-gradient(135deg, #34d399, #10b981);
-  color: #022c22;
-}
+@media (max-width: 800px) {
+  .spell-panel {
+    grid-template-columns: 1fr;
+  }
 
-.secondary {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  .spell-btn {
+    min-height: auto;
+  }
+
+  .mine-orb {
+    border-radius: 8px;
+  }
 }
 </style>

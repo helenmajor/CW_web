@@ -1,240 +1,248 @@
 <template>
-  <GameLevelScaffold
-    title="星穹加冕厅 / Astral Coronation Hall"
-    subtitle="终章不是为了庆祝“游戏打通”，而是为了回顾：你如何把大二规划与大三执行连成完整的申请路径。/ The finale reflects on how Year 2 planning and Year 3 execution connect."
-    :guide="guide"
-    tone="amber"
-    :tags="['全程复盘 / Full journey review', '申请画像 / Planning profile']"
-    status-label="最终称号 / Final Title"
-    :status-text="`${store.travelerStage.titleZh} / ${store.travelerStage.title}`"
-  >
-    <section class="hall">
-      <div class="sparkles">
-        <span v-for="sparkle in sparkles" :key="sparkle.id" class="sparkle" :style="sparkle.style">✦</span>
-      </div>
+  <div class="coronation-game">
+    <button class="close-btn" type="button" @click="$emit('close')">Back to Map</button>
+
+    <div class="confetti-field" aria-hidden="true">
+      <i v-for="piece in confettiPieces" :key="piece" :style="confettiStyle(piece)"></i>
+    </div>
+
+    <section class="ceremony-room">
+      <p class="eyebrow">Y3-8 Astral Coronation Hall</p>
+      <h1>The Astral Coronation Ceremony</h1>
 
       <article class="certificate">
-        <div class="cert-header">GradQuest Scroll of Reflection</div>
-        <div class="cert-body">
-          兹证明旅者 <span class="name">{{ displayName }}</span><br>
-          已完成从 Year 2 规划构建到 Year 3 申请执行的完整训练，并获得称号：<br>
-          <strong>{{ store.travelerStage.titleZh }} / {{ store.travelerStage.title }}</strong>
-        </div>
-        <div class="seal">GRADQUEST</div>
+        <div class="cert-header">GradQuest Scroll of Mastery</div>
+        <p>This certifies that the illustrious trailblazer</p>
+        <div class="cert-name">{{ playerName }}</div>
+        <p>
+          has navigated the fogs of Year 2 and the dark bogs of Year 3, mastering the
+          application arc from self-positioning to final submission.
+        </p>
+        <strong class="title-grant">Title Granted: Archmage Applicant</strong>
+        <div class="wax-seal">GQ<br>OFFICIAL</div>
       </article>
 
-      <div class="summary-grid">
-        <article class="summary-card">
-          <strong>路线偏好 / Route Priority</strong>
-          <p>{{ preferredRoute }}</p>
-        </article>
-        <article class="summary-card">
-          <strong>当前阶段 / Current Stage</strong>
-          <p>{{ store.travelerStage.badgeZh }} / {{ store.travelerStage.badge }}</p>
-        </article>
-        <article class="summary-card">
-          <strong>最近学习收获 / Latest Takeaway</strong>
-          <p>{{ latestTakeaway }}</p>
-        </article>
-        <article class="summary-card">
-          <strong>Year Progress / 年度进度</strong>
-          <p>Year 2: {{ y2Progress.completed }}/{{ y2Progress.total }} | Year 3: {{ y3Progress.completed }}/{{ y3Progress.total }}</p>
-        </article>
+      <div class="reward-grid">
+        <div v-for="reward in rewards" :key="reward" class="reward-item">
+          {{ reward }}
+        </div>
       </div>
 
-      <div class="rewards">
-        <div class="reward">🎫 精英项目策略咨询 / Strategy Ticket</div>
-        <div class="reward">💬 推荐信沟通模板 / RL Communication Template</div>
-        <div class="reward">🧭 路线判断画像 / Route Priority Profile</div>
-        <div class="reward">📦 申请季复盘清单 / Application Review Checklist</div>
-      </div>
-
-      <div class="actions">
-        <button class="secondary" @click="$emit('close')">继续回看地图 / Back to Map</button>
-        <button class="primary" @click="completeLevel">完成终章记录 / Save Final Reflection</button>
-      </div>
+      <button class="complete-btn" type="button" @click="$emit('complete', { game: 'astral-coronation' })">
+        Complete Coronation
+      </button>
     </section>
-  </GameLevelScaffold>
+  </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
-import GameLevelScaffold from '@/components/GameLevelScaffold.vue'
 import { useGameStore } from '@/stores/game'
-import { useLevelGuide } from '@/composables/useLevelGuide'
 
-const emit = defineEmits(['complete', 'close'])
+defineEmits(['complete', 'close'])
+
 const store = useGameStore()
-store.hydrate()
-
-const { guide, rewardCoins } = useLevelGuide('y3', 8)
-
-const sparkles = [
-  { id: 1, style: { left: '8%', top: '12%', animationDelay: '0s' } },
-  { id: 2, style: { left: '88%', top: '10%', animationDelay: '0.6s' } },
-  { id: 3, style: { left: '18%', top: '58%', animationDelay: '1.2s' } },
-  { id: 4, style: { left: '78%', top: '62%', animationDelay: '1.8s' } },
-  { id: 5, style: { left: '50%', top: '8%', animationDelay: '2.4s' } },
+const playerName = computed(() => store.travelerProfile?.name || 'Brave Adventurer')
+const confettiPieces = Array.from({ length: 60 }, (_, index) => index)
+const rewards = [
+  '1-on-1 Elite Academy Prophecy Ticket',
+  'Deep Counsel with Senior Phantoms',
+  "Archmage's Handwritten Recommendation",
+  'Ticket to the Artifact Forging Workshop'
 ]
 
-const displayName = computed(() => store.travelerProfile?.name || 'Brave Traveler / 勇敢旅者')
-const preferredRoute = computed(() => {
-  const route = store.applicationProfile.preferredRoute
-  return route ? `${route.labelZh} / ${route.label}` : '尚未固定 / Not fixed yet'
-})
-const latestTakeaway = computed(() => (
-  store.applicationProfile.latestTakeaway || '你已经把路线判断、选校逻辑、材料分工与申请执行串成了完整链路。'
-))
-const y2Progress = computed(() => store.yearProgress('y2'))
-const y3Progress = computed(() => store.yearProgress('y3'))
-
-function completeLevel() {
-  emit('complete', {
-    rewardCoins,
-    preferences: {
-      latestTakeaway: '真正的终章奖励，是你已经能把规划、材料、执行和复盘连成完整申请路径。/ The real finale reward is a connected understanding of planning, materials, execution, and reflection.',
-    },
-  })
+function confettiStyle(index) {
+  const colors = ['#fde047', '#38bdf8', '#86efac', '#fca5a5']
+  return {
+    left: `${(index * 37) % 100}%`,
+    background: colors[index % colors.length],
+    animationDelay: `${(index % 12) * -0.28}s`,
+    animationDuration: `${4 + (index % 5) * 0.55}s`
+  }
 }
 </script>
 
 <style scoped>
-.hall {
+.coronation-game {
   position: relative;
+  min-height: 100%;
+  padding: clamp(18px, 4vw, 70px);
   overflow: hidden;
-  border-radius: 26px;
-  padding: 28px;
-  background: radial-gradient(circle at center, rgba(44, 30, 74, 0.92) 0%, rgba(13, 9, 20, 0.98) 100%);
-  border: 1px solid rgba(253, 224, 71, 0.18);
-  color: #fff;
+  color: #fff7ed;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(250, 204, 21, 0.24), transparent 34%),
+    linear-gradient(145deg, #201327, #111827 52%, #020617);
 }
 
-.sparkles {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
+.close-btn,
+.complete-btn {
+  border-radius: 8px;
+  font: inherit;
 }
 
-.sparkle {
-  position: absolute;
-  color: rgba(253, 224, 71, 0.85);
-  animation: float 3.2s infinite ease-in-out;
+.close-btn {
+  position: relative;
+  z-index: 4;
+  padding: 10px 14px;
+  color: #fde68a;
+  background: rgba(2, 6, 23, 0.86);
+  border: 1px solid rgba(250, 204, 21, 0.5);
+  cursor: pointer;
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0) scale(1); opacity: 0.5; }
-  50% { transform: translateY(-10px) scale(1.18); opacity: 1; }
+.ceremony-room {
+  position: relative;
+  z-index: 2;
+  width: min(1080px, 100%);
+  margin: 30px auto 0;
+  text-align: center;
+}
+
+h1,
+p {
+  margin: 0;
+}
+
+h1 {
+  margin-top: 8px;
+  color: #fde68a;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2.4rem, 8vw, 8rem);
+  line-height: 0.86;
+}
+
+.eyebrow {
+  color: #facc15;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: 0;
 }
 
 .certificate {
   position: relative;
-  padding: 44px 36px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #fffcf2, #f5ecd5);
+  margin-top: clamp(26px, 5vw, 80px);
+  padding: clamp(24px, 6vw, 90px);
+  border-radius: 8px;
   color: #2c1e16;
-  border: 6px double #c8a165;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.36);
+  background:
+    linear-gradient(90deg, rgba(120, 53, 15, 0.08) 1px, transparent 1px) 0 0 / 32px 100%,
+    linear-gradient(135deg, #fffcf2, #f5ecd5);
+  border: 8px double #b45309;
+  box-shadow: 0 35px 80px rgba(0, 0, 0, 0.5);
+  font-family: 'Times New Roman', Times, serif;
+  font-size: clamp(1.05rem, 2.5vw, 1.7rem);
+  line-height: 1.65;
 }
 
 .cert-header {
-  font-size: 2rem;
+  padding-bottom: 15px;
+  margin-bottom: 22px;
   color: #8b5a2b;
   border-bottom: 2px solid #8b5a2b;
-  padding-bottom: 12px;
-  margin-bottom: 24px;
-  font-family: Georgia, serif;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 1000;
   text-transform: uppercase;
 }
 
-.cert-body {
-  font-size: 1.2rem;
-  line-height: 1.9;
-  text-align: center;
+.cert-name {
+  display: inline-block;
+  margin: 14px 0 20px;
+  padding: 0 18px;
+  color: #b91c1c;
+  border-bottom: 2px dotted #b91c1c;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2rem, 7vw, 7rem);
+  line-height: 0.95;
+  font-weight: 1000;
 }
 
-.name {
-  font-size: 1.9rem;
-  color: #b22222;
-  font-weight: 900;
+.title-grant {
+  display: block;
+  margin-top: 26px;
 }
 
-.seal {
+.wax-seal {
+  width: clamp(86px, 14vw, 145px);
+  aspect-ratio: 1;
   position: absolute;
-  right: 34px;
-  bottom: 28px;
-  width: 82px;
-  height: 82px;
-  border-radius: 50%;
+  right: clamp(18px, 5vw, 80px);
+  bottom: clamp(18px, 5vw, 70px);
   display: grid;
   place-items: center;
-  background: #b22222;
+  border-radius: 50%;
   color: #fff;
-  font-size: 0.82rem;
-  font-weight: 900;
-  transform: rotate(-12deg);
+  background: #b91c1c;
+  border: 4px double #7f1d1d;
+  transform: rotate(-14deg);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(0.65rem, 1.5vw, 1rem);
+  line-height: 1.2;
+  font-weight: 1000;
 }
 
-.summary-grid,
-.rewards {
+.reward-grid {
   display: grid;
-  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 26px;
 }
 
-.summary-grid {
-  margin-top: 24px;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-}
-
-.summary-card,
-.reward {
-  border-radius: 18px;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(253, 224, 71, 0.14);
-}
-
-.summary-card strong {
+.reward-item {
+  min-height: 110px;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  border-radius: 8px;
   color: #fde68a;
+  background: rgba(2, 6, 23, 0.78);
+  border: 1px solid rgba(250, 204, 21, 0.42);
+  font-weight: 1000;
+  line-height: 1.4;
 }
 
-.summary-card p {
-  margin: 8px 0 0;
-  line-height: 1.7;
-}
-
-.rewards {
-  margin-top: 20px;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-}
-
-.reward {
-  color: #fde68a;
-  font-weight: 900;
-}
-
-.actions {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-top: 24px;
-}
-
-.actions button {
-  border: none;
-  border-radius: 999px;
-  padding: 12px 18px;
-  font-weight: 900;
+.complete-btn {
+  width: min(420px, 100%);
+  margin-top: 26px;
+  padding: 16px 20px;
+  color: #111827;
+  background: #facc15;
+  border: 0;
   cursor: pointer;
+  font-weight: 1000;
 }
 
-.primary {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: #fff;
+.confetti-field {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
 }
 
-.secondary {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+.confetti-field i {
+  position: absolute;
+  top: -20px;
+  width: 10px;
+  height: 18px;
+  animation: confetti-fall linear infinite;
+}
+
+@keyframes confetti-fall {
+  from {
+    transform: translateY(-10vh) rotate(0deg);
+  }
+  to {
+    transform: translateY(115vh) rotate(720deg);
+  }
+}
+
+@media (max-width: 700px) {
+  .reward-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wax-seal {
+    position: static;
+    margin: 26px auto 0;
+  }
 }
 </style>

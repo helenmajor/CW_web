@@ -1,253 +1,347 @@
-<template>
-  <GameLevelScaffold
-    title="材料鉴定局 / Bureau of Material Roles"
-    subtitle="CV、PS、RL 各有分工。你需要判断一句话该落在哪份材料里，而不是让三份材料互相重复。/ Classify each statement into CV, PS, or RL based on its real role."
-    :guide="guide"
-    tone="violet"
-    :tags="['CV / PS / RL 分工 / Material roles', '内容归类 / Content classification']"
-    status-label="当前进度 / Progress"
-    :status-text="completed ? '分类完成 / Classification complete' : `${currentIndex} / ${database.length}`"
-  >
-    <section class="progress-card">
-      <div class="progress-bar">
-        <div class="progress-fill" :style="{ width: `${(currentIndex / database.length) * 100}%` }"></div>
-      </div>
-      <p>玩法映射 / Game mechanic meaning: 印章代表你在决定“这段内容该放进哪份材料里”。CV 放客观事实，PS 放动机叙事，RL 放第三方评价。</p>
-    </section>
+﻿<template>
+  <div class="bureau-game">
+    <button class="close-btn" type="button" @click="$emit('close')">Back to Map</button>
 
-    <section v-if="!completed" class="desk-card">
-      <article class="parchment">
-        <p>{{ currentEntry.textZh }}</p>
+    <section class="bureau-room">
+      <p class="eyebrow">Y3-2 Bureau of Magic</p>
+      <h1>Artifact Appraisal</h1>
+      <p class="intro">
+        The same experience should be written differently in CV, PS and RL. Stamp each fragment
+        onto the only document where it belongs.
+      </p>
+
+      <div class="progress-line">
+        <span>Fragment {{ currentIndex + 1 }} / {{ fragments.length }}</span>
+        <div class="meter"><i :style="{ width: progressPercent + '%' }"></i></div>
+      </div>
+
+      <article v-if="currentFragment" class="parchment">
+        <p class="fragment-text">"{{ currentFragment.text }}"</p>
       </article>
 
-      <div class="stamp-row">
-        <button type="button" class="stamp cv" @click="stamp('cv')">
-          <strong>CV</strong>
-          <span>客观经历 / Objective facts</span>
+      <div class="stamp-grid">
+        <button class="stamp-btn cv" type="button" @click="stamp('cv')">
+          <b>CV</b>
+          <small>objective evidence, numbers, skills</small>
         </button>
-        <button type="button" class="stamp ps" @click="stamp('ps')">
-          <strong>PS</strong>
-          <span>动机叙事 / Motivation story</span>
+        <button class="stamp-btn ps" type="button" @click="stamp('ps')">
+          <b>PS</b>
+          <small>motivation, reflection, future fit</small>
         </button>
-        <button type="button" class="stamp rl" @click="stamp('rl')">
-          <strong>RL</strong>
-          <span>第三方评价 / 3rd-party endorsement</span>
+        <button class="stamp-btn rl" type="button" @click="stamp('rl')">
+          <b>RL</b>
+          <small>third-party evaluation and observation</small>
         </button>
       </div>
     </section>
 
-    <section v-else class="summary-card">
-      <h2>材料分工已掌握 / Material split mastered</h2>
-      <p>你已经完成了这一步最关键的学习目标：同样是“亮点”，也要放在最合适的材料里。真实申请里，CV、PS、RL 重复堆砌同一内容，反而会削弱整体说服力。</p>
-      <div class="actions">
-        <button class="secondary" @click="restart">重新练习 / Restamp</button>
-        <button class="primary" @click="completeLevel">保存分工理解 / Save Takeaway</button>
-      </div>
-    </section>
-
-    <LevelResultDialog
-      v-model="showError"
-      tone="error"
-      icon="🚫"
-      title="放置错误 / Misplaced Material"
-      :description="errorMessage"
-      primary-text="重新盖章 / Restamp"
-      @primary="showError = false"
-    />
-  </GameLevelScaffold>
+    <div class="modal-layer" :class="{ show: modal.show }">
+      <section class="modal-card" :class="modal.type">
+        <h2>{{ modal.title }}</h2>
+        <p>{{ modal.message }}</p>
+        <button class="modal-btn" type="button" @click="continueAfterModal">
+          {{ modal.type === 'success' ? 'Next Fragment' : 'Try This Fragment Again' }}
+        </button>
+      </section>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
-import GameLevelScaffold from '@/components/GameLevelScaffold.vue'
-import LevelResultDialog from '@/components/LevelResultDialog.vue'
-import { useLevelGuide } from '@/composables/useLevelGuide'
+import { computed, reactive, ref } from 'vue'
 
-const emit = defineEmits(['complete'])
-const { guide, rewardCoins } = useLevelGuide('y3', 2)
+const emit = defineEmits(['complete', 'close'])
 
-const database = [
+const fragments = [
   {
-    textZh: '在 SAP 实习中，我重构了后端模块，使系统响应速度提升 25%。',
+    text: 'During my SAP internship, I refactored backend code, increasing system response speed by 25%.',
     target: 'cv',
-    error: '这属于 CV，因为它是客观经历 + 量化结果。真实申请里，这种内容最适合放在简历中快速证明硬实力。',
+    note: 'Quantified, objective outcomes are ideal CV bullets.'
   },
   {
-    textZh: '一次大型技术实习中的挫败，让我意识到自己在分布式系统方面的知识瓶颈，并产生了继续深造的动机。',
+    text: 'A setback during a big-tech internship revealed my bottleneck in distributed systems and pushed me toward graduate study.',
     target: 'ps',
-    error: '这更适合 PS，因为它讲的是转折、反思和深造动机，而不是一条客观履历。',
+    note: 'A turning point, reflection and academic motivation belong in the PS.'
   },
   {
-    textZh: '该学生在算法课程项目中展现出很强的领导力，总能在团队卡住时指出关键 bug。',
+    text: "The student showed leadership in the Advanced Algorithms group project and found core bugs when the team was stuck.",
     target: 'rl',
-    error: '这是一种典型推荐信语气。领导力和团队评价更适合由老师或导师以第三方身份来背书。',
+    note: 'Praise of teamwork and character sounds credible when it comes from a recommender.'
   },
   {
-    textZh: '熟练使用 Python、Java、C++，并具备 MySQL 数据库管理能力。',
+    text: 'Proficient in Python, Java and C++; skilled in MySQL database management.',
     target: 'cv',
-    error: '这是一份技能清单，最适合放在 CV。PS 需要叙事逻辑，不适合塞入纯技能罗列。',
+    note: 'Skill lists are scan-friendly on CVs. They become grocery lists inside a PS.'
   },
   {
-    textZh: '我的长期目标是成长为能够独立领导企业级云计算架构的工程师。',
+    text: 'My long-term vision is to lead enterprise-level cloud-computing architecture projects.',
     target: 'ps',
-    error: '这是未来方向与职业愿景，更适合放进 PS 解释“你为什么想去这个方向”。',
+    note: 'Future vision is part of your application narrative, not a CV record.'
   },
   {
-    textZh: '面对极端 deadline 时，她始终保持稳定情绪并高效产出，这一点给我留下了很深印象。',
+    text: 'She remained calm under extreme deadlines and produced efficient work without lowering quality.',
     target: 'rl',
-    error: '软技能评价最好来自第三方观察。你不能在 CV 里直接写“我抗压能力强”并指望它自然成立。',
-  },
+    note: 'Soft traits need third-party observation and concrete context.'
+  }
 ]
 
 const currentIndex = ref(0)
-const completed = ref(false)
-const showError = ref(false)
-const errorMessage = ref('')
+const advanceAfterClose = ref(false)
+const modal = reactive({
+  show: false,
+  type: 'success',
+  title: '',
+  message: ''
+})
 
-const currentEntry = computed(() => database[currentIndex.value] || database[database.length - 1])
+const currentFragment = computed(() => fragments[currentIndex.value])
+const progressPercent = computed(() => Math.round((currentIndex.value / fragments.length) * 100))
 
-function stamp(type) {
-  if (completed.value) return
+function stamp(target) {
+  const fragment = currentFragment.value
+  if (!fragment) return
 
-  if (type === currentEntry.value.target) {
-    if (currentIndex.value === database.length - 1) {
-      completed.value = true
-      return
-    }
-
-    currentIndex.value += 1
+  if (target !== fragment.target) {
+    openModal(
+      'error',
+      `Wrong Seal: this belongs to ${fragment.target.toUpperCase()}`,
+      fragment.note
+    )
     return
   }
 
-  errorMessage.value = currentEntry.value.error
-  showError.value = true
+  advanceAfterClose.value = true
+  openModal('success', 'Correct Seal', fragment.note)
 }
 
-function restart() {
-  currentIndex.value = 0
-  completed.value = false
+function openModal(type, title, message) {
+  modal.type = type
+  modal.title = title
+  modal.message = message
+  modal.show = true
 }
 
-function completeLevel() {
-  emit('complete', {
-    rewardCoins,
-    preferences: {
-      latestTakeaway: 'CV、PS、RL 的价值在于分工不同，而不是互相重复。/ CV, PS, and RL work best when they play different roles.',
-    },
-  })
+function continueAfterModal() {
+  modal.show = false
+
+  if (!advanceAfterClose.value) return
+
+  advanceAfterClose.value = false
+  currentIndex.value += 1
+
+  if (currentIndex.value >= fragments.length) {
+    emit('complete', { game: 'artifact-appraisal' })
+  }
 }
 </script>
 
 <style scoped>
-.progress-card,
-.desk-card,
-.summary-card {
-  border-radius: 24px;
-  background: rgba(17, 24, 39, 0.78);
-  border: 1px solid rgba(216, 180, 254, 0.18);
-  color: #e2e8f0;
-  padding: 20px;
-}
-
-.progress-bar {
-  height: 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #fde047, #f59e0b);
-}
-
-.progress-card p,
-.summary-card p {
-  margin: 14px 0 0;
-  line-height: 1.7;
-}
-
-.desk-card {
+.bureau-game {
+  min-height: 100%;
   display: grid;
-  gap: 20px;
+  place-items: center;
+  padding: clamp(18px, 4vw, 70px);
+  color: #f8fafc;
+  background:
+    radial-gradient(circle at 75% 15%, rgba(248, 113, 113, 0.22), transparent 34%),
+    linear-gradient(145deg, #111827, #3b1f2f 52%, #0f172a);
 }
 
-.parchment {
-  background: #fdf6e3;
-  color: #2c1a0e;
-  padding: 40px 30px;
+.close-btn,
+.stamp-btn,
+.modal-btn {
   border-radius: 8px;
-  min-height: 260px;
-  display: grid;
-  place-items: center;
-  font-size: 1.12rem;
-  line-height: 1.8;
-  font-family: Georgia, serif;
+  font: inherit;
 }
 
-.stamp-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-}
-
-.stamp {
-  min-height: 120px;
-  border-radius: 22px;
-  border: 2px solid transparent;
-  background: linear-gradient(145deg, #1e1b4b, #0f0c20);
-  color: #fff;
+.close-btn {
+  position: fixed;
+  top: 18px;
+  left: 18px;
+  z-index: 4;
+  padding: 10px 14px;
+  color: #fee2e2;
+  background: rgba(2, 6, 23, 0.84);
+  border: 1px solid rgba(248, 113, 113, 0.5);
   cursor: pointer;
-  display: grid;
-  place-items: center;
-  gap: 6px;
-  padding: 12px;
+}
+
+.bureau-room {
+  width: min(1050px, 100%);
   text-align: center;
 }
 
-.stamp.cv { border-color: rgba(56, 189, 248, 0.48); }
-.stamp.ps { border-color: rgba(253, 224, 71, 0.48); }
-.stamp.rl { border-color: rgba(216, 180, 254, 0.48); }
-
-.stamp strong {
-  font-size: 1.4rem;
-}
-
-.summary-card h2 {
+h1,
+h2,
+p {
   margin: 0;
-  color: #f8fafc;
-  font-family: Georgia, serif;
 }
 
-.actions {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-top: 18px;
+h1 {
+  margin-top: 8px;
+  color: #fecaca;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2.5rem, 8vw, 8rem);
+  line-height: 0.86;
 }
 
-.actions button {
-  border: none;
-  border-radius: 999px;
-  padding: 12px 18px;
+.eyebrow {
+  color: #fca5a5;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+.intro {
+  max-width: 780px;
+  margin: 20px auto 0;
+  color: #dbeafe;
+  line-height: 1.65;
+}
+
+.progress-line {
+  margin: 26px auto 0;
+  max-width: 720px;
+  display: grid;
+  gap: 8px;
+  text-align: left;
+  color: #e5e7eb;
   font-weight: 900;
+}
+
+.meter {
+  height: 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.meter i {
+  display: block;
+  height: 100%;
+  background: #fca5a5;
+  transition: width 0.25s ease;
+}
+
+.parchment {
+  min-height: 250px;
+  display: grid;
+  place-items: center;
+  margin: 28px auto 0;
+  padding: clamp(22px, 5vw, 70px);
+  border-radius: 8px;
+  color: #351b0b;
+  background:
+    linear-gradient(90deg, rgba(120, 53, 15, 0.12) 1px, transparent 1px) 0 0 / 34px 100%,
+    linear-gradient(180deg, #fff7ed, #fed7aa);
+  border: 2px solid #b45309;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.36);
+}
+
+.fragment-text {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.35rem, 4vw, 3.5rem);
+  line-height: 1.12;
+}
+
+.stamp-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.stamp-btn {
+  min-height: 150px;
+  padding: 18px;
+  border: 2px solid rgba(254, 202, 202, 0.56);
+  color: #fee2e2;
+  background: rgba(2, 6, 23, 0.72);
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.16s ease, background 0.16s ease;
+}
+
+.stamp-btn:hover {
+  transform: translateY(-5px);
+  background: rgba(127, 29, 29, 0.72);
+}
+
+.stamp-btn b {
+  display: block;
+  font-size: clamp(2rem, 6vw, 5rem);
+  line-height: 0.85;
+}
+
+.stamp-btn small {
+  display: block;
+  margin-top: 18px;
+  color: #e5e7eb;
+  line-height: 1.4;
+}
+
+.modal-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  display: none;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.78);
+}
+
+.modal-layer.show {
+  display: grid;
+}
+
+.modal-card {
+  width: min(560px, 100%);
+  padding: clamp(22px, 5vw, 56px);
+  border-radius: 8px;
+  text-align: center;
+  color: #e5e7eb;
+  background: #111827;
+  border: 2px solid #fca5a5;
+}
+
+.modal-card.success {
+  border-color: #86efac;
+}
+
+.modal-card h2 {
+  color: #fff;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2rem, 6vw, 5rem);
+  line-height: 0.9;
+}
+
+.modal-card p {
+  margin-top: 18px;
+  line-height: 1.65;
+}
+
+.modal-btn {
+  width: 100%;
+  margin-top: 24px;
+  padding: 15px 18px;
+  color: #111827;
+  background: #fca5a5;
+  border: 0;
+  font-weight: 1000;
   cursor: pointer;
 }
 
-.primary {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: #fff;
+.modal-card.success .modal-btn {
+  background: #86efac;
 }
 
-.secondary {
-  background: rgba(255, 255, 255, 0.08);
-  color: #f8fafc;
-}
-
-@media (max-width: 760px) {
-  .stamp-row {
+@media (max-width: 720px) {
+  .stamp-grid {
     grid-template-columns: 1fr;
+  }
+
+  .stamp-btn {
+    min-height: auto;
   }
 }
 </style>

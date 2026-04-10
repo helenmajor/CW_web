@@ -1,382 +1,439 @@
 <template>
-  <GameLevelScaffold
-    title="申请熔炉 / Application Crucible"
-    subtitle="这关把“材料依赖顺序”做成配方融合：不是让你记死，而是理解什么必须先准备，什么必须后生成。/ This fusion node teaches material dependency and sequencing."
-    :guide="guide"
-    tone="violet"
-    :tags="['时间顺序 / Timeline logic', '材料依赖 / Material dependency']"
-    status-label="已解锁配方 / Unlocked Artifacts"
-    :status-text="`${inventory.length} / ${Object.keys(itemDB).length}`"
-  >
-    <section class="forge-layout">
-      <div class="fusion-card">
-        <div class="slot-grid">
-          <button type="button" class="slot" :class="{ filled: selectedSlots[0] }" @click="clearSlot(0)">
-            <template v-if="selectedSlots[0]">
-              <span class="icon">{{ itemDB[selectedSlots[0]].icon }}</span>
-              <strong>{{ itemDB[selectedSlots[0]].nameZh }}</strong>
-            </template>
-            <template v-else>
-              Empty Slot / 空槽位
-            </template>
-          </button>
-          <div class="plus">+</div>
-          <button type="button" class="slot" :class="{ filled: selectedSlots[1] }" @click="clearSlot(1)">
-            <template v-if="selectedSlots[1]">
-              <span class="icon">{{ itemDB[selectedSlots[1]].icon }}</span>
-              <strong>{{ itemDB[selectedSlots[1]].nameZh }}</strong>
-            </template>
-            <template v-else>
-              Empty Slot / 空槽位
-            </template>
-          </button>
-        </div>
+  <div class="alchemy-game">
+    <button class="close-btn" type="button" @click="$emit('close')">Back to Map</button>
 
-        <div class="cauldron-box">
-          <p>玩法映射 / Game mechanic meaning</p>
-          <strong>这里的“融合”代表真实申请材料的前后依赖顺序。</strong>
-          <span>例如没有基本经历和目标项目，就很难先写出有说服力的 CV 与 PS。</span>
-          <button class="primary" :disabled="!canMix" @click="mixElements">执行融合 / Fuse</button>
-        </div>
+    <section class="alchemy-stage">
+      <div class="stage-copy">
+        <p class="eyebrow">Y3-1 Crucible of Truth</p>
+        <h1>Application Alchemy</h1>
+        <p class="intro">
+          Click two ingredients, fuse them, and discover the real Year 3 material sequence:
+          CV, language score, PS, recommendation letter, complete package, offer.
+        </p>
       </div>
 
-      <div class="inventory-card">
-        <div class="inventory-head">
-          <h2>材料仓库 / Inventory</h2>
-          <span>点击物品放入熔炉 / Click to cast</span>
-        </div>
-        <div class="inventory-grid">
+      <div class="progress-book">
+        <h2>Recipe Book</h2>
+        <ol>
+          <li v-for="recipe in recipes" :key="recipe.result" :class="{ done: inventory.includes(recipe.result) }">
+            {{ itemDB[recipe.ing[0]].name }} + {{ itemDB[recipe.ing[1]].name }}
+            <b>{{ itemDB[recipe.result].name }}</b>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <main class="lab-grid">
+      <section class="inventory-panel">
+        <h2>Inventory</h2>
+        <div class="item-grid">
           <button
             v-for="itemId in inventory"
             :key="itemId"
-            type="button"
             class="item-card"
             :class="itemDB[itemId].tier"
+            type="button"
             @click="addToSlot(itemId)"
           >
-            <span class="icon">{{ itemDB[itemId].icon }}</span>
-            <strong>{{ itemDB[itemId].nameZh }}</strong>
-            <span>{{ itemDB[itemId].name }}</span>
+            <span class="item-icon">{{ itemDB[itemId].icon }}</span>
+            <strong>{{ itemDB[itemId].name }}</strong>
           </button>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <section v-if="toast.message" class="toast" :class="toast.tone">
-      <strong>{{ toast.title }}</strong>
-      <p>{{ toast.message }}</p>
-    </section>
+      <section class="cauldron-panel">
+        <h2>The Crucible</h2>
+        <div class="slot-row">
+          <button
+            v-for="(slot, index) in slots"
+            :key="index"
+            class="alchemy-slot"
+            type="button"
+            @click="clearSlot(index)"
+          >
+            <template v-if="slot">
+              <span class="item-icon">{{ itemDB[slot].icon }}</span>
+              <strong>{{ itemDB[slot].name }}</strong>
+              <small>Click to remove</small>
+            </template>
+            <template v-else>
+              <span class="empty-mark">+</span>
+              <strong>Empty Slot</strong>
+              <small>Add one material</small>
+            </template>
+          </button>
+        </div>
 
-    <section v-if="hasOffer" class="victory-card">
-      <h2>Grand Slam Offer / 终极 Offer 已解锁</h2>
-      <p>你已经把申请依赖顺序串起来了：先有经历与项目匹配，再有 CV；再由 CV 延伸出 PS 与 RL；最后把材料包和语言成绩合并成可提交的完整申请。</p>
-      <div class="recipe-summary">
-        <div>经历 + 项目要求 → CV</div>
-        <div>CV + 个人动机 → PS</div>
-        <div>CV + 导师背书 → RL</div>
-        <div>PS + RL → Application Package</div>
-        <div>Package + 语言成绩 → Offer</div>
-      </div>
-      <div class="actions">
-        <button class="secondary" @click="resetSlots">继续试配方 / Keep Exploring</button>
-        <button class="primary" @click="completeLevel">保存时间线逻辑 / Save Timeline Takeaway</button>
-      </div>
-    </section>
-  </GameLevelScaffold>
+        <button class="mix-btn" type="button" :disabled="!canMix" @click="mixSlots">
+          Fuse Selected Ingredients
+        </button>
+
+        <div class="toast" :class="toast.type">
+          <strong>{{ toast.title }}</strong>
+          <p>{{ toast.message }}</p>
+        </div>
+      </section>
+    </main>
+
+    <div class="success-layer" :class="{ show: inventory.includes('offer') }">
+      <section class="success-card">
+        <p class="eyebrow">Grand Slam Achieved</p>
+        <h2>{{ itemDB.offer.icon }} {{ itemDB.offer.name }}</h2>
+        <p>
+          You fused evidence, target requirements, English preparation, PS logic and mentor support
+          into one complete application package.
+        </p>
+        <button class="mix-btn" type="button" @click="$emit('complete', { game: 'application-alchemy' })">
+          Save Artifact & Return
+        </button>
+      </section>
+    </div>
+  </div>
 </template>
 
 <script setup>
 import { computed, reactive, ref } from 'vue'
-import GameLevelScaffold from '@/components/GameLevelScaffold.vue'
-import { useLevelGuide } from '@/composables/useLevelGuide'
 
-const emit = defineEmits(['complete'])
-const { guide, rewardCoins } = useLevelGuide('y3', 1)
+defineEmits(['complete', 'close'])
 
 const itemDB = {
-  exp: { id: 'exp', name: 'Experience Fragments', nameZh: '经历碎片', icon: '📝', tier: 'tier-1' },
-  school: { id: 'school', name: 'Program Requirements', nameZh: '项目要求', icon: '🏫', tier: 'tier-1' },
-  story: { id: 'story', name: 'Personal Motive', nameZh: '个人动机', icon: '🔥', tier: 'tier-1' },
-  prof: { id: 'prof', name: "Mentor's Support", nameZh: '导师支持', icon: '👨‍🏫', tier: 'tier-1' },
-  eng: { id: 'eng', name: 'Language Score', nameZh: '语言成绩', icon: '📖', tier: 'tier-1' },
-  cv: { id: 'cv', name: 'Draft CV', nameZh: '初版 CV', icon: '📋', tier: 'tier-2' },
-  ps: { id: 'ps', name: 'Draft PS', nameZh: '初版 PS', icon: '✨', tier: 'tier-3' },
-  rl: { id: 'rl', name: 'Recommendation Letter', nameZh: '推荐信', icon: '🤝', tier: 'tier-3' },
-  package: { id: 'package', name: 'Application Package', nameZh: '申请材料包', icon: '📦', tier: 'tier-4' },
-  offer: { id: 'offer', name: 'Offer', nameZh: '最终 Offer', icon: '🎓', tier: 'tier-4' },
+  exp: { name: 'Rambling Memories', icon: 'EXP', tier: 'tier-1' },
+  school: { name: 'Academy Requirements', icon: 'REQ', tier: 'tier-1' },
+  hair: { name: 'Sacrificed Sanity', icon: 'HP', tier: 'tier-1' },
+  prof: { name: "Mentor's Goodwill", icon: 'PROF', tier: 'tier-1' },
+  eng: { name: 'Basic English Lore', icon: 'ENG', tier: 'tier-1' },
+  cv: { name: 'Draft CV', icon: 'CV', tier: 'tier-2' },
+  ielts: { name: 'Language Score Scroll', icon: '7.0', tier: 'tier-2' },
+  ps: { name: 'Flawless PS', icon: 'PS', tier: 'tier-3' },
+  rl: { name: 'Strong RL', icon: 'RL', tier: 'tier-3' },
+  package: { name: 'Application Package', icon: 'PKG', tier: 'tier-4' },
+  offer: { name: 'Grand Slam Offer', icon: 'OFFER', tier: 'tier-4' }
 }
 
 const recipes = [
-  { ing: ['exp', 'school'], result: 'cv', title: 'CV 生成 / CV forged', message: '先有经历和项目要求，你才能写出针对性的 CV。现实里这一步对应“整理经历并对照项目要求”。' },
-  { ing: ['cv', 'story'], result: 'ps', title: 'PS 生成 / PS forged', message: 'PS 不该凭空写，它通常建立在 CV 已经整理好的经历基础上，再加入动机与反思。' },
-  { ing: ['cv', 'prof'], result: 'rl', title: 'RL 生成 / RL forged', message: '推荐信也需要你的 CV 或信息包来帮推荐人快速回忆你的亮点。' },
-  { ing: ['ps', 'rl'], result: 'package', title: '材料包生成 / Application package forged', message: '当 PS 与 RL 成型后，核心主申请材料包才算完整。' },
-  { ing: ['package', 'eng'], result: 'offer', title: 'Offer 生成 / Offer summoned', message: '完整材料包再加上语言门槛，才更接近真实可提交的申请。' },
+  { ing: ['exp', 'school'], result: 'cv', msg: 'You aligned memories with target requirements and forged a Draft CV.' },
+  { ing: ['eng', 'hair'], result: 'ielts', msg: 'You traded sanity for timed practice and obtained a Language Score Scroll.' },
+  { ing: ['cv', 'hair'], result: 'ps', msg: 'You used the CV skeleton, then dug deeper until a real PS began to glow.' },
+  { ing: ['cv', 'prof'], result: 'rl', msg: "You sent a concise CV and awakened the mentor's memory. Strong RL obtained." },
+  { ing: ['ps', 'rl'], result: 'package', msg: 'The PS and recommendation letter resonate. Your package now has a story and evidence.' },
+  { ing: ['package', 'ielts'], result: 'offer', msg: 'All hard thresholds and materials align. A Grand Slam Offer appears.' }
 ]
 
-const failureNotes = [
-  { check: ['exp', 'story'], message: '经历和动机都很重要，但没有项目要求参照时，你还没真正进入“面向申请”的写作阶段。' },
-  { check: ['ps', 'prof'], message: '直接拿 PS 去找推荐人通常效率不高。推荐人更需要 CV 和信息包来快速了解你的亮点。' },
-  { check: ['package', 'story'], message: '材料包已经成型，再补动机并不会替代语言门槛或正式提交要求。' },
+const failMsgs = [
+  { check: ['exp', 'hair'], text: 'Rambling plus all-nighters only produces dark circles. Anchor memories to target requirements first.' },
+  { check: ['ps', 'prof'], text: 'Do not throw a massive PS at the mentor. Send a concise CV and highlight summary.' },
+  { check: ['package', 'hair'], text: 'The package is ready. More panic cannot improve it. Check and submit.' },
+  { check: ['school', 'prof'], text: 'A professor needs evidence of your work, not a ranking list of your dream schools.' }
 ]
 
-const inventory = ref(['exp', 'school', 'story', 'prof', 'eng'])
-const selectedSlots = ref([null, null])
+const inventory = reactive(['exp', 'school', 'hair', 'prof', 'eng'])
+const slots = ref([null, null])
 const toast = reactive({
-  title: '',
-  message: '',
-  tone: 'success',
+  type: 'info',
+  title: 'Start the chain',
+  message: 'Hint: combine messy experience with official target requirements.'
 })
 
-const canMix = computed(() => Boolean(selectedSlots.value[0] && selectedSlots.value[1]))
-const hasOffer = computed(() => inventory.value.includes('offer'))
+const canMix = computed(() => Boolean(slots.value[0] && slots.value[1]))
 
 function addToSlot(itemId) {
-  if (selectedSlots.value.includes(itemId)) return
-  if (!selectedSlots.value[0]) {
-    selectedSlots.value[0] = itemId
+  const emptyIndex = slots.value.findIndex((slot) => slot === null)
+  if (emptyIndex === -1) {
+    setToast('error', 'Crucible full', 'Clear a slot or fuse the current pair first.')
     return
   }
-  if (!selectedSlots.value[1]) {
-    selectedSlots.value[1] = itemId
-    return
-  }
-  showToast('warning', '熔炉已满 / Cauldron full', '请先融合或清空一个槽位。/ Fuse or clear one slot first.')
+  slots.value[emptyIndex] = itemId
 }
 
 function clearSlot(index) {
-  selectedSlots.value[index] = null
+  slots.value[index] = null
 }
 
-function resetSlots() {
-  selectedSlots.value = [null, null]
-}
+function mixSlots() {
+  const pair = [...slots.value]
+  const recipe = recipes.find(({ ing }) => ing.every((item) => pair.includes(item)))
 
-function samePair(list, left, right) {
-  return list.includes(left) && list.includes(right)
-}
-
-function mixElements() {
-  if (!canMix.value) return
-
-  const [left, right] = selectedSlots.value
-  const recipe = recipes.find((entry) => samePair(entry.ing, left, right))
-
-  if (recipe) {
-    if (!inventory.value.includes(recipe.result)) {
-      inventory.value = [...inventory.value, recipe.result]
-    }
-
-    showToast('success', recipe.title, recipe.message)
-    resetSlots()
+  if (!recipe) {
+    const fail = failMsgs.find(({ check }) => check.every((item) => pair.includes(item)))
+    setToast('error', 'No resonance', fail?.text || 'These ingredients do not make a useful application artifact.')
+    slots.value = [null, null]
     return
   }
 
-  const failure = failureNotes.find((entry) => samePair(entry.check, left, right))
-  showToast(
-    'error',
-    '配方不成立 / Invalid pairing',
-    failure?.message || '这两个元素之间还没有形成真实申请逻辑。请想想哪一步必须先完成，哪一步必须后生成。',
-  )
-  resetSlots()
+  if (!inventory.includes(recipe.result)) {
+    inventory.push(recipe.result)
+  }
+  setToast('success', itemDB[recipe.result].name, recipe.msg)
+  slots.value = [null, null]
 }
 
-function showToast(tone, title, message) {
-  toast.tone = tone
+function setToast(type, title, message) {
+  toast.type = type
   toast.title = title
   toast.message = message
-}
-
-function completeLevel() {
-  emit('complete', {
-    rewardCoins,
-    preferences: {
-      latestTakeaway: '申请材料不是并列出现的，它们有真实的依赖顺序。/ Application materials are not parallel artifacts; they depend on each other in sequence.',
-    },
-  })
 }
 </script>
 
 <style scoped>
-.forge-layout {
-  display: grid;
-  grid-template-columns: 1.1fr 1fr;
-  gap: 18px;
+.alchemy-game {
+  position: relative;
+  min-height: 100%;
+  padding: clamp(18px, 4vw, 64px);
+  color: #ecfeff;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(34, 211, 238, 0.22), transparent 32%),
+    linear-gradient(135deg, #052e2b, #101827 55%, #111827);
 }
 
-.fusion-card,
-.inventory-card,
-.toast,
-.victory-card {
-  border-radius: 24px;
-  border: 1px solid rgba(129, 140, 248, 0.18);
-  background: rgba(15, 23, 42, 0.78);
-  color: #e2e8f0;
-  padding: 22px;
+.close-btn,
+.item-card,
+.alchemy-slot,
+.mix-btn {
+  border-radius: 8px;
+  font: inherit;
 }
 
-.slot-grid {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: 16px;
-  align-items: center;
-}
-
-.slot {
-  min-height: 140px;
-  border-radius: 20px;
-  border: 1px dashed rgba(129, 140, 248, 0.4);
-  background: rgba(0, 0, 0, 0.24);
-  color: #cbd5e1;
+.close-btn {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  padding: 10px 14px;
+  color: #cffafe;
+  background: rgba(2, 6, 23, 0.84);
+  border: 1px solid rgba(103, 232, 249, 0.5);
   cursor: pointer;
+}
+
+.alchemy-stage,
+.lab-grid {
+  width: min(1260px, 100%);
+  margin: 0 auto;
+}
+
+.alchemy-stage,
+.lab-grid,
+.slot-row {
   display: grid;
-  place-items: center;
-  text-align: center;
-  padding: 16px;
+  gap: 22px;
 }
 
-.slot.filled {
-  border-style: solid;
-  background: linear-gradient(135deg, #3730a3, #1e1b4b);
-  color: #fff;
+.alchemy-stage {
+  grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.9fr);
+  align-items: end;
+  padding-top: 32px;
 }
 
-.slot .icon,
-.item-card .icon {
-  font-size: 2rem;
-}
-
-.plus {
-  font-size: 2rem;
-  color: #818cf8;
-  font-weight: 900;
-}
-
-.cauldron-box {
-  margin-top: 20px;
-  display: grid;
-  gap: 8px;
-  padding: 18px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.cauldron-box p {
+h1,
+h2,
+p {
   margin: 0;
-  color: #c4b5fd;
-  font-weight: 900;
 }
 
-.cauldron-box span {
-  line-height: 1.7;
+h1 {
+  margin-top: 8px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2.5rem, 8vw, 8rem);
+  line-height: 0.86;
+}
+
+h2 {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.5rem, 3vw, 3.6rem);
+  line-height: 1;
+}
+
+.eyebrow {
+  color: #67e8f9;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+.intro {
+  max-width: 760px;
+  margin-top: 18px;
+  color: #cbd5e1;
+  line-height: 1.65;
+}
+
+.progress-book,
+.inventory-panel,
+.cauldron-panel,
+.success-card {
+  padding: clamp(18px, 3vw, 40px);
+  border-radius: 8px;
+  background: rgba(2, 6, 23, 0.78);
+  border: 1px solid rgba(103, 232, 249, 0.28);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.34);
+}
+
+.progress-book ol {
+  display: grid;
+  gap: 9px;
+  margin: 18px 0 0;
+  padding-left: 22px;
   color: #cbd5e1;
 }
 
-.primary,
-.secondary {
-  border: none;
-  border-radius: 999px;
-  padding: 12px 18px;
-  font-weight: 900;
-  cursor: pointer;
+.progress-book li {
+  line-height: 1.4;
 }
 
-.primary {
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: #fff;
+.progress-book li.done {
+  color: #86efac;
 }
 
-.primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.progress-book b {
+  display: block;
+  color: inherit;
 }
 
-.secondary {
-  background: rgba(255, 255, 255, 0.08);
-  color: #f8fafc;
-}
-
-.inventory-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
+.lab-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.9fr);
+  margin-top: 24px;
   align-items: start;
 }
 
-.inventory-head h2,
-.victory-card h2 {
-  margin: 0;
-  color: #f8fafc;
-  font-family: Georgia, serif;
-}
-
-.inventory-grid {
-  margin-top: 18px;
+.item-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
+  margin-top: 20px;
 }
 
-.item-card {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 18px;
-  background: rgba(30, 41, 59, 0.9);
-  color: #f8fafc;
+.item-card,
+.alchemy-slot {
+  min-height: 150px;
   padding: 14px;
-  text-align: center;
+  color: #e5e7eb;
+  border: 1px solid rgba(148, 163, 184, 0.38);
+  background: #0f172a;
   cursor: pointer;
-  display: grid;
-  gap: 6px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  text-align: left;
 }
 
-.item-card.tier-2 { border-color: rgba(59, 130, 246, 0.4); }
-.item-card.tier-3 { border-color: rgba(168, 85, 247, 0.4); }
-.item-card.tier-4 { border-color: rgba(245, 158, 11, 0.48); }
+.item-card:hover,
+.alchemy-slot:hover {
+  transform: translateY(-4px);
+  border-color: #67e8f9;
+}
+
+.item-icon,
+.empty-mark {
+  min-width: 60px;
+  min-height: 60px;
+  width: fit-content;
+  display: grid;
+  place-items: center;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: #022c22;
+  background: #67e8f9;
+  font-weight: 1000;
+}
+
+.tier-2 .item-icon {
+  background: #86efac;
+}
+
+.tier-3 .item-icon {
+  background: #facc15;
+}
+
+.tier-4 .item-icon {
+  color: #450a0a;
+  background: #fca5a5;
+}
+
+.slot-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 22px;
+}
+
+.alchemy-slot small {
+  color: #94a3b8;
+}
+
+.mix-btn {
+  width: 100%;
+  margin-top: 18px;
+  padding: 16px 18px;
+  border: 0;
+  color: #022c22;
+  background: #67e8f9;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.mix-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.toast {
+  min-height: 128px;
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 8px;
+  border-left: 5px solid #67e8f9;
+  background: rgba(15, 23, 42, 0.95);
+  color: #e5e7eb;
+}
 
 .toast.success {
-  border-left: 4px solid #22c55e;
-}
-
-.toast.warning {
-  border-left: 4px solid #f59e0b;
+  border-left-color: #86efac;
 }
 
 .toast.error {
-  border-left: 4px solid #ef4444;
-}
-
-.toast strong {
-  color: #f8fafc;
+  border-left-color: #f87171;
 }
 
 .toast p,
-.victory-card p {
-  margin: 8px 0 0;
-  line-height: 1.8;
+.success-card p {
+  margin-top: 10px;
+  color: #cbd5e1;
+  line-height: 1.55;
 }
 
-.recipe-summary {
-  margin-top: 16px;
+.success-layer {
+  position: fixed;
+  inset: 0;
+  display: none;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.78);
+  z-index: 10;
+}
+
+.success-layer.show {
   display: grid;
-  gap: 10px;
 }
 
-.recipe-summary div {
-  padding: 12px 14px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.06);
+.success-card {
+  width: min(640px, 100%);
+  text-align: center;
 }
 
-.actions {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-top: 18px;
-}
-
-@media (max-width: 920px) {
-  .forge-layout {
+@media (max-width: 900px) {
+  .alchemy-stage,
+  .lab-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .item-grid,
+  .slot-row {
+    grid-template-columns: 1fr;
+  }
+
+  .item-card,
+  .alchemy-slot {
+    min-height: auto;
   }
 }
 </style>

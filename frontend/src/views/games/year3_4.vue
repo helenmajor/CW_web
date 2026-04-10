@@ -1,349 +1,397 @@
 <template>
-  <GameLevelScaffold
-    title="记忆星图 / Memory Constellation"
-    subtitle="点击星点不是为了连线好看，而是在训练 PS 的叙事顺序：过去经历如何推出现在动机，再指向未来方向。/ Connect the stars in a narrative order that matches real PS logic."
-    :guide="guide"
-    tone="violet"
-    :tags="['PS 结构 / PS structure', '叙事逻辑 / Narrative logic']"
-    status-label="已连接节点 / Connected Stars"
-    :status-text="`${selectedOrder.length} / ${nodes.length}`"
-  >
-    <section class="sky-card">
-      <svg class="line-layer" viewBox="0 0 100 100" preserveAspectRatio="none">
-        <polyline class="magic-line" :class="result?.tone" :points="linePoints" />
+  <div class="ps-game">
+    <button class="close-btn" type="button" @click="$emit('close')">Back to Map</button>
+
+    <section class="ps-header">
+      <p class="eyebrow">Y3-4 Constellation of Memories</p>
+      <h1>PS Story Weaving</h1>
+      <p class="intro">
+        Click five stars to weave a personal statement trajectory. Strong PS logic moves from your
+        evidence-backed past, to school fit, to future direction.
+      </p>
+    </section>
+
+    <main class="sky-panel">
+      <svg class="star-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <polyline :points="linePoints" />
       </svg>
 
       <button
-        v-for="node in nodes"
-        :key="node.id"
-        type="button"
+        v-for="star in stars"
+        :key="star.id"
         class="star-node"
-        :class="{ active: selectedOrder.includes(node.id) }"
-        :style="{ left: `${node.x}%`, top: `${node.y}%` }"
-        @click="clickStar(node.id)"
+        :class="{ selected: selectedOrder.includes(star.id) }"
+        :style="{ left: star.x + '%', top: star.y + '%' }"
+        type="button"
+        @click="toggleStar(star.id)"
       >
         <span class="star-core">
-          {{ node.icon }}
-          <span v-if="selectedOrder.includes(node.id)" class="order">{{ selectedOrder.indexOf(node.id) + 1 }}</span>
+          {{ selectedOrder.indexOf(star.id) === -1 ? star.mark : selectedOrder.indexOf(star.id) + 1 }}
         </span>
         <span class="star-label">
-          <strong>{{ node.titleZh }}</strong>
-          <small>{{ node.descZh }}</small>
+          <b>{{ star.title }}</b>
+          <small>{{ star.desc }}</small>
         </span>
       </button>
-    </section>
+    </main>
 
-    <section class="helper-card">
-      <strong>复杂节点提示 / Helper</strong>
-      <p>推荐顺序应该能解释“为什么会想学这个方向 → 发生了什么转折 → 你做了哪些准备 → 为什么匹配这个项目 → 未来想解决什么问题”。</p>
-    </section>
+    <div class="action-row">
+      <button class="secondary-btn" type="button" @click="resetStars">Redraw Trajectory</button>
+      <button class="primary-btn" type="button" :disabled="selectedOrder.length !== stars.length" @click="validateConstellation">
+        Validate Constellation
+      </button>
+    </div>
 
-    <section v-if="result" class="result-card" :class="result.tone">
-      <h2>{{ result.title }}</h2>
-      <p>{{ result.desc }}</p>
-      <div class="actions">
-        <button class="secondary" @click="resetStars">重画星图 / Redraw</button>
-        <button v-if="result.success" class="primary" @click="completeLevel">保存文书骨架 / Save PS Structure</button>
-      </div>
-    </section>
-  </GameLevelScaffold>
+    <div class="result-layer" :class="{ show: result.show }">
+      <section class="result-card" :class="result.type">
+        <h2>{{ result.title }}</h2>
+        <p>{{ result.desc }}</p>
+        <div class="action-row compact">
+          <button class="secondary-btn" type="button" @click="result.show = false">Keep Editing</button>
+          <button
+            v-if="result.type === 'success'"
+            class="primary-btn"
+            type="button"
+            @click="$emit('complete', { game: 'ps-story-weaving', order: selectedOrder })"
+          >
+            Save PS Skeleton
+          </button>
+        </div>
+      </section>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
-import GameLevelScaffold from '@/components/GameLevelScaffold.vue'
-import { useLevelGuide } from '@/composables/useLevelGuide'
+import { computed, reactive, ref } from 'vue'
 
-const emit = defineEmits(['complete'])
-const { guide, rewardCoins } = useLevelGuide('y3', 4)
+defineEmits(['complete', 'close'])
 
-const nodes = [
-  { id: 'motive', x: 20, y: 20, icon: '🌱', titleZh: '最初兴趣', descZh: '为什么这个方向第一次吸引你？' },
-  { id: 'incident', x: 10, y: 55, icon: '⚡', titleZh: '关键转折', descZh: '什么事件让你意识到还需要更深入学习？' },
-  { id: 'action', x: 50, y: 80, icon: '🔨', titleZh: '实际准备', descZh: '你已经做了哪些课程、项目或研究？' },
-  { id: 'match', x: 90, y: 55, icon: '🏫', titleZh: '项目匹配', descZh: '为什么这个项目正好回应你的需要？' },
-  { id: 'goal', x: 80, y: 20, icon: '🚩', titleZh: '未来方向', descZh: '你未来希望解决什么更大的问题？' },
+const stars = [
+  { id: 'motive', x: 20, y: 20, mark: 'M', title: 'Awakening', desc: 'Why did this field first matter to you?' },
+  { id: 'incident', x: 12, y: 62, mark: '!', title: 'The Crucible', desc: 'What setback, question or bottleneck raised the stakes?' },
+  { id: 'action', x: 50, y: 82, mark: 'A', title: 'Forging', desc: 'What academic work, project or research proves your preparation?' },
+  { id: 'match', x: 88, y: 62, mark: 'FIT', title: 'Convergence', desc: 'Why this exact program, lab, module or ecosystem?' },
+  { id: 'goal', x: 80, y: 20, mark: 'G', title: 'The Zenith', desc: 'What future problem will your next training help you tackle?' }
 ]
 
 const selectedOrder = ref([])
-const result = ref(null)
+const result = reactive({
+  show: false,
+  type: 'error',
+  title: '',
+  desc: ''
+})
 
-const linePoints = computed(() => (
-  selectedOrder.value
-    .map((id) => {
-      const node = nodes.find((entry) => entry.id === id)
-      return node ? `${node.x},${node.y}` : ''
-    })
-    .filter(Boolean)
-    .join(' ')
-))
+const linePoints = computed(() => selectedOrder.value
+  .map((id) => stars.find((star) => star.id === id))
+  .filter(Boolean)
+  .map((star) => `${star.x},${star.y}`)
+  .join(' '))
 
-function clickStar(id) {
-  if (result.value?.success) return
+function toggleStar(id) {
+  result.show = false
+  const index = selectedOrder.value.indexOf(id)
 
-  if (selectedOrder.value.includes(id)) {
-    const index = selectedOrder.value.indexOf(id)
+  if (index !== -1) {
     selectedOrder.value = selectedOrder.value.slice(0, index + 1)
-    result.value = null
     return
   }
 
-  if (selectedOrder.value.length >= nodes.length) return
-  selectedOrder.value = [...selectedOrder.value, id]
-
-  if (selectedOrder.value.length === nodes.length) {
-    validateConstellation()
+  if (selectedOrder.value.length < stars.length) {
+    selectedOrder.value = [...selectedOrder.value, id]
   }
+}
+
+function resetStars() {
+  selectedOrder.value = []
+  result.show = false
 }
 
 function validateConstellation() {
   const order = selectedOrder.value
 
   if (order[0] === 'match') {
-    result.value = {
-      tone: 'error',
-      success: false,
-      title: '模板感过强 / Template opening detected',
-      desc: '如果一上来就在夸学校，很容易显得像群发模板。PS 更应该先从“你为什么会走到这里”开始。',
-    }
+    showResult('error', 'Template Warning', 'Opening with school flattery sounds mass-produced. A PS should begin from your own question, context or challenge.')
     return
   }
 
   if (order.indexOf('goal') < order.indexOf('action') || order.indexOf('match') < order.indexOf('action')) {
-    result.value = {
-      tone: 'error',
-      success: false,
-      title: '逻辑悬空 / The logic lacks foundation',
-      desc: '你在讲未来目标和项目匹配之前，还没有先交代自己已经做了哪些准备，这会让目标显得很空。',
-    }
+    showResult('error', 'Logical Collapse', 'Do not discuss school fit or grand vision before showing preparation. The goal needs an evidence foundation.')
     return
   }
 
   if (order.indexOf('motive') > order.indexOf('action')) {
-    result.value = {
-      tone: 'warning',
-      success: false,
-      title: '叙事顺序不够自然 / The story order feels off',
-      desc: '多数情况下，先交代兴趣来源，再讲行动和准备，会更符合读者的理解顺序。',
-    }
+    showResult('error', 'Narrative Risk', 'You placed preparation before origin. Most academic PS drafts read clearer when motive and question lead into action.')
     return
   }
 
-  if (
-    order[0] === 'motive' &&
-    order[1] === 'incident' &&
-    order[2] === 'action' &&
-    order[3] === 'match' &&
-    order[4] === 'goal'
-  ) {
-    result.value = {
-      tone: 'success',
-      success: true,
-      title: '标准英雄旅程 / Hero-journey structure confirmed',
-      desc: '这个顺序能自然解释：你为什么开始、发生了什么转折、做了什么准备、为什么匹配项目、未来想去哪里。',
-    }
+  const orthodox = ['motive', 'incident', 'action', 'match', 'goal']
+  const hook = ['incident', 'motive', 'action', 'match', 'goal']
+  const isOrthodox = orthodox.every((id, index) => order[index] === id)
+  const isHook = hook.every((id, index) => order[index] === id)
+
+  if (isOrthodox || isHook) {
+    showResult(
+      'success',
+      isHook ? 'Advanced Suspense Hook' : "The Hero's Journey",
+      isHook
+        ? 'A challenge-first opening can work when it immediately returns to origin, preparation, school fit and future direction.'
+        : 'A clean arc: origin, catalyst, academic preparation, program fit, future direction. Now fill it with specific evidence.'
+    )
     return
   }
 
-  if (
-    order[0] === 'incident' &&
-    order[1] === 'motive' &&
-    order[2] === 'action' &&
-    order[3] === 'match' &&
-    order[4] === 'goal'
-  ) {
-    result.value = {
-      tone: 'success',
-      success: true,
-      title: '悬念式开场 / Strong hook structure confirmed',
-      desc: '先用关键事件吸引读者，再补回兴趣来源，也是高级但合理的 PS 结构。',
-    }
-    return
-  }
-
-  result.value = {
-    tone: 'warning',
-    success: false,
-    title: '星图还能更顺 / The constellation can be smoother',
-    desc: '记住核心轴线：过去经历推出现在动机，现在准备支撑项目匹配，最后再引向未来方向。',
-  }
+  showResult('error', 'The Starlight Flickers', 'The order is close but not yet persuasive. Try: motive or catalyst, preparation, school fit, future goal.')
 }
 
-function resetStars() {
-  selectedOrder.value = []
-  result.value = null
-}
-
-function completeLevel() {
-  emit('complete', {
-    rewardCoins,
-    preferences: {
-      latestTakeaway: 'PS 的骨架不是堆素材，而是用清晰顺序把过去、现在和未来串起来。/ A PS works when it connects past, present, and future in a clean logic chain.',
-    },
-  })
+function showResult(type, title, desc) {
+  result.type = type
+  result.title = title
+  result.desc = desc
+  result.show = true
 }
 </script>
 
 <style scoped>
-.sky-card,
-.helper-card,
-.result-card {
-  border-radius: 24px;
-  background: rgba(20, 10, 35, 0.72);
-  border: 1px solid rgba(107, 33, 168, 0.22);
-  color: #e2e8f0;
+.ps-game {
+  min-height: 100%;
+  padding: clamp(18px, 4vw, 64px);
+  color: #eef2ff;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(59, 130, 246, 0.28), transparent 34%),
+    linear-gradient(145deg, #111827, #171225 55%, #031927);
 }
 
-.sky-card {
+.close-btn,
+.star-node,
+.secondary-btn,
+.primary-btn {
+  border-radius: 8px;
+  font: inherit;
+}
+
+.close-btn {
+  padding: 10px 14px;
+  color: #bfdbfe;
+  background: rgba(2, 6, 23, 0.86);
+  border: 1px solid rgba(147, 197, 253, 0.5);
+  cursor: pointer;
+}
+
+.ps-header,
+.sky-panel,
+.action-row {
+  width: min(1260px, 100%);
+  margin: 0 auto;
+}
+
+.ps-header {
+  margin-top: 22px;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  margin-top: 8px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2.4rem, 8vw, 8rem);
+  line-height: 0.86;
+  color: #dbeafe;
+}
+
+.eyebrow {
+  color: #93c5fd;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+.intro {
+  max-width: 820px;
+  margin-top: 18px;
+  color: #cbd5e1;
+  line-height: 1.65;
+}
+
+.sky-panel {
   position: relative;
-  height: 470px;
+  height: clamp(560px, 62vw, 780px);
+  margin-top: 28px;
+  border-radius: 8px;
   overflow: hidden;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.85) 1px, transparent 2px) 0 0 / 72px 72px,
+    linear-gradient(180deg, rgba(30, 41, 59, 0.72), rgba(2, 6, 23, 0.9));
+  border: 1px solid rgba(147, 197, 253, 0.3);
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.38);
 }
 
-.line-layer {
+.star-lines {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  pointer-events: none;
 }
 
-.magic-line {
+.star-lines polyline {
   fill: none;
-  stroke: #d8b4fe;
-  stroke-width: 4;
+  stroke: #facc15;
+  stroke-width: 0.8;
   stroke-linecap: round;
   stroke-linejoin: round;
-  filter: drop-shadow(0 0 8px #a855f7);
-}
-
-.magic-line.success {
-  stroke: #fde047;
-  filter: drop-shadow(0 0 15px #fde047);
-}
-
-.magic-line.error,
-.magic-line.warning {
-  stroke: #ef4444;
-  stroke-dasharray: 8 6;
+  filter: drop-shadow(0 0 6px #facc15);
 }
 
 .star-node {
   position: absolute;
+  width: clamp(170px, 22vw, 300px);
+  min-height: 160px;
   transform: translate(-50%, -50%);
-  border: none;
-  background: transparent;
-  color: inherit;
+  padding: 14px;
+  border: 1px solid rgba(191, 219, 254, 0.45);
+  color: #dbeafe;
+  background: rgba(2, 6, 23, 0.72);
   cursor: pointer;
+  text-align: left;
+  display: grid;
+  gap: 10px;
+}
+
+.star-node:hover,
+.star-node.selected {
+  border-color: #facc15;
+  background: rgba(30, 41, 59, 0.92);
 }
 
 .star-core {
-  position: relative;
-  width: 58px;
-  height: 58px;
-  border-radius: 50%;
+  width: 64px;
+  height: 64px;
   display: grid;
   place-items: center;
-  font-size: 1.6rem;
-  background: radial-gradient(circle, #f3e8ff, #7e22ce);
-  box-shadow: 0 0 20px rgba(126, 34, 206, 0.6);
-}
-
-.star-node.active .star-core {
-  background: radial-gradient(circle, #fff, #ca8a04);
-}
-
-.order {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 24px;
-  height: 24px;
   border-radius: 50%;
-  background: #0f172a;
-  color: #fde047;
-  font-size: 0.8rem;
-  display: grid;
-  place-items: center;
-  border: 2px solid #fde047;
+  color: #111827;
+  background: #bfdbfe;
+  font-weight: 1000;
 }
 
-.star-label {
-  margin-top: 10px;
-  min-width: 146px;
-  display: grid;
-  gap: 4px;
-  padding: 10px 12px;
-  border-radius: 14px;
-  background: rgba(15, 23, 42, 0.88);
-  border: 1px solid rgba(76, 29, 149, 0.48);
+.selected .star-core {
+  background: #facc15;
 }
 
-.star-label strong {
-  color: #e9d5ff;
+.star-label b,
+.star-label small {
+  display: block;
 }
 
 .star-label small {
-  color: #94a3b8;
-  line-height: 1.4;
+  margin-top: 6px;
+  color: #cbd5e1;
+  line-height: 1.35;
 }
 
-.helper-card,
-.result-card {
-  padding: 18px;
-}
-
-.helper-card strong,
-.result-card h2 {
-  color: #f8fafc;
-}
-
-.helper-card p,
-.result-card p {
-  margin: 8px 0 0;
-  line-height: 1.7;
-}
-
-.result-card.success {
-  border-left: 4px solid #fde047;
-}
-
-.result-card.warning {
-  border-left: 4px solid #f59e0b;
-}
-
-.result-card.error {
-  border-left: 4px solid #ef4444;
-}
-
-.actions {
+.action-row {
   display: flex;
   gap: 12px;
-  flex-wrap: wrap;
-  margin-top: 18px;
+  justify-content: center;
+  margin-top: 22px;
 }
 
-.actions button {
-  border: none;
-  border-radius: 999px;
-  padding: 12px 18px;
-  font-weight: 900;
+.action-row.compact {
+  width: 100%;
+  margin-top: 24px;
+}
+
+.secondary-btn,
+.primary-btn {
+  min-width: min(100%, 260px);
+  padding: 15px 18px;
+  font-weight: 1000;
   cursor: pointer;
 }
 
-.primary {
-  background: linear-gradient(135deg, #ca8a04, #a16207);
-  color: #fff;
+.secondary-btn {
+  color: #dbeafe;
+  background: rgba(2, 6, 23, 0.82);
+  border: 1px solid rgba(147, 197, 253, 0.5);
 }
 
-.secondary {
-  background: rgba(255, 255, 255, 0.08);
-  color: #f8fafc;
+.primary-btn {
+  color: #111827;
+  background: #facc15;
+  border: 0;
 }
 
-@media (max-width: 700px) {
-  .sky-card {
-    height: 560px;
+.primary-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.result-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  display: none;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.result-layer.show {
+  display: grid;
+}
+
+.result-card {
+  width: min(640px, 100%);
+  padding: clamp(22px, 5vw, 60px);
+  border-radius: 8px;
+  color: #e5e7eb;
+  text-align: center;
+  background: #111827;
+  border: 2px solid #f87171;
+}
+
+.result-card.success {
+  border-color: #86efac;
+}
+
+.result-card h2 {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2rem, 6vw, 5rem);
+  line-height: 0.9;
+}
+
+.result-card p {
+  margin-top: 18px;
+  color: #cbd5e1;
+  line-height: 1.65;
+}
+
+@media (max-width: 720px) {
+  .sky-panel {
+    height: auto;
+    display: grid;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .star-lines {
+    display: none;
+  }
+
+  .star-node {
+    position: static;
+    width: 100%;
+    min-height: auto;
+    transform: none;
+  }
+
+  .action-row {
+    flex-direction: column;
   }
 }
 </style>
