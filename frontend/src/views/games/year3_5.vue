@@ -1,246 +1,351 @@
 <template>
-  <div class="mentor-game">
-    <button class="close-btn" type="button" @click="$emit('close')">{{ t('pages.y3_5.back') }}</button>
-
-    <section class="mentor-room">
-      <div class="office-side">
-        <p class="eyebrow">{{ t('pages.y3_5.eyebrow') }}</p>
-        <h1>{{ t('pages.y3_5.title') }}</h1>
-        <p class="intro">{{ t('pages.y3_5.intro') }}</p>
-
-        <div class="cat-avatar" :class="currentNode.mood">
-          <span>{{ currentNode.emoji }}</span>
-          <small>{{ currentNode.hearts }}</small>
-        </div>
+  <div class="wildcat-root">
+    <div class="game-screen">
+      <div class="status-bar">
+        <div><i class="fas fa-paw" style="color:#f5b342;"></i> Mentor's Favorability</div>
+        <div class="hearts">{{ currentNode.hearts }}</div>
       </div>
 
-      <div class="dialogue-side">
-        <article class="dialogue-box">
-          <p>{{ currentNode.text }}</p>
-        </article>
+      <div class="character-stage">
+        <div class="cat-avatar" :class="catMoodClass">{{ currentNode.emoji }}</div>
+      </div>
 
-        <div class="choice-list">
+      <div class="dialogue-box">
+        <div class="speaker-name">Prof. Wildcat (Archmage)</div>
+        <div class="text-content" v-html="currentNode.text"></div>
+        <div class="choices-area">
           <button
             v-for="choice in currentNode.choices"
             :key="choice.text"
             class="choice-btn"
             type="button"
-            @click="choose(choice.nextId)"
-          >
-            {{ choice.text }}
-          </button>
+            v-html="choice.text"
+            @click="renderNode(choice.nextId)"
+          />
         </div>
       </div>
-    </section>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
-import { useAppI18n } from '@/composables/useAppI18n'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
-const emit = defineEmits(['complete', 'close'])
-const { tm, t } = useAppI18n()
+const emit = defineEmits(['complete'])
 
-const storyMeta = {
-  start: { emoji: ':3', mood: 'normal', nextIds: ['bad_start', 'good_start'] },
-  bad_start: { emoji: ':<', mood: 'angry', nextIds: ['recover_start', 'game_over_rude'] },
-  recover_start: { emoji: ':|', mood: 'normal', nextIds: ['game_over_vague', 'good_timing'] },
-  good_start: { emoji: ':)', mood: 'happy', nextIds: ['game_over_rush', 'good_timing'] },
-  good_timing: { emoji: ':|', mood: 'normal', nextIds: ['game_over_lazy', 'perfect_ending'] },
-  game_over_rude: { emoji: '!!', mood: 'angry', nextIds: ['start'] },
-  game_over_vague: { emoji: '??', mood: 'angry', nextIds: ['start'] },
-  game_over_rush: { emoji: 'NO', mood: 'angry', nextIds: ['start'] },
-  game_over_lazy: { emoji: '...', mood: 'angry', nextIds: ['start'] },
-  perfect_ending: { emoji: ':D', mood: 'happy', nextIds: ['exit'] },
+const storyTree = {
+  start: {
+    text: "(You peek into the office)<br>😼 Meow? Another application season, huh? What do you want? Speak quickly, I am extremely busy.",
+    emoji: '😼',
+    mood: 'normal',
+    hearts: '❤️❤️🤍🤍🤍',
+    choices: [
+      { text: 'Professor! I want you to write me a recommendation letter! (Straight to the point, slightly abrupt)', nextId: 'bad_start' },
+      { text: "Greetings, Prof. Wildcat. I am XXX from your 'Advanced Yarn Ball Catching' class. I'm here to consult you regarding a recommendation letter.", nextId: 'good_start' },
+    ],
+  },
+  bad_start: {
+    text: "😾 MEOW! Barking orders right off the bat? Not even an introduction! I've taught countless students, how am I supposed to remember which mouse you are!",
+    emoji: '😾',
+    mood: 'angry',
+    hearts: '❤️🤍🤍🤍🤍',
+    choices: [
+      { text: 'Ah, my deepest apologies! I was the one sitting in the front row last semester...', nextId: 'recover_start' },
+      { text: "Oh, please don't be mad, Professor. Just write a few casual sentences for me, it's fine.", nextId: 'game_over_rude' },
+    ],
+  },
+  game_over_rude: {
+    text: "💢 A few casual sentences?! Is my academic reputation something to be thrown around casually? Get out! And close the door!<br><span style='color:#e74c3c'>[Game Over: The mentor is thoroughly enraged. You have lost this RL.]</span>",
+    emoji: '🙀',
+    mood: 'angry',
+    hearts: '🖤🖤🖤🖤🖤',
+    choices: [
+      { text: '🔄 Reload Save: Go learn basic email and office etiquette.', nextId: 'start' },
+    ],
+  },
+  recover_start: {
+    text: '😼 Hmph, I have a faint recollection. Speak, which program are you applying for? When is the deadline?',
+    emoji: '😼',
+    mood: 'normal',
+    hearts: '❤️❤️🤍🤍🤍',
+    choices: [
+      { text: "Uhh... The specific academies aren't decided yet. Just write me one as a backup for now.", nextId: 'game_over_vague' },
+      { text: 'I wish to apply for the CS program at XX University; the deadline is at the end of next month. There\'s plenty of time.', nextId: 'good_timing' },
+    ],
+  },
+  good_start: {
+    text: "😸 Oh, it's the little one who got an A on the final. *Purr...* Alright, what program are you applying for? When do you need it?",
+    emoji: '😸',
+    mood: 'happy',
+    hearts: '❤️❤️❤️🤍🤍',
+    choices: [
+      { text: 'The application closes tomorrow night! Please save me, Professor!', nextId: 'game_over_rush' },
+      { text: "It's a program at XX University due at the end of next month. I came a month in advance to ask for your willingness.", nextId: 'good_timing' },
+    ],
+  },
+  game_over_rush: {
+    text: "😾 MEOW!! Due tomorrow and you come to me today?! Do you think I'm an automatic typewriter?! I'm busy, no rush orders!<br><span style='color:#e74c3c'>[Game Over: High-risk maneuver! Never push a professor's DDL to the extreme.]</span>",
+    emoji: '😾',
+    mood: 'angry',
+    hearts: '🖤🖤🖤🖤🖤',
+    choices: [
+      { text: "🔄 Reload Save: Remember to contact professors at least a month in advance.", nextId: 'start' },
+    ],
+  },
+  game_over_vague: {
+    text: "😾 You haven't even set a target, who am I writing this for? Different academies value entirely different traits. Come back when you've figured it out!<br><span style='color:#e74c3c'>[Game Over: Lack of planning. RLs must be tailored to specific programs.]</span>",
+    emoji: '😾',
+    mood: 'angry',
+    hearts: '❤️🤍🤍🤍🤍',
+    choices: [
+      { text: '🔄 Reload Save: Do your homework first.', nextId: 'start' },
+    ],
+  },
+  good_timing: {
+    text: "😼 A month in advance, at least you know the rules. But I'm very busy this term. Do you have any materials to help me quickly recall your shining moments?",
+    emoji: '😼',
+    mood: 'normal',
+    hearts: '❤️❤️❤️🤍🤍',
+    choices: [
+      { text: 'Uhh... Does my final transcript count? For the rest, just freestyle based on your impression.', nextId: 'game_over_lazy' },
+      { text: "Yes! I've prepared an [Application Care Package]: including my latest CV, transcript, target program list, and a highlight summary of my final project in your class.", nextId: 'perfect_ending' },
+    ],
+  },
+  game_over_lazy: {
+    text: "😾 Freestyle based on my impression? Then I'll write 'This student had zero presence other than not snoring in class.' Not even organizing your own materials is a waste of my time!<br><span style='color:#e74c3c'>[Game Over: Professors have no obligation to remember your brilliance. Prepare a material package.]</span>",
+    emoji: '😾',
+    mood: 'angry',
+    hearts: '🤍🤍🤍🤍🤍',
+    choices: [
+      { text: '🔄 Reload Save: Organize your info package before knocking.', nextId: 'start' },
+    ],
+  },
+  perfect_ending: {
+    text: "😻 *Purr, purr...* The materials are this well-organized? Even the highlight summary is listed. Writing this letter will take me ten minutes tops.<br>Alright, leave it to me. May your applications go smoothly!<br><span style='color:#2ecc71'>[Cleared! You successfully smoothed the fur of the Tsundere Wildcat and mastered the perfect template for requesting an RL!]</span>",
+    emoji: '😻',
+    mood: 'happy',
+    hearts: '❤️❤️❤️❤️❤️',
+    choices: [
+      { text: '🎁 Claim Clear Reward (+50 Coins) and Return to Map', nextId: 'exit' },
+    ],
+  },
 }
 
 const currentNodeId = ref('start')
-const storyTree = computed(() => tm('pages.y3_5.tree') || {})
-const currentNode = computed(() => {
-  const copy = storyTree.value[currentNodeId.value] || { text: '', hearts: '', choices: [] }
-  const meta = storyMeta[currentNodeId.value] || { emoji: ':|', mood: 'normal', nextIds: [] }
-  return {
-    ...copy,
-    emoji: meta.emoji,
-    mood: meta.mood,
-    choices: (copy.choices || []).map((text, index) => ({
-      text,
-      nextId: meta.nextIds[index],
-    })),
-  }
-})
+const previousTitle = ref('')
 
-function choose(nextId) {
-  if (nextId === 'exit') {
-    emit('complete', { game: 'recommendation-mentor' })
+const currentNode = computed(() => storyTree[currentNodeId.value] ?? storyTree.start)
+const catMoodClass = computed(() => ({
+  'angry-shake': currentNode.value.mood === 'angry',
+  'happy-bounce': currentNode.value.mood === 'happy',
+}))
+
+function renderNode(nodeId) {
+  if (nodeId === 'exit') {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({
+        type: 'gradquest:node-complete',
+        payload: { year: 'y3', nodeId: 5, rewardCoins: 50 },
+      }, '*')
+    }
+    window.alert('Map Guide: Returned to the map interface! (This triggers the unlock code for the next stage in the main system)')
+    emit('complete', { year: 'y3', nodeId: 5, rewardCoins: 50 })
     return
   }
 
-  currentNodeId.value = nextId
+  currentNodeId.value = nodeId
 }
+
+onMounted(() => {
+  previousTitle.value = document.title
+  document.title = 'Y3-5 Tsundere Wildcat Mentor Simulator'
+  renderNode('start')
+})
+
+onBeforeUnmount(() => {
+  if (previousTitle.value) {
+    document.title = previousTitle.value
+  }
+})
 </script>
 
 <style scoped>
-.mentor-game {
-  min-height: 100%;
-  display: grid;
-  place-items: center;
-  padding: clamp(18px, 4vw, 70px);
-  color: #f8fafc;
-  background:
-    radial-gradient(circle at 75% 22%, rgba(45, 212, 191, 0.2), transparent 32%),
-    linear-gradient(145deg, #052e2b, #172033 52%, #111827);
+.wildcat-root,
+.wildcat-root * {
+  box-sizing: border-box;
 }
 
-.close-btn,
-.choice-btn {
-  border-radius: 8px;
-  font: inherit;
-}
-
-.close-btn {
-  position: fixed;
-  top: 18px;
-  left: 18px;
-  z-index: 3;
-  padding: 10px 14px;
-  color: #ccfbf1;
-  background: rgba(2, 6, 23, 0.86);
-  border: 1px solid rgba(45, 212, 191, 0.5);
-  cursor: pointer;
-}
-
-.mentor-room {
-  width: min(1220px, 100%);
-  display: grid;
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
-  gap: 26px;
+.wildcat-root {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
   align-items: center;
+  padding: 20px;
+  background: #2b2b2b;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-h1,
-h2,
-p {
-  margin: 0;
+.game-screen {
+  background: linear-gradient(to bottom, #4a6984, #2a3b4c);
+  width: 100%;
+  max-width: 800px;
+  height: 600px;
+  border-radius: 20px;
+  border: 4px solid #f5b342;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
-h1 {
-  margin-top: 8px;
-  color: #ccfbf1;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(2.4rem, 7.5vw, 7.6rem);
-  line-height: 0.86;
+.status-bar {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #fff;
+  font-weight: bold;
+  font-size: 1.1rem;
+  border-bottom: 2px dashed rgba(255, 255, 255, 0.2);
+  z-index: 10;
 }
 
-.eyebrow {
-  color: #5eead4;
-  font-weight: 1000;
-  text-transform: uppercase;
-  letter-spacing: 0;
+.hearts {
+  color: #e74c3c;
+  letter-spacing: 5px;
+  transition: 0.3s;
 }
 
-.intro {
-  max-width: 680px;
-  margin-top: 20px;
-  color: #cbd5e1;
-  line-height: 1.65;
+.character-stage {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
 }
 
 .cat-avatar {
-  width: min(420px, 100%);
-  aspect-ratio: 1;
-  margin-top: 30px;
-  border-radius: 8px;
-  display: grid;
-  place-content: center;
-  gap: 14px;
-  text-align: center;
-  color: #111827;
-  background:
-    radial-gradient(circle at 40% 36%, #fff 0 8%, transparent 12%),
-    radial-gradient(circle at 60% 36%, #fff 0 8%, transparent 12%),
-    linear-gradient(145deg, #5eead4, #0d9488);
-  box-shadow: 0 28px 60px rgba(0, 0, 0, 0.34);
+  font-size: 10rem;
+  filter: drop-shadow(0 15px 15px rgba(0, 0, 0, 0.4));
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transform-origin: bottom center;
 }
 
-.cat-avatar.angry {
-  background:
-    radial-gradient(circle at 40% 36%, #fff 0 8%, transparent 12%),
-    radial-gradient(circle at 60% 36%, #fff 0 8%, transparent 12%),
-    linear-gradient(145deg, #fca5a5, #b91c1c);
+.angry-shake {
+  animation: shake 0.5s infinite;
+  filter: drop-shadow(0 0 20px red);
 }
 
-.cat-avatar.happy {
-  background:
-    radial-gradient(circle at 40% 36%, #fff 0 8%, transparent 12%),
-    radial-gradient(circle at 60% 36%, #fff 0 8%, transparent 12%),
-    linear-gradient(145deg, #86efac, #16a34a);
-}
-
-.cat-avatar span {
-  font-size: clamp(4rem, 13vw, 11rem);
-  font-weight: 1000;
-  line-height: 0.8;
-}
-
-.cat-avatar small {
-  font-weight: 1000;
-}
-
-.dialogue-side {
-  padding: clamp(18px, 3vw, 44px);
-  border-radius: 8px;
-  background: rgba(2, 6, 23, 0.78);
-  border: 1px solid rgba(45, 212, 191, 0.26);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.34);
+.happy-bounce {
+  animation: bounce 2s infinite ease-in-out;
+  filter: drop-shadow(0 0 20px #f1c40f);
 }
 
 .dialogue-box {
-  min-height: 260px;
-  padding: clamp(18px, 4vw, 50px);
-  display: grid;
-  place-items: center;
-  border-radius: 8px;
-  color: #134e4a;
-  background: #ccfbf1;
+  background: rgba(20, 20, 20, 0.85);
+  border-top: 3px solid #f5b342;
+  height: 250px;
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
 }
 
-.dialogue-box p {
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(1.25rem, 3.4vw, 3.2rem);
-  line-height: 1.16;
+.speaker-name {
+  background: #f5b342;
+  color: #1e1e1e;
+  font-weight: 900;
+  padding: 5px 20px;
+  border-radius: 0 15px 15px 0;
+  display: inline-block;
+  align-self: flex-start;
+  margin-top: -15px;
+  box-shadow: 2px 2px 0 #d48b2c;
+  font-size: 1.1rem;
+  font-family: Georgia, serif;
 }
 
-.choice-list {
-  display: grid;
-  gap: 12px;
-  margin-top: 18px;
+.text-content {
+  color: #fff;
+  padding: 20px 30px;
+  font-size: 1.15rem;
+  line-height: 1.6;
+  flex: 1;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+  font-family: Georgia, serif;
+}
+
+.choices-area {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 20px 20px;
+  overflow-y: auto;
 }
 
 .choice-btn {
-  padding: 16px 18px;
-  color: #e5e7eb;
-  background: rgba(15, 23, 42, 0.96);
-  border: 1px solid rgba(45, 212, 191, 0.42);
-  cursor: pointer;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  padding: 12px;
+  border-radius: 8px;
   text-align: left;
-  line-height: 1.45;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: 0.2s;
+  display: flex;
+  align-items: flex-start;
+  font-weight: 600;
+}
+
+.choice-btn::before {
+  content: '▶';
+  margin-right: 10px;
+  color: #f5b342;
+  opacity: 0;
+  transition: 0.2s;
 }
 
 .choice-btn:hover {
+  background: rgba(245, 179, 66, 0.2);
+  border-color: #f5b342;
   transform: translateX(5px);
-  color: #111827;
-  background: #5eead4;
 }
 
-@media (max-width: 900px) {
-  .mentor-room {
-    grid-template-columns: 1fr;
+.choice-btn:hover::before {
+  opacity: 1;
+}
+
+@keyframes shake {
+  0% { transform: translateX(0) scale(1.1); }
+  25% { transform: translateX(-10px) rotate(-5deg) scale(1.1); }
+  50% { transform: translateX(10px) rotate(5deg) scale(1.1); }
+  100% { transform: translateX(0) scale(1.1); }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+@media (max-width: 860px) {
+  .wildcat-root {
+    padding: 12px;
+  }
+
+  .game-screen {
+    height: auto;
+    min-height: 640px;
+  }
+
+  .dialogue-box {
+    height: auto;
+    min-height: 280px;
   }
 
   .cat-avatar {
-    aspect-ratio: 1.25;
+    font-size: 8rem;
   }
 }
 </style>

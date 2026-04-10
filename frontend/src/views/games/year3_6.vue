@@ -1,657 +1,1719 @@
 <template>
-  <div class="citadel-game">
-    <section class="citadel-hud">
-      <button class="close-btn" type="button" @click="$emit('close')">{{ t('pages.y3_6.back') }}</button>
-      <div class="hud-stat">{{ t('pages.y3_6.cleared', { count: clearedCount }) }}</div>
-      <div class="hud-stat">{{ t('pages.y3_6.artifacts', { count: gems }) }}</div>
-      <div class="hud-stat">{{ t('pages.y3_6.level', { level }) }}</div>
-      <div class="hud-stat">{{ t('pages.y3_6.coffee', { count: potions }) }}</div>
-    </section>
+  <div class="dark-citadel-root">
+    <div class="sky">
+      <div
+        v-for="star in stars"
+        :key="star.id"
+        class="star"
+        :style="{
+          width: `${star.size}px`,
+          height: `${star.size}px`,
+          left: `${star.left}vw`,
+          top: `${star.top}vh`,
+          animationDelay: `${star.delay}s`,
+        }"
+      />
+    </div>
+    <div class="dusts">
+      <div
+        v-for="dust in dusts"
+        :key="dust.id"
+        class="dust"
+        :style="{
+          left: `${dust.left}vw`,
+          top: `${dust.top}vh`,
+          animationDuration: `${dust.duration}s`,
+          animationDelay: `${dust.delay}s`,
+        }"
+      />
+    </div>
+    <div class="moon"></div>
 
-    <section v-if="mode === 'map'" class="citadel-map">
-      <p class="eyebrow">{{ t('pages.y3_6.eyebrow') }}</p>
-      <h1>{{ t('pages.y3_6.title') }}</h1>
-      <p class="intro">{{ t('pages.y3_6.intro') }}</p>
-
-      <div class="door-grid">
-        <button
-          v-for="stage in stages"
-          :key="stage.id"
-          class="stage-door"
-          :class="{ cleared: cleared[stage.id], locked: isLocked(stage.id) }"
-          type="button"
-          @click="openStage(stage.id)"
-        >
-          <span class="door-status">{{ doorStatus(stage.id) }}</span>
-          <b>{{ stage.month }}</b>
-          <strong>{{ stage.enemy.name }}</strong>
-          <small>{{ stage.subtitle }}</small>
-        </button>
-
-        <button class="stage-door final-door" :class="{ locked: clearedCount !== 3 }" type="button" @click="openFinal">
-          <span class="door-status">{{ clearedCount === 3 ? t('pages.y3_6.unlocked') : t('pages.y3_6.sealed') }}</span>
-          <b>{{ t('pages.y3_6.finalDoorTitle') }}</b>
-          <strong>{{ t('pages.y3_6.finalDoorEnemy') }}</strong>
-          <small>{{ t('pages.y3_6.finalDoorDesc') }}</small>
-        </button>
+    <div class="topbar">
+      <div class="panel title-box">
+        <div class="title">🏰 The Dark Citadel: Battle of the Ordeals 🏰</div>
+        <div class="subtitle">Every month of the application season is a duel! Breach the three gates to open the Sanctuary of Offers.</div>
       </div>
-    </section>
+      <div class="panel status">
+        <div class="stat"><div class="stat-label">Gates Cleared</div><div class="stat-value">{{ clearCountText }}</div></div>
+        <div class="stat"><div class="stat-label">Artifacts</div><div class="stat-value">{{ gameState.gems }}</div></div>
+        <div class="stat"><div class="stat-label">Level</div><div class="stat-value">{{ gameState.level }}</div></div>
+        <div class="stat"><div class="stat-label">Iced Americanos</div><div class="stat-value">{{ gameState.potions }}</div></div>
+      </div>
+    </div>
 
-    <section v-else class="battle-modal">
-      <button class="close-btn modal-close" type="button" @click="returnToMap">{{ t('pages.y3_6.returnToCitadel') }}</button>
+    <div class="scene">
+      <div class="road"></div>
+      <div class="castle-wrap">
+        <div class="castle-glow"></div>
+        <div class="wall side-tower left"></div><div class="wall side-tower right"></div>
+        <div class="wall back-wall-left"></div><div class="wall back-wall-right"></div>
+        <div class="wall center-keep"></div><div class="wall front-wall"></div>
+        <div class="spire left"></div><div class="spire right"></div>
+        <div class="spire mid-left small"></div><div class="spire mid-right small"></div><div class="spire center"></div>
+        <div class="cap left"></div><div class="cap right"></div><div class="cap mid-left"></div><div class="cap mid-right"></div><div class="cap center"></div>
+        <div class="flagpole left"></div><div class="flagpole right"></div><div class="flagpole center"></div>
+        <div class="round-window" style="left:11%; bottom:55%;"></div><div class="window" style="left:11.5%; bottom:18%;"></div>
+        <div class="round-window" style="left:48.7%; bottom:61%;"></div>
+        <div class="round-window" style="right:11%; bottom:56%;"></div><div class="window" style="right:11.5%; bottom:18%;"></div>
 
-      <template v-if="mode === 'intro' && currentStage">
-        <div class="modal-scroll">
-          <p class="eyebrow">{{ currentStage.month }}</p>
-          <h2>{{ currentStage.title }}</h2>
-          <p class="intro">{{ currentStage.subtitle }}</p>
-          <div class="intel-list">
-            <p v-for="tip in currentStage.tips" :key="tip">{{ tip }}</p>
-          </div>
-          <button class="primary-btn" type="button" @click="startBattle">{{ t('pages.y3_6.startBattle') }}</button>
+        <div class="door final-door" :class="{ locked: !allClear, cleared: allClear }" @click="handleFinalDoor">
+          <div class="status-tag">{{ allClear ? 'Unlocked' : 'The Zenith' }}</div>
+          <div class="door-label">Sanctuary of Offers</div>
         </div>
-      </template>
 
-      <template v-else-if="mode === 'battle'">
-        <div class="battle-screen">
-          <div class="combatants">
-            <article class="fighter enemy">
-              <span class="sprite">{{ enemy.icon }}</span>
-              <h2>{{ enemy.name }}</h2>
-              <HealthBar :value="enemy.hp" :max="enemy.maxHp" tone="enemy" />
-            </article>
-
-            <article class="fighter hero">
-              <span class="sprite">APP</span>
-              <h2>{{ t('pages.y3_6.heroName') }}</h2>
-              <HealthBar :value="hero.hp" :max="hero.maxHp" />
-              <small v-if="hero.shield" class="shield-tag">{{ t('pages.y3_6.shieldActive') }}</small>
-            </article>
+        <div class="door-row">
+          <div
+            v-for="stage in stages"
+            :key="stage.id"
+            class="door trial-door"
+            :class="{ locked: isStageLocked(stage.id), cleared: gameState.cleared[stage.id] }"
+            :data-level="stage.id"
+            @click="openStage(stage.id)"
+          >
+            <div class="status-tag">{{ getDoorTag(stage.id) }}</div>
+            <div class="door-label">{{ stage.doorLabel }}</div>
           </div>
+        </div>
+      </div>
+      <div class="mist"></div><div class="ground"></div>
+    </div>
 
-          <div class="command-deck">
-            <div class="message-box" aria-live="polite">{{ battleLog }}</div>
-            <div class="skill-grid">
+    <div class="hint">Click the three gates below to commence the trials. Manage your PP and outlive the deadlines!</div>
+
+    <div class="modal" :class="{ show: modalVisible }">
+      <div ref="modalCard" class="modal-card" @scroll="updateScrollCue">
+        <button class="close-btn" type="button" @click="closeModal">×</button>
+
+        <template v-if="modalMode === 'intro' && gameState.currentStage">
+          <div class="level-header">
+            <div>
+              <div class="level-title">{{ gameState.currentStage.title }}</div>
+              <div class="level-desc">{{ gameState.currentStage.subtitle }}</div>
+            </div>
+          </div>
+          <div class="battle-grid">
+            <div class="box" style="text-align:center;">
+              <div class="character-name">Guardian Boss: {{ gameState.currentStage.enemy.name }}</div>
+              <div style="font-size:80px; margin:20px 0; filter:drop-shadow(0 0 15px #e74c3c);">{{ gameState.currentStage.enemy.icon }}</div>
+              <div style="color:#ead7a7; font-weight:bold;">HP: {{ gameState.currentStage.enemy.hp }} | Base ATK: {{ gameState.currentStage.enemy.atk }}</div>
+            </div>
+            <div class="box">
+              <div class="character-name">Combat Intel</div>
+              <div class="info-list">
+                <div v-for="item in currentStageIntel" :key="item" class="info-item" v-html="item"></div>
+              </div>
+              <div
+                class="reward-box"
+                :style="gameState.cleared[gameState.currentStage.id] ? 'border-color:#2ecc71;' : ''"
+                v-html="introRewardHtml"
+              ></div>
+            </div>
+          </div>
+          <div class="center-actions"><button class="btn next" type="button" @click="initBattle">Draw Sword & Engage</button></div>
+        </template>
+
+        <template v-else-if="modalMode === 'battle' && gameState.currentStage">
+          <div class="roco-game-screen">
+            <div class="roco-battle-scene">
+              <div class="ground-ellipse ground-enemy"></div>
+              <div class="ground-ellipse ground-hero"></div>
+
+              <div class="hud hud-enemy">
+                <div class="hud-name"><span>{{ enemy.name }}</span> <span class="lvl">Lv.{{ gameState.currentStage.id * 10 + 20 }}</span></div>
+                <div class="hp-bar-bg"><div class="hp-bar-fill" :style="{ width: `${enemyHpPercent}%`, background: '#e53e3e' }"></div></div>
+                <div class="hp-text"><span>{{ enemy.hp }}/{{ enemy.maxHp }}</span></div>
+              </div>
+              <div class="sprite sprite-enemy" :class="{ 'anim-enemy-attack': enemyAttack, hit: enemyHit }" style="transform: scaleX(-1);">{{ enemy.icon }}</div>
+              <div
+                :key="enemyDamage.key"
+                class="damage-text"
+                :class="{ 'damage-anim': enemyDamage.visible }"
+                :style="{ top: '100px', right: '28%', color: enemyDamage.color }"
+              >{{ enemyDamage.text }}</div>
+
+              <div class="hud hud-hero">
+                <div class="hud-name"><span>{{ gameState.hero.name }}</span> <span class="lvl">Lv.{{ gameState.level * 10 + 10 }}</span></div>
+                <div class="hp-bar-bg"><div class="hp-bar-fill" :style="{ width: `${heroHpPercent}%`, background: heroHpBarColor }"></div></div>
+                <div class="hp-text"><span>{{ gameState.hero.hp }}/{{ gameState.hero.maxHp }}</span></div>
+                <div class="shield-tag" :style="{ display: gameState.hero.shield ? 'block' : 'none' }">🛡️ Shield Active</div>
+              </div>
+              <div class="sprite sprite-hero" :class="{ 'anim-hero-attack': heroAttack, hit: heroHit }">{{ gameState.hero.icon }}</div>
+              <div
+                :key="heroDamage.key"
+                class="damage-text"
+                :class="{ 'damage-anim': heroDamage.visible }"
+                :style="{ bottom: '120px', left: '28%', color: heroDamage.color }"
+              >{{ heroDamage.text }}</div>
+            </div>
+
+            <div class="ui-bottom">
+              <div class="message-box">
+                <template v-for="(line, index) in messageLines" :key="`${index}-${line}`">
+                  <br v-if="index > 0">
+                  <span>{{ line }}</span>
+                </template>
+              </div>
+              <div class="action-menu" :style="{ display: commandMenuVisible ? 'grid' : 'none' }">
+                <button
+                  v-for="skill in heroSkills"
+                  :key="skill.id"
+                  class="skill-btn"
+                  type="button"
+                  :disabled="skill.pp <= 0"
+                  @click="useSkill(skill.id)"
+                >
+                  <div class="skill-name">{{ skill.name }}</div>
+                  <div class="skill-type" :class="skill.cssType">{{ skill.cssLabel }}</div>
+                  <div class="skill-pp">PP: {{ skill.pp }}/{{ skill.maxPp }}</div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <template v-else-if="modalMode === 'victory' && gameState.currentStage">
+          <div class="level-header"><div class="level-title">🏆 Month Conquered!</div></div>
+          <div class="box" style="text-align:center; padding: 40px;">
+            <div style="font-size: 80px; filter: drop-shadow(0 0 20px #2ecc71); margin-bottom: 20px;">✨</div>
+            <div style="font-size: 1.2rem; margin-bottom: 20px;"><b>{{ gameState.currentStage.enemy.name }}</b> was obliterated by your precise tactics.</div>
+            <div class="reward-box" style="border-color:#f1c40f;" v-html="victoryRewardHtml"></div>
+            <div class="center-actions" style="margin-top:30px;">
+              <button class="btn next" type="button" @click="closeModal">Return to Citadel</button>
               <button
-                v-for="skill in skills"
-                :key="skill.id"
-                class="skill-btn"
+                v-if="allClear"
+                class="btn next"
+                style="background: linear-gradient(135deg, #e74c3c, #c0392b); color: #fff;"
                 type="button"
-                :disabled="skill.pp <= 0 || hero.hp <= 0 || enemy.hp <= 0"
-                @click="useSkill(skill)"
+                @click="openFinal"
               >
-                <b>{{ skill.name }}</b>
-                <small>{{ skill.label }} | PP {{ skill.pp }} / {{ skill.maxPp }}</small>
+                Open The Sanctuary
               </button>
             </div>
           </div>
-        </div>
-      </template>
+        </template>
 
-      <template v-else-if="mode === 'victory'">
-        <div class="modal-scroll center">
-          <p class="eyebrow">{{ t('pages.y3_6.monthConquered') }}</p>
-          <h2>{{ t('pages.y3_6.defeatedTitle', { enemy: currentStage.enemy.name }) }}</h2>
-          <p class="intro">{{ settlementText }}</p>
-          <button class="primary-btn" type="button" @click="returnToMap">{{ t('pages.y3_6.returnToCitadel') }}</button>
-          <button v-if="clearedCount === 3" class="danger-btn" type="button" @click="mode = 'final'">
-            {{ t('pages.y3_6.openSanctuary') }}
-          </button>
-        </div>
-      </template>
+        <template v-else-if="modalMode === 'defeat'">
+          <div class="level-header"><div class="level-title" style="color:#e74c3c;">💥 Application Foiled</div></div>
+          <div class="box" style="text-align:center; padding: 40px;">
+            <div style="font-size: 80px; filter: grayscale(1); margin-bottom: 20px;">🥀</div>
+            <div style="font-size: 1.2rem; margin-bottom: 20px;">You were crushed by the DDLs... But do not despair. Gather your resolve and try again!</div>
+            <div class="info-list" style="text-align:left;">
+              <div class="info-item">💡 Hint: Use [Proofreader's Slash] for high burst damage, and always chug an [Iced Americano] when your HP drops low.</div>
+            </div>
+            <div class="center-actions" style="margin-top:30px;">
+              <button class="btn next" type="button" @click="openStage(gameState.currentStage.id)">Resurrect & Retaliate</button>
+              <button class="btn next" style="background: linear-gradient(135deg, #7f8c8d, #34495e); color:#fff;" type="button" @click="closeModal">Tactical Retreat</button>
+            </div>
+          </div>
+        </template>
 
-      <template v-else-if="mode === 'defeat'">
-        <div class="modal-scroll center">
-          <p class="eyebrow">{{ t('pages.y3_6.defeatEyebrow') }}</p>
-          <h2>{{ t('pages.y3_6.defeatTitle') }}</h2>
-          <p class="intro">{{ t('pages.y3_6.defeatDesc') }}</p>
-          <button class="primary-btn" type="button" @click="startBattle">{{ t('pages.y3_6.retryBattle') }}</button>
-        </div>
-      </template>
+        <template v-else-if="modalMode === 'final'">
+          <div class="final-reward-screen">
+            <div class="level-title" style="background: linear-gradient(90deg, #fff, #f1c40f, #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-family: 'Georgia', serif;">🏰 Sanctuary of Offers Opened 🏰</div>
+            <div class="big-gem">🎓</div>
+            <div class="level-desc" style="max-width:800px; margin: 0 auto; font-size: 1.1rem; font-family: 'Georgia', serif;">
+              Congratulations on surviving the agonizing application season.<br>The Dragon is dead, the Zombie repelled, the Reaper evaded.<br>Now, prepare to embrace your rain of Offers!
+            </div>
+            <div class="box" style="margin-top:30px; max-width:500px; margin-left:auto; margin-right:auto; text-align:left;">
+              <div class="character-name">Autumn Recruitment Tally</div>
+              <div class="info-list">
+                <div class="info-item">✨ Artifacts Collected: {{ gameState.gems }} / 3</div>
+                <div class="info-item">✨ Final Power Level: Lv.{{ gameState.level }}</div>
+                <div class="info-item">✨ Honorary Title: <b>Master of Time · The Dragon Slayer</b></div>
+              </div>
+            </div>
+            <div class="center-actions" style="margin-top:30px;">
+              <button class="btn next" type="button" @click="completeNode">Return in Glory</button>
+            </div>
+          </div>
+        </template>
+      </div>
 
-      <template v-else-if="mode === 'final'">
-        <div class="modal-scroll center">
-          <p class="eyebrow">{{ t('pages.y3_6.finalEyebrow') }}</p>
-          <h2>{{ t('pages.y3_6.finalTitle') }}</h2>
-          <p class="intro">{{ t('pages.y3_6.finalDesc', { gems }) }}</p>
-          <button class="primary-btn" type="button" @click="$emit('complete', { game: 'dark-citadel', artifacts: gems })">
-            {{ t('pages.y3_6.returnInGlory') }}
-          </button>
-        </div>
-      </template>
-    </section>
+      <button
+        class="modal-scroll-cue"
+        :class="{ show: scrollCueVisible }"
+        type="button"
+        aria-label="Scroll down"
+        @click="scrollModal"
+      >
+        ↓
+      </button>
+    </div>
   </div>
 </template>
 
-<script>
-import { computed, defineComponent, h, reactive, ref } from 'vue'
-import { useAppI18n } from '@/composables/useAppI18n'
+<script setup>
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 
-const HealthBar = defineComponent({
-  props: {
-    value: { type: Number, required: true },
-    max: { type: Number, required: true },
-    tone: { type: String, default: 'hero' }
-  },
-  setup(props) {
-    const percent = computed(() => Math.max(0, Math.min(100, (props.value / props.max) * 100)))
-    return () => h('div', { class: ['health-bar', `tone-${props.tone}`] }, [
-      h('i', { style: { width: `${percent.value}%` } }),
-      h('span', `${props.value} / ${props.max}`)
-    ])
-  }
+const emit = defineEmits(['complete'])
+
+const stages = [
+  { id: 0, title: 'September Vanguard: The Language War', subtitle: 'Without language scores, you cannot advance a single step.', gemReward: 1, doorLabel: 'Gate of Language', enemy: { name: 'IELTS Dragon', icon: '🐲', hp: 150, atk: 20 } },
+  { id: 1, title: 'October Purgatory: The Essay War', subtitle: "The agony of writer's block gnaws at you like a zombie.", gemReward: 1, doorLabel: 'Gate of Essays', enemy: { name: "Writer's Block Zombie", icon: '🧟', hp: 200, atk: 30 } },
+  { id: 2, title: 'November Abyss: The Application War', subtitle: 'DDLs approach! Filling forms and uploading documents leaves no room for error.', gemReward: 1, doorLabel: 'Gate of Portals', enemy: { name: 'The Reaper of DDLs', icon: '💀', hp: 280, atk: 45 } },
+]
+
+const gameState = reactive({
+  gems: 0,
+  cleared: [false, false, false],
+  level: 1,
+  potions: 4,
+  shield: false,
+  currentStage: null,
+  inBattle: false,
+  isAnimating: false,
+  hero: { name: 'Applicant (You)', icon: '👨‍🎓', hp: 120, maxHp: 120, shield: false },
+  enemy: { name: '', icon: '', hp: 0, maxHp: 0, atk: 0 },
 })
 
-export default {
-  components: { HealthBar },
-  emits: ['complete', 'close'],
-  setup() {
-    const { t, tm } = useAppI18n()
-    const stageMeta = [
-      { id: 0, icon: 'DRG', hp: 150, atk: 20 },
-      { id: 1, icon: 'ZMB', hp: 200, atk: 30 },
-      { id: 2, icon: 'DDL', hp: 280, atk: 45 },
+const heroSkills = reactive([
+  { id: 0, name: 'Mock Exam Thrust', pp: 15, maxPp: 15, power: 30, class: 'attack', cssType: 'type-normal', cssLabel: 'Physical', log: 'executed <b>Mock Exam Thrust</b>!' },
+  { id: 1, name: "Proofreader's Slash", pp: 3, maxPp: 3, power: 80, class: 'heavy', cssType: 'type-fire', cssLabel: 'Magic · Crit', log: "unleashed the ultimate <b>Proofreader's Slash</b>! It's super effective!" },
+  { id: 2, name: 'Cold Email Shield', pp: 5, maxPp: 5, power: 0, class: 'shield', cssType: 'type-magic', cssLabel: 'Buff · Defense', log: 'sent a <b>Cold Email</b>! Defense sharply increased!' },
+  { id: 3, name: 'Iced Americano', pp: gameState.potions, maxPp: gameState.potions, power: -80, class: 'heal', cssType: 'type-heal', cssLabel: 'Heal', log: 'chugged an <b>Iced Americano</b>! Vitality restored!' },
+])
+
+const modalVisible = ref(false)
+const modalMode = ref('intro')
+const messageLines = ref(['Preparing for battle...'])
+const commandMenuVisible = ref(false)
+const scrollCueVisible = ref(false)
+const modalCard = ref(null)
+const previousTitle = ref('')
+
+const heroAttack = ref(false)
+const enemyAttack = ref(false)
+const heroHit = ref(false)
+const enemyHit = ref(false)
+const heroDamage = reactive({ key: 0, text: '', color: '#ff4757', visible: false })
+const enemyDamage = reactive({ key: 0, text: '', color: '#ff4757', visible: false })
+const victoryRewardHtml = ref('')
+
+let typeWriterRun = 0
+let turnWatchdog = null
+const timers = new Set()
+
+const stars = Array.from({ length: 50 }, (_, index) => ({
+  id: `star-${index}`,
+  size: Math.random() * 3 + 1,
+  left: Math.random() * 100,
+  top: Math.random() * 78,
+  delay: Math.random() * 4,
+}))
+
+const dusts = Array.from({ length: 10 }, (_, index) => ({
+  id: `dust-${index}`,
+  left: Math.random() * 100,
+  top: 48 + Math.random() * 24,
+  duration: 8 + Math.random() * 6,
+  delay: Math.random() * 8,
+}))
+
+const clearCountText = computed(() => `${gameState.cleared.filter(Boolean).length} / 3`)
+const allClear = computed(() => gameState.cleared.every(Boolean))
+const enemy = computed(() => gameState.enemy)
+const currentStageIntel = computed(() => {
+  if (!gameState.currentStage) return []
+  if (gameState.currentStage.id === 0) {
+    return [
+      'Language scores are hard thresholds: check the <b>official program page</b> for overall score, every sub-score, accepted tests, waiver policy, and whether the score is still valid at enrollment.',
+      'Plan backwards: IELTS/TOEFL scores are usually valid for <b>2 years</b>; IELTS paper-based results often take about <b>13 days</b>, TOEFL iBT about <b>6-10 days</b>. Try to qualify before summer ends and leave September-October for retakes.',
+      'Prep with core materials first: <b>official guides, Cambridge IELTS papers, and TOEFL TPO-style practice</b>. Analyze mistakes; do not worship shortcut packages.',
     ]
-    const stages = computed(() => {
-      const localizedStages = tm('pages.y3_6.stages') || []
-      return stageMeta.map((stage, index) => {
-        const localized = localizedStages[index] || {}
-        return {
-          ...stage,
-          ...localized,
-          enemy: {
-            name: localized.enemyName || '',
-            icon: stage.icon,
-            hp: stage.hp,
-            atk: stage.atk,
-          },
-        }
-      })
+  }
+  return [
+    "⚔️ Manage the PP of <b>Proofreader's Slash</b>. It deals massive damage but has limited uses.",
+    '🛡️ In moments of crisis, the <b>Cold Email Shield</b> blocks 70% of incoming damage.',
+  ]
+})
+const introRewardHtml = computed(() => {
+  if (!gameState.currentStage) return ''
+  if (gameState.cleared[gameState.currentStage.id]) {
+    return 'Boss already slain. No extra rewards for repeated challenges.'
+  }
+  return `First Clear Reward: <b>${gameState.currentStage.gemReward} Artifacts</b> + Level Up + Iced Americano.`
+})
+const heroHpPercent = computed(() => Math.max(0, (gameState.hero.hp / gameState.hero.maxHp) * 100))
+const enemyHpPercent = computed(() => Math.max(0, (gameState.enemy.hp / gameState.enemy.maxHp) * 100))
+const heroHpBarColor = computed(() => (
+  heroHpPercent.value > 50 ? 'linear-gradient(90deg, #4ed481, #2a9a57)' : heroHpPercent.value > 20 ? '#f1c40f' : '#e74c3c'
+))
+
+function setManagedTimeout(callback, delay) {
+  const timer = window.setTimeout(() => {
+    timers.delete(timer)
+    callback()
+  }, delay)
+  timers.add(timer)
+  return timer
+}
+
+function isStageLocked(idx) {
+  return idx > 0 && !gameState.cleared[idx - 1]
+}
+
+function getDoorTag(idx) {
+  if (gameState.cleared[idx]) return 'Slain'
+  if (isStageLocked(idx)) return 'Sealed'
+  return idx === 0 ? 'September' : idx === 1 ? 'October' : 'November'
+}
+
+function syncPotionSkillToHud() {
+  heroSkills[3].pp = gameState.potions
+  heroSkills[3].maxPp = gameState.potions
+}
+
+function updateHUD() {
+  syncPotionSkillToHud()
+}
+
+function cancelTypeWriter() {
+  typeWriterRun += 1
+}
+
+function clearTurnWatchdog() {
+  if (!turnWatchdog) return
+  window.clearTimeout(turnWatchdog)
+  turnWatchdog = null
+}
+
+function startTurnWatchdog() {
+  clearTurnWatchdog()
+  turnWatchdog = window.setTimeout(() => {
+    if (!gameState.inBattle || !gameState.isAnimating || !gameState.enemy.name) return
+    if (gameState.hero.hp <= 0 || gameState.enemy.hp <= 0) return
+    showCommandMenu('Awaiting your command:')
+  }, 12000)
+}
+
+function updateScrollCue() {
+  if (!modalVisible.value || !modalCard.value) {
+    scrollCueVisible.value = false
+    return
+  }
+  const canScroll = modalCard.value.scrollHeight - modalCard.value.clientHeight > 14
+  const atBottom = modalCard.value.scrollTop + modalCard.value.clientHeight >= modalCard.value.scrollHeight - 14
+  scrollCueVisible.value = canScroll && !atBottom
+}
+
+function resetModalScroll() {
+  nextTick(() => {
+    if (modalCard.value) {
+      modalCard.value.scrollTop = 0
+    }
+    window.requestAnimationFrame(updateScrollCue)
+    setManagedTimeout(updateScrollCue, 120)
+  })
+}
+
+function scrollModal() {
+  if (!modalCard.value) return
+  modalCard.value.scrollBy({ top: Math.round(modalCard.value.clientHeight * 0.75), behavior: 'smooth' })
+  setManagedTimeout(updateScrollCue, 360)
+}
+
+function openStage(idx) {
+  if (idx > 0 && !gameState.cleared[idx - 1]) return
+  gameState.currentStage = stages[idx]
+  modalMode.value = 'intro'
+  modalVisible.value = true
+  resetModalScroll()
+}
+
+function renderRocoBattleUI() {
+  modalMode.value = 'battle'
+  messageLines.value = ['Preparing for battle...']
+  commandMenuVisible.value = false
+  heroAttack.value = false
+  enemyAttack.value = false
+  heroHit.value = false
+  enemyHit.value = false
+  heroDamage.visible = false
+  enemyDamage.visible = false
+  resetModalScroll()
+}
+
+function initBattle() {
+  const lvlBonus = (gameState.level - 1) * 30
+  gameState.hero.maxHp = 120 + lvlBonus
+  gameState.hero.hp = gameState.hero.maxHp
+  gameState.hero.shield = false
+  heroSkills.forEach((skill) => {
+    if (skill.id !== 3) skill.pp = skill.maxPp
+  })
+
+  const stage = gameState.currentStage
+  gameState.enemy = { ...stage.enemy, maxHp: stage.enemy.hp }
+  gameState.inBattle = true
+  gameState.isAnimating = true
+
+  renderRocoBattleUI()
+
+  setManagedTimeout(() => {
+    typeWriter(`A wild <b>${gameState.enemy.name}</b> appears!`, () => {
+      setManagedTimeout(() => {
+        showCommandMenu()
+      }, 800)
     })
+  }, 500)
+}
 
-    const mode = ref('map')
-    const currentStage = ref(null)
-    const cleared = reactive([false, false, false])
-    const gems = ref(0)
-    const level = ref(1)
-    const potions = ref(4)
-    const hero = reactive({ hp: 120, maxHp: 120, shield: false })
-    const enemy = reactive({ name: '', icon: '', hp: 1, maxHp: 1, atk: 1 })
-    const skills = reactive([])
-    const battleLog = ref(t('pages.y3_6.logs.awaiting'))
-    const settlementText = ref('')
+function typeWriter(text, callback, clear = true) {
+  const runId = ++typeWriterRun
+  const message = String(text).replace(/<\/?b>/g, '')
 
-    const clearedCount = computed(() => cleared.filter(Boolean).length)
+  if (clear) {
+    messageLines.value = ['']
+  } else {
+    messageLines.value = [...messageLines.value, '']
+  }
 
-    function isLocked(stageId) {
-      return stageId > 0 && !cleared[stageId - 1]
-    }
+  let index = 0
+  const speed = 30
+  const targetLine = messageLines.value.length - 1
 
-    function doorStatus(stageId) {
-      if (cleared[stageId]) return t('pages.y3_6.slain')
-      if (isLocked(stageId)) return t('pages.y3_6.sealed')
-      return stages.value[stageId]?.month || ''
-    }
-
-    function openStage(stageId) {
-      if (isLocked(stageId)) {
-        battleLog.value = t('pages.y3_6.logs.previousFirst')
-        return
-      }
-
-      currentStage.value = stages.value[stageId]
-      mode.value = 'intro'
-    }
-
-    function openFinal() {
-      mode.value = clearedCount.value === 3 ? 'final' : 'map'
-      if (clearedCount.value !== 3) {
-        battleLog.value = t('pages.y3_6.logs.sanctuarySealed')
-      }
-    }
-
-    function returnToMap() {
-      mode.value = 'map'
-      currentStage.value = null
-    }
-
-    function startBattle() {
-      const stage = currentStage.value
-      const levelBonus = (level.value - 1) * 30
-      hero.maxHp = 120 + levelBonus
-      hero.hp = hero.maxHp
-      hero.shield = false
-      Object.assign(enemy, {
-        ...stage.enemy,
-        hp: stage.enemy.hp,
-        maxHp: stage.enemy.hp
-      })
-
-      skills.splice(
-        0,
-        skills.length,
-        { id: 'mock', name: t('pages.y3_6.skills.mock.name'), label: t('pages.y3_6.skills.mock.label'), pp: 15, maxPp: 15, power: 34, kind: 'attack' },
-        { id: 'proof', name: t('pages.y3_6.skills.proof.name'), label: t('pages.y3_6.skills.proof.label'), pp: 3, maxPp: 3, power: 86, kind: 'attack' },
-        { id: 'shield', name: t('pages.y3_6.skills.shield.name'), label: t('pages.y3_6.skills.shield.label'), pp: 5, maxPp: 5, power: 0, kind: 'shield' },
-        { id: 'coffee', name: t('pages.y3_6.skills.coffee.name'), label: t('pages.y3_6.skills.coffee.label'), pp: potions.value, maxPp: potions.value, power: 95, kind: 'heal' }
-      )
-
-      battleLog.value = t('pages.y3_6.logs.battleStart', { enemy: enemy.name })
-      mode.value = 'battle'
-    }
-
-    function useSkill(skill) {
-      if (skill.pp <= 0 || hero.hp <= 0 || enemy.hp <= 0) return
-
-      skill.pp -= 1
-
-      if (skill.kind === 'attack') {
-        const damage = skill.power + 6 + (level.value - 1) * 12
-        enemy.hp = Math.max(0, enemy.hp - damage)
-        battleLog.value = t('pages.y3_6.logs.attack', { skill: skill.name, enemy: enemy.name, damage })
-      } else if (skill.kind === 'shield') {
-        hero.shield = true
-        battleLog.value = t('pages.y3_6.logs.shield')
-      } else if (skill.kind === 'heal') {
-        potions.value = Math.max(0, potions.value - 1)
-        hero.hp = Math.min(hero.maxHp, hero.hp + skill.power)
-        battleLog.value = t('pages.y3_6.logs.heal', { heal: skill.power })
-      }
-
-      if (enemy.hp <= 0) {
-        winStage()
-        return
-      }
-
-      enemyCounter()
-    }
-
-    function enemyCounter() {
-      let damage = enemy.atk + 10
-      if (hero.shield) {
-        damage = Math.ceil(damage * 0.3)
-        hero.shield = false
-      }
-      hero.hp = Math.max(0, hero.hp - damage)
-      battleLog.value += ` ${t('pages.y3_6.logs.counter', { enemy: enemy.name, damage })}`
-
-      if (hero.hp <= 0) {
-        mode.value = 'defeat'
-      }
-    }
-
-    function winStage() {
-      const stage = currentStage.value
-      if (!cleared[stage.id]) {
-        cleared[stage.id] = true
-        gems.value += 1
-        level.value += 1
-        potions.value += 1
-        settlementText.value = t('pages.y3_6.logs.firstClear', { level: level.value })
-      } else {
-        settlementText.value = t('pages.y3_6.logs.replayClear')
-      }
-
-      mode.value = 'victory'
-    }
-
-    return {
-      mode,
-      stages,
-      currentStage,
-      cleared,
-      gems,
-      level,
-      potions,
-      hero,
-      enemy,
-      skills,
-      battleLog,
-      settlementText,
-      t,
-      clearedCount,
-      isLocked,
-      doorStatus,
-      openStage,
-      openFinal,
-      returnToMap,
-      startBattle,
-      useSkill
+  function type() {
+    if (runId !== typeWriterRun) return
+    if (index < message.length) {
+      const nextLines = [...messageLines.value]
+      nextLines[targetLine] = `${nextLines[targetLine]}${message.charAt(index)}`
+      messageLines.value = nextLines
+      index += 1
+      setManagedTimeout(type, speed)
+    } else if (callback && runId === typeWriterRun) {
+      setManagedTimeout(() => {
+        if (runId === typeWriterRun) callback()
+      }, 500)
     }
   }
+
+  type()
 }
+
+function showCommandMenu(message = 'Awaiting your command:') {
+  cancelTypeWriter()
+  clearTurnWatchdog()
+  messageLines.value = [message]
+  commandMenuVisible.value = true
+  gameState.isAnimating = false
+}
+
+function holdCommandMenu() {
+  gameState.isAnimating = true
+  commandMenuVisible.value = false
+  startTurnWatchdog()
+}
+
+async function popDamage(target, text, color) {
+  const state = target === 'hero' ? heroDamage : enemyDamage
+  state.text = text
+  state.color = color
+  state.visible = false
+  state.key += 1
+  await nextTick()
+  state.visible = true
+}
+
+function useSkill(skillIdx) {
+  if (!gameState.inBattle || gameState.isAnimating) return
+  const skill = heroSkills[skillIdx]
+  if (skill.pp <= 0) return
+
+  holdCommandMenu()
+
+  skill.pp -= 1
+  if (skillIdx === 3) {
+    gameState.potions -= 1
+  }
+
+  typeWriter(`You ${skill.log}`, () => {
+    if (skill.class === 'attack' || skill.class === 'heavy') {
+      heroAttack.value = true
+      setManagedTimeout(() => {
+        const damage = skill.power + Math.floor(Math.random() * 15) + (gameState.level - 1) * 10
+        gameState.enemy.hp = Math.max(0, gameState.enemy.hp - damage)
+        enemyHit.value = true
+        popDamage('enemy', `-${damage}`, '#ff4757')
+
+        setManagedTimeout(() => {
+          heroAttack.value = false
+          enemyHit.value = false
+          checkWinOrNext()
+        }, 400)
+      }, 200)
+    } else if (skill.class === 'heal') {
+      const heal = Math.abs(skill.power) + (gameState.level * 15)
+      gameState.hero.hp = Math.min(gameState.hero.maxHp, gameState.hero.hp + heal)
+      popDamage('hero', `+${heal}`, '#48bb78')
+      setManagedTimeout(() => checkWinOrNext(), 800)
+    } else if (skill.class === 'shield') {
+      gameState.hero.shield = true
+      setManagedTimeout(() => checkWinOrNext(), 800)
+    } else {
+      setManagedTimeout(() => checkWinOrNext(), 400)
+    }
+  })
+}
+
+function checkWinOrNext() {
+  if (gameState.enemy.hp <= 0) {
+    clearTurnWatchdog()
+    typeWriter(`Successfully crushed <b>${gameState.enemy.name}</b>!`, () => {
+      setManagedTimeout(() => winStage(), 1200)
+    })
+  } else {
+    enemyTurn()
+  }
+}
+
+function enemyTurn() {
+  const enemyName = gameState.enemy.name
+  typeWriter(`<b>${enemyName}</b> launched a frantic counterattack!`, () => {
+    enemyAttack.value = true
+
+    setManagedTimeout(() => {
+      let damage = gameState.enemy.atk + Math.floor(Math.random() * 20)
+      if (gameState.hero.shield) {
+        damage = Math.floor(damage * 0.3)
+        gameState.hero.shield = false
+        typeWriter('The <b>Cold Email Shield</b> absorbed massive damage!', null, false)
+      }
+
+      gameState.hero.hp = Math.max(0, gameState.hero.hp - damage)
+      heroHit.value = true
+      popDamage('hero', `-${damage}`, '#ff4757')
+
+      setManagedTimeout(() => {
+        enemyAttack.value = false
+        heroHit.value = false
+
+        if (gameState.hero.hp <= 0) {
+          clearTurnWatchdog()
+          typeWriter('You were thoroughly crushed by DDLs and pressure...', () => {
+            setManagedTimeout(() => loseStage(), 1500)
+          })
+        } else {
+          showCommandMenu()
+        }
+      }, 400)
+    }, 200)
+  })
+}
+
+function winStage() {
+  clearTurnWatchdog()
+  cancelTypeWriter()
+  gameState.inBattle = false
+  gameState.isAnimating = false
+
+  const stage = gameState.currentStage
+  let rewardText = 'You have already crushed this Boss. Your strength needs no further proof.'
+
+  if (!gameState.cleared[stage.id]) {
+    gameState.cleared[stage.id] = true
+    gameState.gems += stage.gemReward
+    gameState.level += 1
+    gameState.potions += 1
+    rewardText = `🎉 First Blood! Gained <b>${stage.gemReward} Artifacts</b>, leveled up to <b>Lv.${gameState.level}</b>, and scavenged 1 Iced Americano!`
+  }
+
+  updateHUD()
+  victoryRewardHtml.value = rewardText
+  modalMode.value = 'victory'
+  resetModalScroll()
+}
+
+function loseStage() {
+  clearTurnWatchdog()
+  cancelTypeWriter()
+  gameState.inBattle = false
+  gameState.isAnimating = false
+  modalMode.value = 'defeat'
+  resetModalScroll()
+}
+
+function openFinal() {
+  modalMode.value = 'final'
+  modalVisible.value = true
+  resetModalScroll()
+}
+
+function completeNode() {
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage({
+      type: 'gradquest:node-complete',
+      payload: { year: 'y3', nodeId: 6 },
+    }, '*')
+  }
+  window.alert('Map Guide: Returning to the Main Map!')
+  emit('complete', { year: 'y3', nodeId: 6 })
+}
+
+function handleFinalDoor() {
+  if (gameState.cleared.every(Boolean)) {
+    openFinal()
+  } else {
+    window.alert('There are still Bosses uncleared! The Sanctuary remains sealed.')
+  }
+}
+
+function closeModal() {
+  if (gameState.inBattle && !window.confirm('The battle is ongoing! Are you sure you want to flee?')) return
+  cancelTypeWriter()
+  clearTurnWatchdog()
+  modalVisible.value = false
+  gameState.inBattle = false
+  updateScrollCue()
+}
+
+watch([modalVisible, modalMode], () => {
+  resetModalScroll()
+})
+
+onMounted(() => {
+  previousTitle.value = document.title
+  document.title = 'Y3-6 The Dark Citadel: Battle of the Ordeals'
+  updateHUD()
+  window.addEventListener('resize', updateScrollCue)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateScrollCue)
+  cancelTypeWriter()
+  clearTurnWatchdog()
+  timers.forEach((timer) => window.clearTimeout(timer))
+  timers.clear()
+  if (previousTitle.value) {
+    document.title = previousTitle.value
+  }
+})
 </script>
 
 <style scoped>
-.citadel-game {
-  min-height: 100%;
-  padding: clamp(18px, 4vw, 64px);
-  color: #f5f1e6;
-  background:
-    radial-gradient(circle at 50% 0%, rgba(220, 38, 38, 0.22), transparent 36%),
-    linear-gradient(180deg, #0f172a 0%, #1c1917 56%, #020617 100%);
-}
-
-.citadel-hud {
-  position: sticky;
-  top: 10px;
-  z-index: 5;
-  width: min(1280px, 100%);
-  margin: 0 auto;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.close-btn,
-.hud-stat,
-.stage-door,
-.primary-btn,
-.danger-btn,
-.skill-btn {
-  border-radius: 8px;
-  font: inherit;
-}
-
-.close-btn,
-.hud-stat {
-  padding: 10px 14px;
-  color: #fed7aa;
-  background: rgba(2, 6, 23, 0.9);
-  border: 1px solid rgba(251, 146, 60, 0.48);
-}
-
-.close-btn,
-.stage-door,
-.primary-btn,
-.danger-btn,
-.skill-btn {
-  cursor: pointer;
-}
-
-.modal-close {
-  position: absolute;
-  top: 18px;
-  left: 18px;
-}
-
-.citadel-map,
-.battle-modal {
-  width: min(1280px, 100%);
-  margin: 40px auto 0;
-}
-
-h1,
-h2,
-p {
+.dark-citadel-root,
+.dark-citadel-root * {
+  box-sizing: border-box;
   margin: 0;
+  padding: 0;
+  user-select: none;
 }
 
-h1 {
-  margin-top: 8px;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(2.5rem, 8vw, 8rem);
-  line-height: 0.86;
-  color: #fed7aa;
-}
-
-h2 {
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(2rem, 6vw, 6rem);
-  line-height: 0.9;
-  color: #fed7aa;
-}
-
-.eyebrow {
-  color: #fb923c;
-  font-weight: 1000;
-  text-transform: uppercase;
-  letter-spacing: 0;
-}
-
-.intro {
-  max-width: 820px;
-  margin-top: 18px;
-  color: #cbd5e1;
-  line-height: 1.65;
-}
-
-.door-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 18px;
-  margin-top: clamp(30px, 6vw, 90px);
-}
-
-.stage-door {
-  min-height: 420px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 20px;
-  color: #f5f1e6;
-  text-align: left;
-  border: 4px solid rgba(215, 191, 133, 0.82);
-  background:
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.1), transparent 22%),
-    linear-gradient(180deg, #654321, #2b1b10);
-}
-
-.stage-door:hover:not(.locked) {
-  transform: translateY(-8px);
-  filter: brightness(1.1);
-}
-
-.stage-door.locked {
-  cursor: not-allowed;
-  filter: grayscale(1) brightness(0.65);
-}
-
-.stage-door.cleared {
-  border-color: #86efac;
-}
-
-.final-door {
-  background:
-    linear-gradient(to bottom, rgba(250, 204, 21, 0.2), transparent 30%),
-    linear-gradient(180deg, #7f1d1d, #1c1917);
-}
-
-.door-status {
-  width: fit-content;
-  padding: 5px 9px;
-  border-radius: 999px;
-  color: #111827;
-  background: #fed7aa;
-  font-size: 0.75rem;
-  font-weight: 1000;
-  text-transform: uppercase;
-}
-
-.stage-door b {
-  color: #fb923c;
-  text-transform: uppercase;
-}
-
-.stage-door strong {
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(1.4rem, 3vw, 3.4rem);
-  line-height: 0.95;
-}
-
-.stage-door small {
-  color: #e5e7eb;
-  line-height: 1.45;
-}
-
-.battle-modal {
+.dark-citadel-root {
+  --fire1: #fff0bf;
+  --fire2: #efc268;
+  --fire3: #d88435;
   position: relative;
-  min-height: calc(100vh - 150px);
-  padding: clamp(62px, 8vw, 110px) clamp(16px, 4vw, 70px) 30px;
-  border-radius: 8px;
-  background: rgba(2, 6, 23, 0.88);
-  border: 1px solid rgba(251, 146, 60, 0.35);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.48);
+  overflow: hidden;
+  color: #fff;
+  min-height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background:
+    radial-gradient(circle at 78% 15%, rgba(220, 230, 255, .12), transparent 18%),
+    radial-gradient(circle at 16% 18%, rgba(255, 255, 255, .04), transparent 12%),
+    linear-gradient(to bottom, #03050b 0%, #07101d 26%, #0c1730 58%, #132443 100%);
 }
 
-.modal-scroll {
-  max-height: min(720px, calc(100vh - 220px));
-  overflow: auto;
-  padding: 4px 6px 12px;
+.sky,
+.dusts {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
 }
 
-.modal-scroll.center {
+.star {
+  position: absolute;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, .65);
+  animation: twinkle 3.2s infinite ease-in-out;
+}
+
+.dust {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, .8), rgba(180, 195, 255, .35), transparent 75%);
+  animation: drift 12s linear infinite;
+  opacity: .55;
+}
+
+.moon {
+  position: fixed;
+  right: 7%;
+  top: 6%;
+  width: 175px;
+  height: 175px;
+  border-radius: 50%;
+  z-index: 2;
+  background: radial-gradient(circle, #f8fbff 0%, #dfe8ff 55%, #c6d0e8 82%, rgba(255, 255, 255, .04) 100%);
+  box-shadow: 0 0 36px rgba(218, 228, 255, .55), 0 0 120px rgba(170, 190, 240, .24);
+}
+
+.moon::after {
+  content: '';
+  position: absolute;
+  right: 18px;
+  top: 20px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(180, 192, 220, .14);
+}
+
+.topbar {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1280px, 95vw);
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  z-index: 40;
+}
+
+.panel {
+  backdrop-filter: blur(14px);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .10), rgba(255, 255, 255, .04));
+  border: 1px solid rgba(255, 255, 255, .13);
+  border-radius: 20px;
+  box-shadow: 0 0 24px rgba(0, 0, 0, .25), inset 0 0 18px rgba(255, 255, 255, .02);
+  padding: 16px 22px;
+}
+
+.title-box {
+  min-width: 520px;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 900;
+  background: linear-gradient(90deg, #fff, #f0deb0, #dfe8ff, #fff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 1px;
+  font-family: Georgia, serif;
+}
+
+.subtitle {
+  margin-top: 8px;
+  color: #e8edff;
+  line-height: 1.65;
+  font-size: 14px;
+  opacity: .96;
+  font-family: Georgia, serif;
+}
+
+.status {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.stat {
+  min-width: 100px;
+  text-align: center;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .05);
+  border: 1px solid rgba(255, 255, 255, .10);
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #dbe5ff;
+  font-weight: bold;
+}
+
+.stat-value {
+  margin-top: 6px;
+  font-size: 22px;
+  font-weight: 900;
+  color: #ecd9a7;
+}
+
+.scene {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.ground {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 19vh;
+  background: linear-gradient(to top, #0f1a12, #17251b 40%, transparent);
+  z-index: 3;
+}
+
+.mist {
+  position: absolute;
+  left: 0;
+  bottom: 8vh;
+  width: 100%;
+  height: 12vh;
+  background: linear-gradient(to right, rgba(255, 255, 255, .03), rgba(220, 228, 255, .11), rgba(255, 255, 255, .03));
+  filter: blur(18px);
+  z-index: 4;
+}
+
+.road {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 30vw;
+  min-width: 320px;
+  height: 18vh;
+  background: linear-gradient(to top, rgba(122, 129, 141, .46), rgba(255, 255, 255, .10), transparent);
+  clip-path: polygon(40% 100%, 60% 100%, 74% 0, 26% 0);
+  z-index: 4;
+}
+
+.castle-wrap {
+  position: absolute;
+  left: 50%;
+  bottom: 8vh;
+  transform: translateX(-50%);
+  width: min(1200px, 94vw);
+  height: 70vh;
+  z-index: 10;
+}
+
+.castle-glow {
+  position: absolute;
+  left: 50%;
+  bottom: 8%;
+  transform: translateX(-50%);
+  width: 78%;
+  height: 56%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(170, 185, 230, .12), rgba(240, 200, 120, .05), transparent 72%);
+  filter: blur(30px);
+  z-index: 0;
+}
+
+.wall {
+  position: absolute;
+  border: 4px solid rgba(195, 204, 222, .95);
+  box-shadow: inset 0 0 18px rgba(255, 255, 255, .05), 0 0 20px rgba(0, 0, 0, .18);
+  background: linear-gradient(to bottom, #959daa 0%, #737c89 18%, #535d69 52%, #36404b 78%, #232a33 100%);
+}
+
+.back-wall-left,
+.back-wall-right {
+  bottom: 0;
+  width: 17%;
+  height: 48%;
+  z-index: 5;
+  border-radius: 4px;
+}
+
+.back-wall-left {
+  left: 18%;
+}
+
+.back-wall-right {
+  right: 18%;
+}
+
+.front-wall {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 52%;
+  height: 30%;
+  z-index: 8;
+  border-radius: 4px;
+}
+
+.center-keep {
+  position: absolute;
+  left: 50%;
+  bottom: 24%;
+  transform: translateX(-50%);
+  width: 16%;
+  height: 62%;
+  z-index: 7;
+  border-radius: 4px;
+}
+
+.side-tower {
+  position: absolute;
+  bottom: 0;
+  width: 18%;
+  height: 74%;
+  z-index: 4;
+  border-radius: 4px;
+}
+
+.side-tower.left { left: 4%; }
+.side-tower.right { right: 4%; }
+
+.side-tower::before,
+.back-wall-left::before,
+.back-wall-right::before,
+.front-wall::before,
+.center-keep::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: -22px;
+  width: calc(100% + 8px);
+  height: 22px;
+  background:
+    linear-gradient(135deg, transparent 10px, rgba(170, 179, 194, .96) 0) top left,
+    linear-gradient(225deg, transparent 10px, rgba(170, 179, 194, .96) 0) top right,
+    linear-gradient(315deg, transparent 10px, rgba(170, 179, 194, .96) 0) bottom right,
+    linear-gradient(45deg, transparent 10px, rgba(170, 179, 194, .96) 0) bottom left;
+  background-size: 50% 50%;
+  background-repeat: no-repeat;
+}
+
+.spire {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 44px solid transparent;
+  border-right: 44px solid transparent;
+  border-bottom: 120px solid #262b38;
+  z-index: 9;
+  filter: drop-shadow(0 0 10px rgba(0, 0, 0, .35));
+}
+
+.spire.small {
+  border-left-width: 34px;
+  border-right-width: 34px;
+  border-bottom-width: 96px;
+}
+
+.spire.left { left: 7.8%; bottom: 77%; }
+.spire.right { right: 7.8%; bottom: 77%; }
+.spire.mid-left { left: 25.6%; bottom: 51%; }
+.spire.mid-right { right: 25.6%; bottom: 51%; }
+.spire.center { left: 50%; bottom: 88%; transform: translateX(-50%); }
+
+.cap {
+  position: absolute;
+  width: 12px;
+  height: 28px;
+  border-radius: 6px 6px 0 0;
+  background: linear-gradient(to bottom, #efddaa, #c79d52);
+  z-index: 10;
+  box-shadow: 0 0 12px rgba(239, 221, 170, .24);
+}
+
+.cap.left { left: 11.1%; bottom: 95.3%; }
+.cap.right { right: 11.1%; bottom: 95.3%; }
+.cap.mid-left { left: 28.1%; bottom: 63%; }
+.cap.mid-right { right: 28.1%; bottom: 63%; }
+.cap.center { left: 50%; bottom: 108%; transform: translateX(-50%); }
+
+.flagpole {
+  position: absolute;
+  width: 3px;
+  height: 86px;
+  background: rgba(230, 235, 245, .95);
+  z-index: 10;
+}
+
+.flagpole::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 10px;
+  width: 34px;
+  height: 16px;
+  background: linear-gradient(90deg, #6c1c29, #972b39);
+  clip-path: polygon(0 0, 100% 18%, 82% 50%, 100% 82%, 0 100%);
+  animation: wave 2.2s infinite ease-in-out;
+}
+
+.flagpole.left { left: 11.2%; bottom: 79%; }
+.flagpole.right { right: 11.2%; bottom: 79%; }
+.flagpole.center { left: 50%; bottom: 90%; transform: translateX(-50%); }
+
+.window {
+  position: absolute;
+  width: 24px;
+  height: 74px;
+  border-radius: 14px 14px 4px 4px;
+  background: linear-gradient(to bottom, var(--fire1), var(--fire2) 42%, var(--fire3) 100%);
+  border: 2px solid rgba(235, 220, 175, .9);
+  box-shadow: 0 0 18px rgba(240, 194, 104, .34);
+  z-index: 9;
+}
+
+.round-window {
+  position: absolute;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff, #f1ddb0, #d08d44);
+  border: 2px solid rgba(235, 220, 175, .9);
+  box-shadow: 0 0 14px rgba(240, 194, 104, .28);
+  z-index: 9;
+}
+
+.door-row {
+  position: absolute;
+  left: 50%;
+  bottom: 0.5%;
+  transform: translateX(-50%);
+  width: 62%;
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  align-items: end;
+  z-index: 12;
+  pointer-events: none;
+}
+
+.door {
+  position: relative;
+  pointer-events: auto;
+  cursor: pointer;
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  text-align: center;
+  padding: 10px;
+  color: #f5f1e6;
+  font-size: 14px;
+  font-weight: 800;
+  border: 4px solid rgba(215, 191, 133, .92);
+  box-shadow: 0 0 20px rgba(0, 0, 0, .25), inset 0 0 14px rgba(255, 255, 255, .04);
+  transition: transform .22s ease, filter .22s ease, box-shadow .22s ease;
+  overflow: hidden;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, .08), rgba(255, 255, 255, .02)), linear-gradient(to bottom, #5d4832, #382b1d 46%, #181109 100%);
+}
+
+.door::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border-radius: inherit;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, .10), rgba(255, 255, 255, .02)), repeating-linear-gradient(90deg, rgba(255, 255, 255, .03) 0 2px, transparent 2px 18px);
+  pointer-events: none;
+}
+
+.door::after {
+  content: '';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff5d4, #d5a64d);
+  box-shadow: 0 0 10px rgba(213, 166, 77, .6);
+}
+
+.door:hover {
+  transform: translateY(-6px) scale(1.03);
+  filter: brightness(1.05);
+  box-shadow: 0 0 28px rgba(0, 0, 0, .3), 0 0 16px rgba(235, 220, 175, .10), inset 0 0 14px rgba(255, 255, 255, .05);
+}
+
+.door-label {
+  width: 100%;
+  padding: 4px 6px;
+  line-height: 1.2;
+  border-radius: 10px;
+  background: rgba(8, 12, 22, .42);
+  border: 1px solid rgba(255, 255, 255, .08);
+  position: relative;
+  z-index: 2;
+  font-size: 11px;
   text-align: center;
 }
 
-.intel-list {
-  display: grid;
-  gap: 12px;
-  margin-top: 24px;
+.status-tag {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .5);
+  border: 1px solid rgba(255, 255, 255, .12);
+  z-index: 2;
+  font-weight: bold;
 }
 
-.intel-list p,
-.message-box {
-  padding: 14px;
-  border-radius: 8px;
-  color: #fef3c7;
-  background: rgba(120, 53, 15, 0.5);
-  line-height: 1.55;
+.door.locked {
+  filter: grayscale(.2) brightness(.82);
+  pointer-events: none;
 }
 
-.primary-btn,
-.danger-btn {
-  display: inline-block;
-  margin: 24px 10px 0;
-  padding: 15px 20px;
-  color: #111827;
-  background: #fb923c;
-  border: 0;
-  font-weight: 1000;
+.door.cleared .status-tag {
+  background: rgba(50, 120, 76, .8);
+  color: #e2ffe9;
+  border-color: #2ecc71;
 }
 
-.danger-btn {
+.trial-door {
+  width: 15%;
+  height: 110px;
+  border-radius: 28px 28px 10px 10px;
+}
+
+.final-door {
+  position: absolute;
+  left: 50%;
+  bottom: 32%;
+  transform: translateX(-50%);
+  width: 16%;
+  height: 128px;
+  border-radius: 24px 24px 10px 10px;
+  z-index: 11;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, .10), rgba(255, 255, 255, .03)), linear-gradient(to bottom, #6b573b, #45331f 44%, #1c140c 100%);
+  box-shadow: 0 0 20px rgba(0, 0, 0, .28), 0 0 18px rgba(235, 220, 175, .10), inset 0 0 14px rgba(255, 255, 255, .05);
+}
+
+.final-door:hover {
+  transform: translateX(-50%) translateY(-6px) scale(1.03);
+}
+
+.hint {
+  position: fixed;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  z-index: 25;
+  width: min(820px, 82vw);
+  background: rgba(8, 12, 24, .82);
+  border: 1px solid rgba(255, 255, 255, .10);
+  padding: 8px 18px;
+  border-radius: 999px;
+  color: #e8edff;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 14px rgba(0, 0, 0, .18);
+  font-weight: bold;
+  font-size: 0.9rem;
+  line-height: 1.28;
+  pointer-events: none;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 7, 14, .84);
+  z-index: 60;
+  padding: 18px;
+}
+
+.modal.show {
+  display: flex;
+}
+
+.modal-card {
+  position: relative;
+  width: min(1120px, 96vw);
+  max-height: 92vh;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  border-radius: 22px;
+  padding: 24px;
+  background: linear-gradient(180deg, rgba(17, 22, 38, .98), rgba(10, 14, 24, .98)), radial-gradient(circle at top right, rgba(255, 255, 255, .06), transparent 30%);
+  border: 1px solid rgba(255, 255, 255, .12);
+  box-shadow: 0 0 38px rgba(0, 0, 0, .3);
+}
+
+.modal-scroll-cue {
+  position: fixed;
+  right: 34px;
+  bottom: 34px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, .72);
+  background: rgba(8, 12, 24, .86);
   color: #fff;
-  background: #dc2626;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 130;
+  display: none;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .36);
 }
 
-.battle-screen {
+.modal-scroll-cue.show {
   display: grid;
-  gap: 20px;
+  place-items: center;
 }
 
-.combatants {
+.modal-scroll-cue:hover {
+  background: rgba(232, 210, 155, .95);
+  color: #1a202c;
+}
+
+.close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, .08);
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  z-index: 100;
+  font-weight: bold;
+}
+
+.close-btn:hover {
+  background: #e74c3c;
+}
+
+.level-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.level-title {
+  font-size: 26px;
+  font-weight: 900;
+  color: #ead7a7;
+  font-family: Georgia, serif;
+}
+
+.level-desc {
+  margin-top: 8px;
+  color: #e4eaff;
+  line-height: 1.7;
+  font-size: 15px;
+  max-width: 760px;
+  font-family: Georgia, serif;
+}
+
+.battle-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1.2fr 1fr;
   gap: 18px;
+  margin-top: 18px;
 }
 
-.fighter,
-.command-deck {
-  padding: clamp(16px, 3vw, 40px);
-  border-radius: 8px;
-  background: rgba(15, 23, 42, 0.95);
-  border: 1px solid rgba(251, 146, 60, 0.28);
+.box {
+  background: rgba(255, 255, 255, .04);
+  border: 1px solid rgba(255, 255, 255, .10);
+  border-radius: 18px;
+  padding: 18px;
 }
 
-.fighter.enemy {
-  text-align: right;
+.character-name {
+  font-size: 20px;
+  font-weight: 900;
+  margin-bottom: 10px;
+  color: #f9d976;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.2);
+  padding-bottom: 8px;
 }
+
+.info-list {
+  margin-top: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.info-item {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .04);
+  border: 1px solid rgba(255, 255, 255, .07);
+  color: #edf1ff;
+  line-height: 1.6;
+  font-size: .95rem;
+}
+
+.reward-box {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(232, 210, 155, .10), rgba(255, 255, 255, .04));
+  border: 1px solid rgba(232, 210, 155, .22);
+  color: #f1e3be;
+}
+
+.center-actions {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 16px;
+}
+
+.btn.next {
+  background: linear-gradient(135deg, #e8d29b, #ba944e);
+  color: #2c2110;
+  font-weight: bold;
+  font-size: 1.1rem;
+  padding: 12px 30px;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: 0.2s;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.btn.next:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+  filter: brightness(1.1);
+}
+
+.roco-game-screen {
+  width: 100%;
+  max-width: min(1040px, 100%);
+  height: clamp(500px, calc(100dvh - 140px), 620px);
+  background: #000;
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  position: relative;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  margin: 0 auto;
+}
+
+.roco-battle-scene {
+  flex: 1;
+  position: relative;
+  background: linear-gradient(to bottom, #1a2a6c, #112 60%, #2c3e50);
+  overflow: hidden;
+}
+
+.ground-ellipse {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+}
+
+.ground-hero { bottom: 20px; left: 15%; width: 250px; height: 60px; }
+.ground-enemy { top: 120px; right: 15%; width: 250px; height: 60px; }
 
 .sprite {
-  display: block;
-  margin-bottom: 16px;
-  font-size: clamp(3rem, 10vw, 11rem);
-  line-height: 0.8;
-  font-weight: 1000;
-  color: #fb923c;
+  position: absolute;
+  font-size: 110px;
+  filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.5));
+  transition: transform 0.3s;
+}
+
+.sprite-hero { bottom: 40px; left: 20%; z-index: 10; }
+.sprite-enemy { top: 70px; right: 20%; z-index: 5; }
+
+.damage-text {
+  position: absolute;
+  font-size: 40px;
+  font-weight: 900;
+  color: #ff3333;
+  text-shadow: 2px 2px 0 #fff, -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff;
+  z-index: 20;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.hud {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.95);
+  color: #2d3748;
+  border: 4px solid #cbd5e0;
+  border-radius: 12px;
+  padding: 12px 18px;
+  width: 300px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+  z-index: 15;
+}
+
+.hud-enemy { top: 25px; left: 25px; }
+.hud-hero { bottom: 35px; right: 25px; }
+
+.hud-name {
+  font-weight: 900;
+  font-size: 1.15rem;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.hud-name span.lvl {
+  font-weight: bold;
+  font-size: 1rem;
+  color: #d69e2e;
+}
+
+.hp-bar-bg {
+  width: 100%;
+  height: 14px;
+  background: #a0aec0;
+  border-radius: 7px;
+  overflow: hidden;
+  border: 1px solid #718096;
+}
+
+.hp-bar-fill {
+  height: 100%;
+  transition: width 0.5s ease-out, background-color 0.3s;
+}
+
+.hp-text {
+  text-align: right;
+  font-size: .9rem;
+  font-weight: bold;
+  margin-top: 4px;
 }
 
 .shield-tag {
-  display: inline-block;
-  margin-top: 10px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  color: #111827;
-  background: #93c5fd;
-  font-weight: 900;
+  color: #3182ce;
+  font-size: .85rem;
+  font-weight: bold;
+  margin-top: 4px;
+  display: none;
 }
 
-:deep(.health-bar) {
-  position: relative;
-  height: 30px;
-  margin-top: 14px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: #111827;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+.ui-bottom {
+  height: 112px;
+  flex: 0 0 112px;
+  background: linear-gradient(to bottom, #2d3748, #1a202c);
+  border-top: 4px solid #f6e05e;
+  display: flex;
 }
 
-:deep(.health-bar i) {
-  display: block;
-  height: 100%;
-  background: linear-gradient(90deg, #22c55e, #86efac);
-  transition: width 0.25s ease;
-}
-
-:deep(.health-bar.tone-enemy i) {
-  background: linear-gradient(90deg, #dc2626, #fb7185);
-}
-
-:deep(.health-bar span) {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
+.message-box {
+  flex: 1;
+  padding: 12px 18px;
+  font-size: 1rem;
+  line-height: 1.35;
+  font-weight: bold;
   color: #fff;
-  font-size: 0.82rem;
-  font-weight: 1000;
-  text-shadow: 0 1px 2px #000;
+  border-right: 4px solid #4a5568;
+  display: flex;
+  align-items: center;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  font-family: Georgia, serif;
 }
 
-.skill-grid {
+.action-menu {
+  width: 500px;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 14px;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  padding: 8px 10px;
+  gap: 8px 10px;
+  display: none;
 }
 
 .skill-btn {
-  min-height: 132px;
-  padding: 14px;
-  color: #f5f1e6;
-  background: #1f2937;
-  border: 1px solid rgba(251, 146, 60, 0.38);
-  text-align: left;
+  background: linear-gradient(to bottom, #fffaf0, #e2e8f0);
+  border: 3px solid #a0aec0;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  transition: 0.15s;
+}
+
+.skill-btn:hover {
+  background: #fefcbf;
+  border-color: #d69e2e;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.skill-btn:active {
+  transform: scale(0.95);
 }
 
 .skill-btn:disabled {
+  filter: grayscale(1);
+  opacity: 0.5;
   cursor: not-allowed;
-  opacity: 0.45;
+  transform: none;
+  box-shadow: none;
 }
 
-.skill-btn small {
-  display: block;
-  margin-top: 10px;
-  color: #cbd5e1;
-  line-height: 1.35;
+.skill-name {
+  font-weight: 900;
+  font-size: .92rem;
+  color: #2d3748;
+}
+
+.skill-pp {
+  font-size: .72rem;
+  color: #718096;
+  font-weight: bold;
+  margin-top: 2px;
+}
+
+.skill-type {
+  font-size: .66rem;
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: #fff;
+  margin-top: 2px;
+  font-weight: bold;
+}
+
+.type-normal { background: #a0aec0; }
+.type-fire { background: #e53e3e; }
+.type-magic { background: #805ad5; }
+.type-heal { background: #38b2ac; }
+
+.final-reward-screen {
+  text-align: center;
+  padding: 18px 8px 8px;
+}
+
+.big-gem {
+  font-size: 124px;
+  filter: drop-shadow(0 0 24px rgba(232, 210, 155, .5));
+  margin: 16px 0;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: .22; transform: scale(1); }
+  50% { opacity: .9; transform: scale(1.5); }
+}
+
+@keyframes drift {
+  0% { transform: translate(0, 0) scale(.8); opacity: 0; }
+  15% { opacity: .55; }
+  100% { transform: translate(70px, -180px) scale(1.25); opacity: 0; }
+}
+
+@keyframes wave {
+  0%, 100% { transform: skewY(0deg); }
+  50% { transform: skewY(7deg); }
+}
+
+@keyframes heroRush {
+  0% { transform: translate(0, 0); }
+  40% { transform: translate(400px, -100px) scale(1.2); filter: drop-shadow(0 0 20px #e74c3c); }
+  60% { transform: translate(400px, -100px) scale(1.2); filter: drop-shadow(0 0 20px #e74c3c); }
+  100% { transform: translate(0, 0); }
+}
+
+@keyframes enemyRush {
+  0% { transform: translate(0, 0) scaleX(-1); }
+  40% { transform: translate(-400px, 100px) scale(1.2) scaleX(-1); filter: drop-shadow(0 0 20px #e74c3c); }
+  60% { transform: translate(-400px, 100px) scale(1.2) scaleX(-1); filter: drop-shadow(0 0 20px #e74c3c); }
+  100% { transform: translate(0, 0) scaleX(-1); }
+}
+
+@keyframes takeDamage {
+  0%, 100% { filter: brightness(1) drop-shadow(0 10px 10px rgba(0, 0, 0, 0.5)); transform: translateX(0); }
+  20%, 60% { filter: brightness(2) drop-shadow(0 0 20px rgba(231, 76, 60, 1)); transform: translateX(-15px); }
+  40%, 80% { filter: brightness(2) drop-shadow(0 0 20px rgba(231, 76, 60, 1)); transform: translateX(15px); }
+}
+
+@keyframes floatUp {
+  0% { opacity: 1; transform: translateY(0) scale(0.5); }
+  20% { transform: translateY(-30px) scale(1.2); }
+  100% { opacity: 0; transform: translateY(-80px) scale(1); }
+}
+
+.anim-hero-attack { animation: heroRush 0.6s ease-in-out; }
+.anim-enemy-attack { animation: enemyRush 0.6s ease-in-out; }
+.anim-hit { animation: takeDamage 0.5s; }
+.damage-anim { animation: floatUp 1s ease-out forwards; }
+
+@media (max-width: 1100px) {
+  .title-box {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .topbar {
+    width: min(95vw, 1080px);
+  }
+
+  .battle-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 900px) {
-  .door-grid,
-  .combatants,
-  .skill-grid {
-    grid-template-columns: 1fr;
+  .topbar {
+    top: 10px;
   }
 
-  .stage-door {
-    min-height: 260px;
+  .title {
+    font-size: 22px;
   }
 
-  .fighter.enemy {
-    text-align: left;
+  .subtitle {
+    font-size: 13px;
+  }
+
+  .status {
+    width: 100%;
+  }
+
+  .stat {
+    flex: 1 1 calc(50% - 12px);
+  }
+
+  .door-row {
+    width: 80%;
+    gap: 12px;
+  }
+
+  .trial-door,
+  .final-door {
+    width: 28%;
+    min-width: 92px;
+  }
+
+  .final-door {
+    width: 24%;
+  }
+
+  .modal-card {
+    padding: 18px;
+  }
+
+  .roco-game-screen {
+    height: auto;
+    min-height: 620px;
+  }
+
+  .ui-bottom {
+    height: auto;
+    flex-direction: column;
+  }
+
+  .message-box {
+    min-height: 92px;
+    border-right: none;
+    border-bottom: 4px solid #4a5568;
+  }
+
+  .action-menu {
+    width: 100%;
   }
 }
 </style>

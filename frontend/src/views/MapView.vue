@@ -99,10 +99,10 @@
     </div>
 
     <div v-if="activeLevel" class="modal-overlay">
-      <div class="game-modal-content">
-        <button class="absolute-close-btn" @click="closeGame"><i class="fas fa-times"></i></button>
-        <div class="modal-header"><span>{{ activeLevelTitle }}</span></div>
-        <div class="game-stage native-stage">
+      <div class="game-modal-content" :class="{ 'chrome-free-modal': isChromeFreeLevel }">
+        <button v-if="!isChromeFreeLevel" class="absolute-close-btn" @click="closeGame"><i class="fas fa-times"></i></button>
+        <div v-if="!isChromeFreeLevel" class="modal-header"><span>{{ activeLevelTitle }}</span></div>
+        <div class="game-stage native-stage" :class="{ 'chrome-free-stage': isChromeFreeLevel }">
           <component v-if="nativeGameComponent" :is="nativeGameComponent" @complete="handleNativeComplete" @close="closeGame" />
           <div v-else class="missing-native-game">{{ t('map.missingLevel') }}</div>
         </div>
@@ -136,6 +136,7 @@ import { useGameStore } from '@/stores/game'
 const store = useGameStore()
 const { t } = useAppI18n()
 store.hydrate()
+const chromeFreeFiles = new Set(['year3_5.vue', 'year3_6.vue'])
 
 const y2Path = 'M572.3 368.6C575.8 325.1 579.2 281.6 573.5 243.1 567.7 204.7 558.2 165.2 537.6 137.9 517 110.6 482.5 87.3 449.8 79.3c-32.8-8-78.8-5-108.7 10.7-29.9 15.7-55.7 49.8-70.5 83.7-14.8 33.9-17.9 79.3-18.5 119.5-.6 40.3 4.1 91.5 15.1 122 11 30.5 27.7 45.4 50.9 61 23.2 15.5 56.5 30.6 87.9 32.2 31.4 1.6 75.7-10 100.6-22.7 24.9-12.7 40.5-34.3 48.6-53.8 8.1-19.5 6.2-51.4 0-63.4-6.2-12-28-12.4-37-8.4-9 4-15.6 18.7-17.3 32.3-1.7 13.5-5.8 31.3 6.9 49 12.7 17.7 30.4 36 68.7 50.6 38.3 14.6 100.9 28.7 160.7 29.9 59.7 1.2 155.7-4.8 197.7-22.7 42-17.9 51.4-59.8 54.3-84.9 2.9-25.1-9.4-48.6-37-65.7-27.6-17.1-89.6-23.7-128.3-37.1-38.7-13.4-82.1-22.9-104-43-22-20.1-29.1-51.6-27.8-77.7 1.4-26.1 19.1-58.6 35.9-78.9 16.8-20.3 39.7-36.2 64.8-43 25-6.8 61.5-3.4 85.5 2.4 24 5.7 36.8 10.9 53.6 21.7 16.8 10.8 52.7 56.4 59.7 61.9'
 const y3Path = 'M284 351.5 388.257 259.513 383.437 124.872 526.06 129.423 623.5 31 720.94 129.423 863.563 124.872 858.743 259.513 963 351.5 858.743 443.487 863.563 578.128 720.94 573.577 623.5 672 526.06 573.577 383.437 578.128 388.257 443.487Z'
@@ -172,6 +173,7 @@ const nativeGameComponent = computed(() => {
   if (!loader) return null
   return defineAsyncComponent(loader)
 })
+const isChromeFreeLevel = computed(() => Boolean(activeLevel.value && chromeFreeFiles.has(activeLevel.value.file)))
 const activeLevelTitle = computed(() => activeLevel.value?.i18nKey ? t(`${activeLevel.value.i18nKey}.title`) : '')
 let openLevelTimer = null
 const travelerTimers = { y2: null, y3: null }
@@ -304,11 +306,13 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', handleEscape); win
 .traveler-leg { bottom: 0; width: 10px; height: 22px; border-radius: 10px; background: #fff3d9; } .traveler-leg.left { left: 16px; } .traveler-leg.right { right: 16px; }
 .modal-overlay { position: fixed; inset: 0; background: rgba(10, 20, 30, 0.85); backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 600; }
 .game-modal-content { background: #fffcf3; width: 95%; max-width: 1200px; height: 90vh; border-radius: 24px; padding: 25px; border: 3px solid #e2bc7c; box-shadow: 0 25px 40px rgba(0, 0, 0, 0.6); display: flex; flex-direction: column; position: relative; }
+.chrome-free-modal { background: transparent; width: 100vw; max-width: 100vw; height: 100vh; padding: 0; border: none; box-shadow: none; }
 .absolute-close-btn { position: absolute; top: -20px; right: -20px; width: 55px; height: 55px; border-radius: 50%; background: #e74c3c; color: #fff; border: 4px solid #fff; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4); font-size: 1.8rem; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 1000; transition: 0.2s; }
 .absolute-close-btn:hover { background: #c0392b; transform: scale(1.15); }
 .modal-header { font-size: 1.5rem; color: #2d5a6e; border-bottom: 2px dashed #e7bc7a; padding-bottom: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; font-weight: 900; font-family: Georgia, serif; }
 .game-stage { flex: 1; overflow: auto; border-radius: 16px; background: rgba(15, 23, 42, 0.04); }
 .native-stage { padding: 0; }
+.chrome-free-stage { overflow: visible; border-radius: 0; background: transparent; min-height: 100%; }
 .missing-native-game { min-height: 320px; display: grid; place-items: center; padding: 32px; text-align: center; color: #475569; font-weight: 700; }
 .game-frame { flex: 1; width: 100%; border: 2px solid #e2bc7c; border-radius: 16px; background: #000; }
 .confirm-modal-content { background: #fffcf4; width: 92%; max-width: 520px; border-radius: 26px; padding: 30px; border: 3px solid #e2bc7c; box-shadow: 0 20px 32px rgba(0, 0, 0, 0.32); }

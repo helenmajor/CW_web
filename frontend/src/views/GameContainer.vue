@@ -1,7 +1,7 @@
 <template>
   <div class="game-shell">
-    <div class="game-modal-content">
-      <div class="modal-header">
+    <div class="game-modal-content" :class="{ 'chrome-free-modal': isChromeFreeLevel }">
+      <div v-if="!isChromeFreeLevel" class="modal-header">
         <button class="back-btn" @click="goBack">
           <i class="fas fa-arrow-left"></i> {{ t('components.gameContainer.backToMap') }}
         </button>
@@ -9,11 +9,11 @@
         <span class="year-chip">{{ yearChip }}</span>
       </div>
 
-      <div class="game-stage">
+      <div class="game-stage" :class="{ 'chrome-free-stage': isChromeFreeLevel }">
         <component :is="currentGame" :level-id="levelId" @complete="handleChildComplete" @close="goBack" />
       </div>
 
-      <div class="game-actions" v-if="!isMissingLevel">
+      <div class="game-actions" v-if="!isMissingLevel && !isChromeFreeLevel">
         <button class="action-btn secondary" @click="skipLevel">
           {{ t('components.gameContainer.skipUnlockNext') }}
         </button>
@@ -33,6 +33,7 @@ const route = useRoute()
 const router = useRouter()
 const store = useGameStore()
 const { t } = useAppI18n()
+const chromeFreeFiles = new Set(['year3_5.vue', 'year3_6.vue'])
 
 store.hydrate()
 
@@ -85,6 +86,7 @@ const levelTitle = computed(() => {
   if (!levelDefinition.value) return t('components.gameContainer.loadingLevel')
   return t(`${levelDefinition.value.i18nKey}.title`)
 })
+const isChromeFreeLevel = computed(() => Boolean(levelDefinition.value && chromeFreeFiles.has(levelDefinition.value.file)))
 
 const yearChip = computed(() => (
   t(`components.gameContainer.yearChip.${store.year}`)
@@ -132,6 +134,15 @@ function skipLevel() {
   box-shadow: 0 25px 40px rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;
+}
+.chrome-free-modal {
+  background: transparent;
+  width: 100%;
+  max-width: none;
+  min-height: 100%;
+  padding: 0;
+  border: none;
+  box-shadow: none;
 }
 
 .modal-header {
@@ -181,6 +192,12 @@ function skipLevel() {
   overflow: auto;
   border-radius: 16px;
   background: rgba(15, 23, 42, 0.04);
+}
+.chrome-free-stage {
+  overflow: visible;
+  border-radius: 0;
+  background: transparent;
+  min-height: 100%;
 }
 
 .game-actions {
