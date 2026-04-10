@@ -1,544 +1,677 @@
 <template>
-  <GameLevelScaffold
-    title="申请季暗堡 / The Dark Citadel"
-    subtitle="每一扇门都对应申请季中的真实任务。你不是在打怪，而是在练习压力下的策略选择。/ Each gate represents a real application-season task."
-    :guide="guide"
-    tone="sky"
-    :tags="['申请季策略 / Application-season strategy', '任务优先级 / Pressure decisions']"
-    status-label="城堡进度 / Citadel Progress"
-    :status-text="`${clearedCount} / ${stages.length} gates cleared`"
-  >
-    <section class="hud-grid">
-      <article class="hud-card"><strong>Cleared / 已完成</strong><span>{{ clearedCount }} / {{ stages.length }}</span></article>
-      <article class="hud-card"><strong>Artifacts / 宝石</strong><span>{{ session.gems }}</span></article>
-      <article class="hud-card"><strong>Level / 等级</strong><span>{{ session.level }}</span></article>
-      <article class="hud-card"><strong>Iced Americanos / 冰美式</strong><span>{{ session.potions }}</span></article>
+  <div class="citadel-game">
+    <section class="citadel-hud">
+      <button class="close-btn" type="button" @click="$emit('close')">Back to Map</button>
+      <div class="hud-stat">Cleared {{ clearedCount }} / 3</div>
+      <div class="hud-stat">Artifacts {{ gems }}</div>
+      <div class="hud-stat">Lv.{{ level }}</div>
+      <div class="hud-stat">Coffee {{ potions }}</div>
     </section>
 
-    <section class="mapping-box">
-      <strong>技能映射 / Skill Mapping</strong>
-      <p><b>外教精修斩</b> = 高强度文书精修；<b>套磁护盾</b> = 主动联系与风险缓冲；<b>冰美式</b> = 恢复与续航；<b>清单冲刺</b> = 快速推进明确任务。</p>
+    <section v-if="mode === 'map'" class="citadel-map">
+      <p class="eyebrow">Y3-6 The Dark Citadel</p>
+      <h1>Battle of the Ordeals</h1>
+      <p class="intro">
+        Clear September language pressure, October essay pressure and November deadline pressure.
+        Each first clear levels you up and opens the next gate.
+      </p>
+
+      <div class="door-grid">
+        <button
+          v-for="stage in stages"
+          :key="stage.id"
+          class="stage-door"
+          :class="{ cleared: cleared[stage.id], locked: isLocked(stage.id) }"
+          type="button"
+          @click="openStage(stage.id)"
+        >
+          <span class="door-status">{{ doorStatus(stage.id) }}</span>
+          <b>{{ stage.month }}</b>
+          <strong>{{ stage.enemy.name }}</strong>
+          <small>{{ stage.subtitle }}</small>
+        </button>
+
+        <button class="stage-door final-door" :class="{ locked: clearedCount !== 3 }" type="button" @click="openFinal">
+          <span class="door-status">{{ clearedCount === 3 ? 'Unlocked' : 'Sealed' }}</span>
+          <b>Sanctuary</b>
+          <strong>Rain of Offers</strong>
+          <small>Open after all three bosses are defeated.</small>
+        </button>
+      </div>
     </section>
 
-    <section class="gate-grid">
-      <article
-        v-for="stage in stages"
-        :key="stage.id"
-        class="gate-card"
-        :class="{ locked: !isUnlocked(stage.id), cleared: session.cleared[stage.id] }"
-      >
-        <div class="gate-head">
-          <h2>{{ stage.titleZh }}</h2>
-          <span>{{ stage.month }}</span>
+    <section v-else class="battle-modal">
+      <button class="close-btn modal-close" type="button" @click="returnToMap">Return to Citadel</button>
+
+      <template v-if="mode === 'intro' && currentStage">
+        <div class="modal-scroll">
+          <p class="eyebrow">{{ currentStage.month }} Gate</p>
+          <h2>{{ currentStage.title }}</h2>
+          <p class="intro">{{ currentStage.subtitle }}</p>
+          <div class="intel-list">
+            <p v-for="tip in currentStage.tips" :key="tip">{{ tip }}</p>
+          </div>
+          <button class="primary-btn" type="button" @click="startBattle">Draw Sword & Engage</button>
         </div>
-        <p>{{ stage.subtitleZh }}</p>
-        <div class="gate-meta">
-          <span>Enemy / 挑战：{{ stage.enemyName }}</span>
-          <span>Reward / 奖励：{{ stage.reward }}</span>
+      </template>
+
+      <template v-else-if="mode === 'battle'">
+        <div class="battle-screen">
+          <div class="combatants">
+            <article class="fighter enemy">
+              <span class="sprite">{{ enemy.icon }}</span>
+              <h2>{{ enemy.name }}</h2>
+              <HealthBar :value="enemy.hp" :max="enemy.maxHp" tone="enemy" />
+            </article>
+
+            <article class="fighter hero">
+              <span class="sprite">APP</span>
+              <h2>Applicant</h2>
+              <HealthBar :value="hero.hp" :max="hero.maxHp" />
+              <small v-if="hero.shield" class="shield-tag">Cold Email Shield active</small>
+            </article>
+          </div>
+
+          <div class="command-deck">
+            <div class="message-box" aria-live="polite">{{ battleLog }}</div>
+            <div class="skill-grid">
+              <button
+                v-for="skill in skills"
+                :key="skill.id"
+                class="skill-btn"
+                type="button"
+                :disabled="skill.pp <= 0 || hero.hp <= 0 || enemy.hp <= 0"
+                @click="useSkill(skill)"
+              >
+                <b>{{ skill.name }}</b>
+                <small>{{ skill.label }} | PP {{ skill.pp }} / {{ skill.maxPp }}</small>
+              </button>
+            </div>
+          </div>
         </div>
-        <div class="actions">
-          <button
-            class="primary"
-            :disabled="!isUnlocked(stage.id)"
-            @click="openStage(stage.id)"
-          >
-            {{ session.cleared[stage.id] ? '重打复习 / Replay' : '开始执行 / Engage' }}
+      </template>
+
+      <template v-else-if="mode === 'victory'">
+        <div class="modal-scroll center">
+          <p class="eyebrow">Month Conquered</p>
+          <h2>{{ currentStage.enemy.name }} defeated</h2>
+          <p class="intro">{{ settlementText }}</p>
+          <button class="primary-btn" type="button" @click="returnToMap">Return to Citadel</button>
+          <button v-if="clearedCount === 3" class="danger-btn" type="button" @click="mode = 'final'">
+            Open The Sanctuary
           </button>
         </div>
-        <small v-if="!isUnlocked(stage.id)">先完成前一扇门 / Finish the previous gate first</small>
-      </article>
-    </section>
+      </template>
 
-    <section v-if="currentStage" class="battle-card">
-      <div class="battle-head">
-        <div>
-          <h2>{{ currentStage.titleZh }} / {{ currentStage.title }}</h2>
-          <p>{{ currentStage.challengeZh }}</p>
+      <template v-else-if="mode === 'defeat'">
+        <div class="modal-scroll center">
+          <p class="eyebrow">Application Foiled</p>
+          <h2>You were crushed by pressure</h2>
+          <p class="intro">
+            Retry with burst damage, coffee heals and Cold Email Shield before a heavy boss turn.
+          </p>
+          <button class="primary-btn" type="button" @click="startBattle">Resurrect & Retaliate</button>
         </div>
-        <button class="secondary" @click="closeStage">回城复盘 / Retreat</button>
-      </div>
+      </template>
 
-      <div v-if="battle.phase === 'battle'" class="battle-grid">
-        <article class="stat-panel">
-          <h3>Traveler / 旅者</h3>
-          <p>HP {{ battle.heroHp }} / {{ battle.heroMax }}</p>
-          <p v-if="battle.shield">🛡️ 套磁护盾已开启 / Shield active</p>
-        </article>
-        <article class="stat-panel enemy">
-          <h3>{{ currentStage.enemyName }}</h3>
-          <p>HP {{ battle.enemyHp }} / {{ battle.enemyMax }}</p>
-          <p>{{ currentStage.realMeaningZh }}</p>
-        </article>
-      </div>
-
-      <div v-if="battle.phase === 'battle'" class="skill-grid">
-        <button class="skill-btn" :disabled="battle.skillUses.slash <= 0 || battle.pending" @click="useSkill('slash')">
-          <strong>外教精修斩 / Proofreader's Slash</strong>
-          <span>重击文书问题，适合关键回合。PP {{ battle.skillUses.slash }}</span>
-        </button>
-        <button class="skill-btn" :disabled="battle.skillUses.shield <= 0 || battle.pending" @click="useSkill('shield')">
-          <strong>套磁护盾 / Cold Email Shield</strong>
-          <span>吸收下一个高压回合的大部分伤害。PP {{ battle.skillUses.shield }}</span>
-        </button>
-        <button class="skill-btn" :disabled="session.potions <= 0 || battle.pending" @click="useSkill('americano')">
-          <strong>冰美式 / Iced Americano</strong>
-          <span>恢复执行力，不是偷懒而是续航。库存 {{ session.potions }}</span>
-        </button>
-        <button class="skill-btn" :disabled="battle.skillUses.sprint <= 0 || battle.pending" @click="useSkill('sprint')">
-          <strong>清单冲刺 / Checklist Sprint</strong>
-          <span>推进明确任务，适合收尾。PP {{ battle.skillUses.sprint }}</span>
-        </button>
-      </div>
-
-      <div class="log-panel">
-        <strong>战斗日志 / Strategy Log</strong>
-        <ul>
-          <li v-for="entry in battle.log" :key="entry">{{ entry }}</li>
-        </ul>
-      </div>
-
-      <div v-if="battle.phase === 'won'" class="settlement success">
-        <h3>月度关卡完成 / Stage Cleared</h3>
-        <p>{{ battle.summary }}</p>
-        <div class="actions">
-          <button class="secondary" @click="closeStage">返回城堡 / Return to Citadel</button>
-          <button v-if="allCleared" class="primary" @click="showSanctuary = true">开启 Offer 圣殿 / Open Sanctuary</button>
+      <template v-else-if="mode === 'final'">
+        <div class="modal-scroll center">
+          <p class="eyebrow">Sanctuary Opened</p>
+          <h2>The Offer Rain Begins</h2>
+          <p class="intro">
+            Dragon, zombie and DDL reaper are defeated. You collected {{ gems }} artifacts and
+            survived the autumn application season.
+          </p>
+          <button class="primary-btn" type="button" @click="$emit('complete', { game: 'dark-citadel', artifacts: gems })">
+            Return in Glory
+          </button>
         </div>
-      </div>
-
-      <div v-if="battle.phase === 'lost'" class="settlement error">
-        <h3>本轮策略失败 / Strategy Review Needed</h3>
-        <p>{{ battle.summary }}</p>
-        <div class="actions">
-          <button class="secondary" @click="openStage(currentStage.id)">重试本关 / Retry</button>
-          <button class="primary" @click="closeStage">先回城复盘 / Return to Citadel</button>
-        </div>
-      </div>
+      </template>
     </section>
-
-    <section v-if="showSanctuary && allCleared" class="sanctuary-card">
-      <h2>Offer 圣殿已开启 / Sanctuary Opened</h2>
-      <p>你已经练完申请季最核心的三类动作：处理语言门槛、在压力下打磨文书，以及在最后阶段稳住提交执行。</p>
-      <div class="summary-list">
-        <div>宝石 / Artifacts: {{ session.gems }}</div>
-        <div>等级 / Level: {{ session.level }}</div>
-        <div>称号 / Title: 时间调度师 / Master of Timing</div>
-      </div>
-      <div class="actions">
-        <button class="secondary" @click="showSanctuary = false">继续复盘 / Keep Reviewing</button>
-        <button class="primary" @click="completeLevel">保存申请季总结 / Save Battle Takeaway</button>
-      </div>
-    </section>
-  </GameLevelScaffold>
+  </div>
 </template>
 
-<script setup>
-import { computed, reactive, ref } from 'vue'
-import GameLevelScaffold from '@/components/GameLevelScaffold.vue'
-import { useLevelGuide } from '@/composables/useLevelGuide'
+<script>
+import { computed, defineComponent, h, reactive, ref } from 'vue'
 
-const emit = defineEmits(['complete'])
-const { guide, rewardCoins } = useLevelGuide('y3', 6)
-
-const stages = [
-  {
-    id: 0,
-    month: 'September / 9月',
-    title: 'Language Gate',
-    titleZh: '语言之门',
-    subtitleZh: '语言门槛与考试节奏',
-    challengeZh: '模拟你在语言成绩和时间压力之间做取舍。',
-    enemyName: 'Threshold Wyrm / 门槛飞龙',
-    realMeaningZh: '它代表硬性的语言门槛，拖延会直接让申请出局。',
-    enemyHp: 96,
-    enemyAtk: 18,
-    reward: '+1 Artifact / 1 枚宝石',
+const HealthBar = defineComponent({
+  props: {
+    value: { type: Number, required: true },
+    max: { type: Number, required: true },
+    tone: { type: String, default: 'hero' }
   },
-  {
-    id: 1,
-    month: 'October / 10月',
-    title: 'Essay Gate',
-    titleZh: '文书之门',
-    subtitleZh: '高压下的文书精修',
-    challengeZh: '模拟你在反复修改与截止压力之间做策略选择。',
-    enemyName: 'Draft Chimera / 草稿奇美拉',
-    realMeaningZh: '它代表文书质量波动、逻辑混乱与反复返工。',
-    enemyHp: 112,
-    enemyAtk: 20,
-    reward: '+1 Artifact / 1 枚宝石',
-  },
-  {
-    id: 2,
-    month: 'November / 11月',
-    title: 'Submission Gate',
-    titleZh: '提交之门',
-    subtitleZh: '提交清单与最终执行',
-    challengeZh: '模拟你在 deadline 前核对材料并完成提交。',
-    enemyName: 'DDL Titan / 截止巨像',
-    realMeaningZh: '它代表网申最后阶段的混乱与执行失误。',
-    enemyHp: 126,
-    enemyAtk: 22,
-    reward: '+1 Artifact / 1 枚宝石',
-  },
-]
-
-const session = reactive({
-  level: 1,
-  gems: 0,
-  potions: 4,
-  cleared: [false, false, false],
+  setup(props) {
+    const percent = computed(() => Math.max(0, Math.min(100, (props.value / props.max) * 100)))
+    return () => h('div', { class: ['health-bar', `tone-${props.tone}`] }, [
+      h('i', { style: { width: `${percent.value}%` } }),
+      h('span', `${props.value} / ${props.max}`)
+    ])
+  }
 })
 
-const battle = reactive({
-  phase: 'idle',
-  heroHp: 0,
-  heroMax: 0,
-  enemyHp: 0,
-  enemyMax: 0,
-  shield: false,
-  pending: false,
-  skillUses: {
-    slash: 2,
-    shield: 2,
-    sprint: 3,
-  },
-  log: [],
-  summary: '',
-})
+export default {
+  components: { HealthBar },
+  emits: ['complete', 'close'],
+  setup() {
+    const stages = [
+      {
+        id: 0,
+        month: 'September',
+        title: 'September Vanguard: The Language War',
+        subtitle: 'Without language scores, applications cannot advance a single step.',
+        tips: [
+          'Check official program pages for total score, sub-score, accepted tests, waiver and enrollment validity.',
+          'IELTS/TOEFL are usually valid for 2 years. Leave September-October for retakes instead of first attempts.',
+          'Use OG, Cambridge IELTS papers and TOEFL TPO-style practice before buying random shortcuts.'
+        ],
+        enemy: { name: 'IELTS Dragon', icon: 'DRG', hp: 150, atk: 20 }
+      },
+      {
+        id: 1,
+        month: 'October',
+        title: 'October Purgatory: The Essay War',
+        subtitle: 'Writer\'s block attacks while essays, CV and RL requests collide.',
+        tips: [
+          'Treat the CV as an evidence inventory and the PS as a story of motive, preparation, school fit and future direction.',
+          'Use a proofreader for logic and language, but keep the final审核权: the statement must sound like you.'
+        ],
+        enemy: { name: "Writer's Block Zombie", icon: 'ZMB', hp: 200, atk: 30 }
+      },
+      {
+        id: 2,
+        month: 'November',
+        title: 'November Abyss: The Application War',
+        subtitle: 'DDLs approach. Forms, payments and uploads leave no room for careless errors.',
+        tips: [
+          'Create a school-by-school checklist for portals, recommendation status, application fee, uploads and submission confirmation.',
+          'Keep login access and final review power. Screenshot confirmation pages and receipt emails after submission.'
+        ],
+        enemy: { name: 'The Reaper of DDLs', icon: 'DDL', hp: 280, atk: 45 }
+      }
+    ]
 
-const activeStageId = ref(null)
-const showSanctuary = ref(false)
+    const mode = ref('map')
+    const currentStage = ref(null)
+    const cleared = reactive([false, false, false])
+    const gems = ref(0)
+    const level = ref(1)
+    const potions = ref(4)
+    const hero = reactive({ hp: 120, maxHp: 120, shield: false })
+    const enemy = reactive({ name: '', icon: '', hp: 1, maxHp: 1, atk: 1 })
+    const skills = reactive([])
+    const battleLog = ref('Awaiting your command.')
+    const settlementText = ref('')
 
-const currentStage = computed(() => stages.find((stage) => stage.id === activeStageId.value) || null)
-const clearedCount = computed(() => session.cleared.filter(Boolean).length)
-const allCleared = computed(() => session.cleared.every(Boolean))
+    const clearedCount = computed(() => cleared.filter(Boolean).length)
 
-function isUnlocked(id) {
-  return id === 0 || session.cleared[id - 1]
-}
+    function isLocked(stageId) {
+      return stageId > 0 && !cleared[stageId - 1]
+    }
 
-function openStage(id) {
-  if (!isUnlocked(id)) return
-  activeStageId.value = id
-  showSanctuary.value = false
+    function doorStatus(stageId) {
+      if (cleared[stageId]) return 'Slain'
+      if (isLocked(stageId)) return 'Sealed'
+      return stages[stageId].month
+    }
 
-  const stage = stages[id]
-  battle.phase = 'battle'
-  battle.heroMax = 120 + (session.level - 1) * 18
-  battle.heroHp = battle.heroMax
-  battle.enemyMax = stage.enemyHp
-  battle.enemyHp = stage.enemyHp
-  battle.shield = false
-  battle.pending = false
-  battle.skillUses = { slash: 2, shield: 2, sprint: 3 }
-  battle.log = [`${stage.titleZh} 开始：${stage.challengeZh}`]
-  battle.summary = ''
-}
+    function openStage(stageId) {
+      if (isLocked(stageId)) {
+        battleLog.value = 'Clear the previous month first.'
+        return
+      }
 
-function closeStage() {
-  activeStageId.value = null
-  battle.phase = 'idle'
-}
+      currentStage.value = stages[stageId]
+      mode.value = 'intro'
+    }
 
-function addLog(message) {
-  battle.log = [message, ...battle.log].slice(0, 6)
-}
+    function openFinal() {
+      mode.value = clearedCount.value === 3 ? 'final' : 'map'
+      if (clearedCount.value !== 3) {
+        battleLog.value = 'The Sanctuary is still sealed.'
+      }
+    }
 
-function useSkill(skill) {
-  if (battle.phase !== 'battle' || battle.pending || !currentStage.value) return
-  battle.pending = true
+    function returnToMap() {
+      mode.value = 'map'
+      currentStage.value = null
+    }
 
-  if (skill === 'slash' && battle.skillUses.slash > 0) {
-    battle.skillUses.slash -= 1
-    const damage = 34 + session.level * 8
-    battle.enemyHp = Math.max(0, battle.enemyHp - damage)
-    addLog(`外教精修斩命中，说明你在关键回合投入高强度文书打磨，造成 ${damage} 点推进。`)
-  } else if (skill === 'shield' && battle.skillUses.shield > 0) {
-    battle.skillUses.shield -= 1
-    battle.shield = true
-    addLog('套磁护盾展开：主动联系与沟通开始为你吸收后续风险。')
-  } else if (skill === 'americano' && session.potions > 0) {
-    session.potions -= 1
-    const heal = 32 + session.level * 10
-    battle.heroHp = Math.min(battle.heroMax, battle.heroHp + heal)
-    addLog(`冰美式恢复 ${heal} 点执行力。现实里，恢复节奏也是策略的一部分。`)
-  } else if (skill === 'sprint' && battle.skillUses.sprint > 0) {
-    battle.skillUses.sprint -= 1
-    const damage = 24 + session.level * 6
-    battle.enemyHp = Math.max(0, battle.enemyHp - damage)
-    addLog(`清单冲刺推进了明确任务，造成 ${damage} 点收尾效率。`)
+    function startBattle() {
+      const stage = currentStage.value
+      const levelBonus = (level.value - 1) * 30
+      hero.maxHp = 120 + levelBonus
+      hero.hp = hero.maxHp
+      hero.shield = false
+      Object.assign(enemy, {
+        ...stage.enemy,
+        hp: stage.enemy.hp,
+        maxHp: stage.enemy.hp
+      })
+
+      skills.splice(
+        0,
+        skills.length,
+        { id: 'mock', name: 'Mock Exam Thrust', label: 'steady damage', pp: 15, maxPp: 15, power: 34, kind: 'attack' },
+        { id: 'proof', name: "Proofreader's Slash", label: 'burst edit', pp: 3, maxPp: 3, power: 86, kind: 'attack' },
+        { id: 'shield', name: 'Cold Email Shield', label: 'reduce next hit', pp: 5, maxPp: 5, power: 0, kind: 'shield' },
+        { id: 'coffee', name: 'Iced Americano', label: 'heal', pp: potions.value, maxPp: potions.value, power: 95, kind: 'heal' }
+      )
+
+      battleLog.value = `${enemy.name} appears. Choose a command; no typewriter lock is used in this version.`
+      mode.value = 'battle'
+    }
+
+    function useSkill(skill) {
+      if (skill.pp <= 0 || hero.hp <= 0 || enemy.hp <= 0) return
+
+      skill.pp -= 1
+
+      if (skill.kind === 'attack') {
+        const damage = skill.power + 6 + (level.value - 1) * 12
+        enemy.hp = Math.max(0, enemy.hp - damage)
+        battleLog.value = `${skill.name} hits ${enemy.name} for ${damage}.`
+      } else if (skill.kind === 'shield') {
+        hero.shield = true
+        battleLog.value = 'Cold Email Shield is active. Next boss hit is reduced by 70%.'
+      } else if (skill.kind === 'heal') {
+        potions.value = Math.max(0, potions.value - 1)
+        hero.hp = Math.min(hero.maxHp, hero.hp + skill.power)
+        battleLog.value = `Iced Americano restored ${skill.power} HP.`
+      }
+
+      if (enemy.hp <= 0) {
+        winStage()
+        return
+      }
+
+      enemyCounter()
+    }
+
+    function enemyCounter() {
+      let damage = enemy.atk + 10
+      if (hero.shield) {
+        damage = Math.ceil(damage * 0.3)
+        hero.shield = false
+      }
+      hero.hp = Math.max(0, hero.hp - damage)
+      battleLog.value += ` ${enemy.name} counters for ${damage}.`
+
+      if (hero.hp <= 0) {
+        mode.value = 'defeat'
+      }
+    }
+
+    function winStage() {
+      const stage = currentStage.value
+      if (!cleared[stage.id]) {
+        cleared[stage.id] = true
+        gems.value += 1
+        level.value += 1
+        potions.value += 1
+        settlementText.value = `First clear: +1 Artifact, level up to ${level.value}, and +1 Iced Americano.`
+      } else {
+        settlementText.value = 'Boss already slain. Replays do not grant additional rewards.'
+      }
+
+      mode.value = 'victory'
+    }
+
+    return {
+      mode,
+      stages,
+      currentStage,
+      cleared,
+      gems,
+      level,
+      potions,
+      hero,
+      enemy,
+      skills,
+      battleLog,
+      settlementText,
+      clearedCount,
+      isLocked,
+      doorStatus,
+      openStage,
+      openFinal,
+      returnToMap,
+      startBattle,
+      useSkill
+    }
   }
-
-  if (battle.enemyHp <= 0) {
-    settleWin()
-    return
-  }
-
-  window.setTimeout(enemyTurn, 260)
-}
-
-function enemyTurn() {
-  if (!currentStage.value) return
-
-  let damage = currentStage.value.enemyAtk + session.level * 2
-  if (battle.shield) {
-    damage = Math.floor(damage * 0.3)
-    battle.shield = false
-    addLog('套磁护盾吸收了大部分压力冲击。')
-  }
-
-  battle.heroHp = Math.max(0, battle.heroHp - damage)
-  addLog(`${currentStage.value.enemyName} 反扑，造成 ${damage} 点压力伤害。`)
-
-  if (battle.heroHp <= 0) {
-    settleLoss()
-    return
-  }
-
-  battle.pending = false
-}
-
-function settleWin() {
-  if (!currentStage.value) return
-
-  const firstClear = !session.cleared[currentStage.value.id]
-  if (firstClear) {
-    session.cleared[currentStage.value.id] = true
-    session.gems += 1
-    session.level += 1
-    session.potions += 1
-  }
-
-  battle.phase = 'won'
-  battle.pending = false
-  battle.summary = firstClear
-    ? '你第一次清掉了这扇门，对应的是你学会了处理一种真实申请压力，并获得 1 枚宝石、1 级成长和 1 杯新的冰美式。'
-    : '这次是复盘战，不会重复发奖励，但你仍然可以用它回顾策略分配。'
-}
-
-function settleLoss() {
-  battle.phase = 'lost'
-  battle.pending = false
-  battle.summary = '你被 deadline 和压力击穿了，但这更像一次策略复盘：关键回合优先用精修或防御，不要把所有资源都留到最后。'
-}
-
-function completeLevel() {
-  emit('complete', {
-    rewardCoins,
-    preferences: {
-      latestTakeaway: '申请季战斗的本质，是在语言、文书、提交和恢复之间做策略分配。/ The real lesson of application season is strategic trade-off between language, essays, submission, and recovery.',
-    },
-  })
 }
 </script>
 
 <style scoped>
-.hud-grid,
-.gate-grid,
-.skill-grid,
-.summary-list {
-  display: grid;
-  gap: 14px;
+.citadel-game {
+  min-height: 100%;
+  padding: clamp(18px, 4vw, 64px);
+  color: #f5f1e6;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(220, 38, 38, 0.22), transparent 36%),
+    linear-gradient(180deg, #0f172a 0%, #1c1917 56%, #020617 100%);
 }
 
-.hud-grid {
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-}
-
-.hud-card,
-.mapping-box,
-.gate-card,
-.battle-card,
-.log-panel,
-.sanctuary-card {
-  border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(8, 12, 24, 0.86);
-  color: #f8fafc;
-  padding: 18px;
-}
-
-.hud-card strong,
-.mapping-box strong,
-.battle-head h2,
-.sanctuary-card h2 {
-  color: #fcd34d;
-}
-
-.hud-card span {
-  display: block;
-  margin-top: 6px;
-  font-size: 1.5rem;
-  font-weight: 900;
-}
-
-.mapping-box p,
-.gate-card p,
-.settlement p,
-.sanctuary-card p {
-  margin: 10px 0 0;
-  line-height: 1.8;
-}
-
-.gate-grid {
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-}
-
-.gate-card.locked {
-  opacity: 0.65;
-}
-
-.gate-card.cleared {
-  border-color: rgba(34, 197, 94, 0.36);
-}
-
-.gate-head {
+.citadel-hud {
+  position: sticky;
+  top: 10px;
+  z-index: 5;
+  width: min(1280px, 100%);
+  margin: 0 auto;
   display: flex;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.gate-head h2 {
-  margin: 0;
-  font-size: 1.15rem;
-  font-family: Georgia, serif;
-}
-
-.gate-meta {
-  margin-top: 14px;
-  display: grid;
-  gap: 6px;
-  color: #cbd5e1;
-}
-
-.actions {
-  display: flex;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
-  margin-top: 16px;
+  align-items: center;
 }
 
-.actions button,
+.close-btn,
+.hud-stat,
+.stage-door,
+.primary-btn,
+.danger-btn,
 .skill-btn {
-  border: none;
-  border-radius: 999px;
-  padding: 12px 18px;
-  font-weight: 900;
+  border-radius: 8px;
+  font: inherit;
+}
+
+.close-btn,
+.hud-stat {
+  padding: 10px 14px;
+  color: #fed7aa;
+  background: rgba(2, 6, 23, 0.9);
+  border: 1px solid rgba(251, 146, 60, 0.48);
+}
+
+.close-btn,
+.stage-door,
+.primary-btn,
+.danger-btn,
+.skill-btn {
   cursor: pointer;
 }
 
-.primary {
-  background: linear-gradient(135deg, #e8d29b, #ba944e);
-  color: #2c2110;
+.modal-close {
+  position: absolute;
+  top: 18px;
+  left: 18px;
 }
 
-.primary:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
+.citadel-map,
+.battle-modal {
+  width: min(1280px, 100%);
+  margin: 40px auto 0;
 }
 
-.secondary {
-  background: rgba(255, 255, 255, 0.08);
-  color: #f8fafc;
-}
-
-.battle-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: start;
-}
-
-.battle-grid,
-.skill-grid {
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-}
-
-.battle-grid {
-  display: grid;
-  gap: 14px;
-  margin-top: 18px;
-}
-
-.stat-panel {
-  padding: 16px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.stat-panel.enemy {
-  border: 1px solid rgba(239, 68, 68, 0.26);
-}
-
-.stat-panel h3 {
-  margin: 0 0 10px;
-}
-
-.stat-panel p {
-  margin: 6px 0 0;
-  line-height: 1.6;
-}
-
-.skill-grid {
-  display: grid;
-  margin-top: 18px;
-}
-
-.skill-btn {
-  text-align: left;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.06);
-  color: #f8fafc;
-  display: grid;
-  gap: 6px;
-}
-
-.skill-btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.log-panel {
-  margin-top: 18px;
-}
-
-.log-panel ul {
-  margin: 12px 0 0;
-  padding-left: 18px;
-  line-height: 1.7;
-}
-
-.settlement {
-  margin-top: 18px;
-  padding: 18px;
-  border-radius: 22px;
-}
-
-.settlement.success {
-  background: rgba(17, 55, 38, 0.72);
-  border: 1px solid rgba(34, 197, 94, 0.28);
-}
-
-.settlement.error {
-  background: rgba(62, 22, 25, 0.72);
-  border: 1px solid rgba(239, 68, 68, 0.28);
-}
-
-.settlement h3 {
+h1,
+h2,
+p {
   margin: 0;
 }
 
-.sanctuary-card {
-  background: linear-gradient(160deg, rgba(34, 26, 12, 0.92) 0%, rgba(10, 14, 24, 0.96) 100%);
+h1 {
+  margin-top: 8px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2.5rem, 8vw, 8rem);
+  line-height: 0.86;
+  color: #fed7aa;
 }
 
-.summary-list {
-  margin-top: 16px;
+h2 {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2rem, 6vw, 6rem);
+  line-height: 0.9;
+  color: #fed7aa;
 }
 
-.summary-list div {
-  padding: 12px 14px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.06);
+.eyebrow {
+  color: #fb923c;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+.intro {
+  max-width: 820px;
+  margin-top: 18px;
+  color: #cbd5e1;
+  line-height: 1.65;
+}
+
+.door-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: clamp(30px, 6vw, 90px);
+}
+
+.stage-door {
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px;
+  color: #f5f1e6;
+  text-align: left;
+  border: 4px solid rgba(215, 191, 133, 0.82);
+  background:
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.1), transparent 22%),
+    linear-gradient(180deg, #654321, #2b1b10);
+}
+
+.stage-door:hover:not(.locked) {
+  transform: translateY(-8px);
+  filter: brightness(1.1);
+}
+
+.stage-door.locked {
+  cursor: not-allowed;
+  filter: grayscale(1) brightness(0.65);
+}
+
+.stage-door.cleared {
+  border-color: #86efac;
+}
+
+.final-door {
+  background:
+    linear-gradient(to bottom, rgba(250, 204, 21, 0.2), transparent 30%),
+    linear-gradient(180deg, #7f1d1d, #1c1917);
+}
+
+.door-status {
+  width: fit-content;
+  padding: 5px 9px;
+  border-radius: 999px;
+  color: #111827;
+  background: #fed7aa;
+  font-size: 0.75rem;
+  font-weight: 1000;
+  text-transform: uppercase;
+}
+
+.stage-door b {
+  color: #fb923c;
+  text-transform: uppercase;
+}
+
+.stage-door strong {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.4rem, 3vw, 3.4rem);
+  line-height: 0.95;
+}
+
+.stage-door small {
+  color: #e5e7eb;
+  line-height: 1.45;
+}
+
+.battle-modal {
+  position: relative;
+  min-height: calc(100vh - 150px);
+  padding: clamp(62px, 8vw, 110px) clamp(16px, 4vw, 70px) 30px;
+  border-radius: 8px;
+  background: rgba(2, 6, 23, 0.88);
+  border: 1px solid rgba(251, 146, 60, 0.35);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.48);
+}
+
+.modal-scroll {
+  max-height: min(720px, calc(100vh - 220px));
+  overflow: auto;
+  padding: 4px 6px 12px;
+}
+
+.modal-scroll.center {
+  text-align: center;
+}
+
+.intel-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.intel-list p,
+.message-box {
+  padding: 14px;
+  border-radius: 8px;
+  color: #fef3c7;
+  background: rgba(120, 53, 15, 0.5);
+  line-height: 1.55;
+}
+
+.primary-btn,
+.danger-btn {
+  display: inline-block;
+  margin: 24px 10px 0;
+  padding: 15px 20px;
+  color: #111827;
+  background: #fb923c;
+  border: 0;
+  font-weight: 1000;
+}
+
+.danger-btn {
+  color: #fff;
+  background: #dc2626;
+}
+
+.battle-screen {
+  display: grid;
+  gap: 20px;
+}
+
+.combatants {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.fighter,
+.command-deck {
+  padding: clamp(16px, 3vw, 40px);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(251, 146, 60, 0.28);
+}
+
+.fighter.enemy {
+  text-align: right;
+}
+
+.sprite {
+  display: block;
+  margin-bottom: 16px;
+  font-size: clamp(3rem, 10vw, 11rem);
+  line-height: 0.8;
+  font-weight: 1000;
+  color: #fb923c;
+}
+
+.shield-tag {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: #111827;
+  background: #93c5fd;
+  font-weight: 900;
+}
+
+:deep(.health-bar) {
+  position: relative;
+  height: 30px;
+  margin-top: 14px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #111827;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+:deep(.health-bar i) {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #86efac);
+  transition: width 0.25s ease;
+}
+
+:deep(.health-bar.tone-enemy i) {
+  background: linear-gradient(90deg, #dc2626, #fb7185);
+}
+
+:deep(.health-bar span) {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 1000;
+  text-shadow: 0 1px 2px #000;
+}
+
+.skill-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.skill-btn {
+  min-height: 132px;
+  padding: 14px;
+  color: #f5f1e6;
+  background: #1f2937;
+  border: 1px solid rgba(251, 146, 60, 0.38);
+  text-align: left;
+}
+
+.skill-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.skill-btn small {
+  display: block;
+  margin-top: 10px;
+  color: #cbd5e1;
+  line-height: 1.35;
+}
+
+@media (max-width: 900px) {
+  .door-grid,
+  .combatants,
+  .skill-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stage-door {
+    min-height: 260px;
+  }
+
+  .fighter.enemy {
+    text-align: left;
+  }
 }
 </style>

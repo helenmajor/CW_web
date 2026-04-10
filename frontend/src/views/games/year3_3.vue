@@ -1,298 +1,386 @@
-<template>
-  <GameLevelScaffold
-    title="简历诊疗室 / CV Surgery"
-    subtitle="点击简历里的问题点，不只是找错，而是理解一份 CV 应该怎样快速证明你的申请价值。/ Diagnose the CV by identifying issues and learning the underlying logic."
-    :guide="guide"
-    tone="amber"
-    :tags="['CV 诊断 / CV diagnosis', '证据表达 / Evidence writing']"
-    status-label="核心问题修复 / Core Bugs Fixed"
-    :status-text="`${coreFixedCount} / ${coreBugs.length}`"
-  >
-    <section class="workspace">
+﻿<template>
+  <div class="clinic-game">
+    <button class="close-btn" type="button" @click="$emit('close')">Back to Map</button>
+
+    <section class="clinic-header">
+      <p class="eyebrow">Y3-3 Clinic of Truth</p>
+      <h1>CV Surgery</h1>
+      <p class="intro">
+        Diagnose the six fatal CV problems. Click suspicious text on the resume; green checks appear
+        only when you have found a core bug.
+      </p>
+      <div class="progress-pill">Core bugs {{ foundCoreCount }} / {{ coreBugIds.length }}</div>
+    </section>
+
+    <main class="clinic-workspace">
       <article class="cv-paper">
-        <div class="cv-filename bug-text" :class="{ fixed: isFixed('filename') }" @click="findBug('filename')">
-          📄 Resume_Final_Actually_Final_v3.pdf
-        </div>
+        <button class="bug-line name-line" :class="{ fixed: isFound('font') }" type="button" @click="findBug('font')">
+          Zhang San
+        </button>
+        <button class="bug-line filename-line" :class="{ fixed: isFound('filename') }" type="button" @click="findBug('filename')">
+          final_final_REALLY_final_cv_3.pdf
+        </button>
+        <button class="bug-line contact-line" :class="{ fixed: isFound('email') }" type="button" @click="findBug('email')">
+          dark_dragon_99@randommail.com
+        </button>
 
-        <div class="cv-body">
-          <div class="cv-header">
-            <h2 class="bug-text inline" :class="{ fixed: isFixed('font') }" @click="findBug('font')">Zhang San</h2>
-            <p>
-              Email:
-              <span class="bug-text" :class="{ fixed: isFixed('email') }" @click="findBug('email')">dark_dragon_99@qq.com</span>
-              | Tel: +86-138xxxx
-            </p>
-          </div>
+        <hr>
 
-          <section class="cv-section">
-            <h3>Education</h3>
-            <p>
-              <strong>XX University</strong> | B.S. in Computer Science
-              <span class="right">2023 - 2027</span>
-            </p>
-            <p>
-              GPA:
-              <span class="bug-text" :class="{ fixed: isFixed('gpa') }" @click="findBug('gpa')">Top 3 in class, excellent grades</span>
-            </p>
-            <p class="small bug-text" :class="{ fixed: isFixed('hs') }" @click="findBug('hs')">Runner-up in XX Middle School Ping-Pong Tournament</p>
-          </section>
+        <h2>Education</h2>
+        <p>
+          Miskatonic University - Computer Science
+          <button class="bug-chip" :class="{ fixed: isFound('gpa') }" type="button" @click="findBug('gpa')">
+            GPA: excellent, top student
+          </button>
+        </p>
 
-          <section class="cv-section">
-            <h3>Experience</h3>
-            <p><strong>Research Intern</strong> | Magical Lab <span class="right">Summer 2025</span></p>
-            <ul>
-              <li class="bug-text" :class="{ fixed: isFixed('vague') }" @click="findBug('vague')">Assisted the mentor with data analysis, fixed some bugs, was praised, and learned a lot.</li>
-              <li class="bug-text" :class="{ fixed: isFixed('passive') }" @click="findBug('passive')">Learned how to use Python and scikit-learn for modeling.</li>
-            </ul>
-            <p class="bug-text" :class="{ fixed: isFixed('order') }" @click="findBug('order')"><strong>Voluntary Work</strong> | 2023 - 2024 (Older Experience)</p>
-          </section>
+        <h2>Experience</h2>
+        <p>
+          <b>Software Engineering Intern</b>
+          <button class="bug-chip hidden-tip" type="button" @click="findBug('passive')">
+            learned how to use Spring Boot
+          </button>
+        </p>
+        <p>
+          <button class="bug-chip" :class="{ fixed: isFound('vague') }" type="button" @click="findBug('vague')">
+            worked very hard on an impressive project and helped the team a lot
+          </button>
+        </p>
 
-          <section class="cv-section">
-            <h3>Additional</h3>
-            <ul>
-              <li>Python: <span class="bug-text" :class="{ fixed: isFixed('score') }" @click="findBug('score')">⭐⭐⭐⭐⭐ (Master)</span></li>
-              <li class="bug-text" :class="{ fixed: isFixed('hobby') }" @click="findBug('hobby')">Hobbies: Master tier in League of Legends, excellent team shotcaller.</li>
-            </ul>
-          </section>
-        </div>
+        <h2>Skills & Interests</h2>
+        <p>Python / Java / SQL / Git</p>
+        <p>
+          <button class="bug-chip hidden-tip" type="button" @click="findBug('score')">
+            Machine Learning: self-rated 5 stars
+          </button>
+        </p>
+        <p>
+          <button class="bug-chip" :class="{ fixed: isFound('hobby') }" type="button" @click="findBug('hobby')">
+            Gaming guild leader; platinum ranked night owl
+          </button>
+        </p>
       </article>
 
-      <aside class="diagnostic-panel">
-        <h2>Core Surgery Checklist</h2>
-        <ul class="checklist">
-          <li v-for="bug in coreBugs" :key="bug.id" :class="{ completed: isFixed(bug.id) }">
-            <i class="fas" :class="isFixed(bug.id) ? 'fa-check-square' : 'fa-square'"></i>
-            <span>{{ bug.label }}</span>
+      <aside class="diagnosis-board">
+        <h2>Diagnosis Checklist</h2>
+        <ul>
+          <li v-for="id in coreBugIds" :key="id" :class="{ done: isFound(id) }">
+            {{ isFound(id) ? 'FIXED' : 'OPEN' }} - {{ bugDatabase[id].short }}
           </li>
         </ul>
 
-        <div v-if="feedback" class="feedback-box">
-          <strong>{{ feedback.title }}</strong>
-          <p>{{ feedback.desc }}</p>
+        <div class="feedback-box" :class="{ visible: feedback.title }">
+          <h3>{{ feedback.title || 'Click a suspicious CV part' }}</h3>
+          <p>{{ feedback.desc || 'Precise filenames, clean contact info, quantified evidence and formal presentation matter.' }}</p>
         </div>
-      </aside>
-    </section>
 
-    <LevelResultDialog
-      v-model="showSuccess"
-      tone="success"
-      icon="📜"
-      title="诊疗完成 / Diagnosis Complete"
-      description="你已经清掉了最关键的简历硬伤。真正的简历不是把经历全塞进去，而是用规范格式、量化结果和相关证据快速建立可信度。"
-      primary-text="保存诊疗结果 / Save CV Takeaway"
-      secondary-text="继续查看 / Keep Reviewing"
-      @secondary="showSuccess = false"
-      @primary="completeLevel"
-    />
-  </GameLevelScaffold>
+        <button
+          class="complete-btn"
+          type="button"
+          :disabled="foundCoreCount !== coreBugIds.length"
+          @click="$emit('complete', { game: 'cv-surgery', fixed: foundCoreCount })"
+        >
+          Submit Diagnosis
+        </button>
+      </aside>
+    </main>
+  </div>
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
-import GameLevelScaffold from '@/components/GameLevelScaffold.vue'
-import LevelResultDialog from '@/components/LevelResultDialog.vue'
-import { useLevelGuide } from '@/composables/useLevelGuide'
+import { computed, reactive } from 'vue'
 
-const emit = defineEmits(['complete'])
-const { guide, rewardCoins } = useLevelGuide('y3', 3)
+defineEmits(['complete', 'close'])
+
+const coreBugIds = ['filename', 'email', 'gpa', 'vague', 'hobby', 'font']
 
 const bugDatabase = {
-  filename: { title: 'Chaotic Filename / 文件名混乱', desc: '导师和招生官会同时处理大量文件，混乱命名会直接降低专业感。更好的格式是 Name_Program_CV.pdf。' },
-  email: { title: 'Unprofessional Email / 邮箱不专业', desc: '学术申请非常看重基本礼仪。过于中二或随意的邮箱，会让人下意识怀疑你的正式度。' },
-  gpa: { title: 'Vague GPA / 成绩表述太模糊', desc: '简历需要硬数据。请写具体 GPA 数值和分制，而不是“成绩很好”这种主观判断。' },
-  vague: { title: 'No evidence / 空话没有证据', desc: '“做了一些分析、学到了很多”没有说服力。更好的写法是技术 + 动作 + 结果。' },
-  hobby: { title: 'Irrelevant hobbies / 无关爱好', desc: '除非和申请方向强相关，否则无关爱好会挤占真正有价值的证据空间。' },
-  font: { title: 'Unprofessional typography / 排版字体不专业', desc: '不正式的字体和混乱排版会破坏第一印象。CV 首先要做到可读、统一、可信。' },
-  passive: { title: 'Passive verbs / 动词太被动', desc: 'CV 更适合用 Implemented、Optimized、Led 等主动动词，强调你做了什么。' },
-  order: { title: 'Wrong order / 顺序不对', desc: '简历通常遵循倒序时间线，让最近、最 relevant 的内容先出现。' },
-  score: { title: 'Self-rated skill / 自评分技能', desc: '“五星精通”很主观。更好的方式是用项目或结果来证明熟练度。' },
-  hs: { title: 'Old irrelevant history / 过旧无关经历', desc: '除非是非常顶级的奖项，否则中学经历通常应该给大学阶段的内容让位。' },
-}
-
-const coreBugs = [
-  { id: 'filename', label: 'Chaotic Filename / 文件名混乱' },
-  { id: 'email', label: 'Unprofessional Email / 不专业邮箱' },
-  { id: 'gpa', label: 'Vague GPA / 模糊成绩' },
-  { id: 'vague', label: 'No quantified evidence / 空话无数据' },
-  { id: 'hobby', label: 'Irrelevant hobbies / 无关爱好' },
-  { id: 'font', label: 'Unprofessional typography / 字体排版不专业' },
-]
-
-const fixed = reactive({})
-const feedback = ref(null)
-const showSuccess = ref(false)
-
-const coreFixedCount = computed(() => coreBugs.filter((bug) => fixed[bug.id]).length)
-
-function isFixed(id) {
-  return Boolean(fixed[id])
-}
-
-function findBug(id) {
-  if (fixed[id]) return
-  fixed[id] = true
-  feedback.value = bugDatabase[id]
-
-  if (coreFixedCount.value === coreBugs.length) {
-    showSuccess.value = true
+  filename: {
+    short: 'Chaotic filename',
+    title: 'Chaotic Filename',
+    desc: 'Use a predictable file name such as Name_Program_CV.pdf. Mentors and reviewers handle too many attachments.'
+  },
+  email: {
+    short: 'Unprofessional email',
+    title: 'Edgy Email',
+    desc: 'Register a clean name-based mailbox for applications. Contact details are part of the first impression.'
+  },
+  gpa: {
+    short: 'Vague academic metric',
+    title: 'Subjective GPA Claim',
+    desc: 'State exact GPA and scale, such as 3.8/4.0. "Excellent" is not an academic metric.'
+  },
+  vague: {
+    short: 'No STAR/result evidence',
+    title: 'Empty Fluff',
+    desc: 'Replace vague effort with action, technology, scope and result: implemented X, reduced Y by Z%.'
+  },
+  hobby: {
+    short: 'Irrelevant hobby',
+    title: 'Off-target Hobby',
+    desc: 'CV space is scarce. Keep hobbies only when they connect to the target program or rare achievements.'
+  },
+  font: {
+    short: 'Informal typography',
+    title: 'Blasphemous Typography',
+    desc: 'Use standard CV fonts and consistent spacing. A playful fantasy display font hurts credibility.'
+  },
+  passive: {
+    title: 'Hidden Tip: Passive Verbs',
+    desc: 'Prefer active verbs: implemented, optimized, evaluated, designed. "Learned how to" centers the process, not impact.'
+  },
+  score: {
+    title: 'Hidden Tip: Subjective Rating',
+    desc: 'Self-rated stars are hard to compare. Show skill through projects, technologies, outcomes or standard certifications.'
   }
 }
 
-function completeLevel() {
-  emit('complete', {
-    rewardCoins,
-    preferences: {
-      latestTakeaway: '好简历不是堆砌经历，而是用规范格式、量化结果和相关证据快速证明价值。/ A strong CV is not a dump of experiences, but a concise proof document.',
-    },
-  })
+const foundIds = reactive(new Set())
+const feedback = reactive({ title: '', desc: '' })
+
+const foundCoreCount = computed(() => coreBugIds.filter((id) => foundIds.has(id)).length)
+
+function isFound(id) {
+  return foundIds.has(id)
+}
+
+function findBug(id) {
+  const bug = bugDatabase[id]
+  feedback.title = bug.title
+  feedback.desc = bug.desc
+
+  if (coreBugIds.includes(id)) {
+    foundIds.add(id)
+  }
 }
 </script>
 
 <style scoped>
-.workspace {
+.clinic-game {
+  min-height: 100%;
+  padding: clamp(18px, 4vw, 64px);
+  color: #e5e7eb;
+  background:
+    radial-gradient(circle at 82% 12%, rgba(250, 204, 21, 0.18), transparent 34%),
+    linear-gradient(135deg, #1f2937, #111827 52%, #2f1d1d);
+}
+
+.close-btn,
+.bug-line,
+.bug-chip,
+.complete-btn {
+  border-radius: 8px;
+  font: inherit;
+}
+
+.close-btn {
+  padding: 10px 14px;
+  color: #fde68a;
+  background: rgba(2, 6, 23, 0.86);
+  border: 1px solid rgba(250, 204, 21, 0.5);
+  cursor: pointer;
+}
+
+.clinic-header,
+.clinic-workspace {
+  width: min(1280px, 100%);
+  margin: 0 auto;
+}
+
+.clinic-header {
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
-  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: end;
+  margin-top: 22px;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+h1 {
+  margin-top: 8px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2.8rem, 9vw, 9rem);
+  line-height: 0.84;
+  color: #fde68a;
+}
+
+.eyebrow {
+  color: #facc15;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+.intro {
+  max-width: 760px;
+  margin-top: 18px;
+  color: #cbd5e1;
+  line-height: 1.6;
+}
+
+.progress-pill {
+  padding: 14px 18px;
+  border-radius: 8px;
+  color: #111827;
+  background: #facc15;
+  font-weight: 1000;
+}
+
+.clinic-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(340px, 0.8fr);
+  gap: 24px;
+  margin-top: 28px;
   align-items: start;
 }
 
 .cv-paper,
-.diagnostic-panel {
-  border-radius: 24px;
-  overflow: hidden;
+.diagnosis-board {
+  padding: clamp(18px, 3vw, 42px);
+  border-radius: 8px;
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.34);
 }
 
 .cv-paper {
-  background: linear-gradient(135deg, #fdf5e6, #ebd5ab);
-  padding: 26px;
-  color: #2c1e16;
-  position: relative;
+  color: #1f2937;
+  background: #fff;
+  border-left: 16px solid #facc15;
+  line-height: 1.7;
 }
 
-.cv-filename {
-  display: inline-block;
-  margin-bottom: 18px;
-  padding: 6px 10px;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.7);
-  color: #82b1ff;
-  font-family: monospace;
+.cv-paper h2 {
+  margin-top: 22px;
+  padding-bottom: 5px;
+  color: #111827;
+  border-bottom: 2px solid #e5e7eb;
 }
 
-.cv-body {
-  font-family: Papyrus, "Courier New", serif;
-}
-
-.cv-header {
-  text-align: center;
-  border-bottom: 2px solid #5d4037;
-  padding-bottom: 10px;
-  margin-bottom: 20px;
-}
-
-.cv-header h2 {
-  margin: 0;
-  font-size: 1.8rem;
-}
-
-.cv-section {
-  margin-bottom: 20px;
-}
-
-.cv-section h3 {
-  margin: 0 0 10px;
-  color: #5d4037;
-  font-family: Georgia, serif;
-}
-
-.cv-section ul {
-  margin: 8px 0 0 18px;
-  display: grid;
-  gap: 8px;
-}
-
-.right {
-  float: right;
-}
-
-.small {
-  font-size: 0.85rem;
-}
-
-.bug-text {
+.bug-line,
+.bug-chip {
+  color: #7f1d1d;
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
   cursor: pointer;
-  border-bottom: 1px dotted rgba(200, 0, 0, 0.6);
 }
 
-.bug-text.inline {
+.bug-line {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  text-align: center;
+}
+
+.name-line {
+  font-family: Papyrus, fantasy;
+  font-size: clamp(2rem, 6vw, 5rem);
+  line-height: 1;
+}
+
+.filename-line,
+.contact-line {
+  font-size: 0.95rem;
+}
+
+.bug-chip {
   display: inline-block;
+  padding: 5px 8px;
+  margin: 4px;
+  line-height: 1.4;
 }
 
-.bug-text.fixed {
-  text-decoration: line-through;
-  color: #c0392b;
-  border-bottom: none;
-  background: rgba(231, 76, 60, 0.12);
+.bug-line.fixed,
+.bug-chip.fixed {
+  color: #14532d;
+  background: #dcfce7;
+  border-color: #22c55e;
 }
 
-.diagnostic-panel {
-  padding: 22px;
-  background: rgba(30, 20, 25, 0.88);
-  border: 1px solid rgba(141, 110, 99, 0.32);
-  color: #f8fafc;
+.hidden-tip {
+  color: #92400e;
+  background: #fef3c7;
+  border-color: #f59e0b;
 }
 
-.diagnostic-panel h2 {
-  margin: 0 0 16px;
-  color: #f9d976;
-  font-family: Georgia, serif;
+.diagnosis-board {
+  position: sticky;
+  top: 20px;
+  background: rgba(2, 6, 23, 0.82);
+  border: 1px solid rgba(250, 204, 21, 0.28);
 }
 
-.checklist {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.diagnosis-board h2 {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.6rem, 3vw, 3.6rem);
+  line-height: 1;
+  color: #fde68a;
+}
+
+.diagnosis-board ul {
   display: grid;
-  gap: 10px;
+  gap: 9px;
+  margin: 20px 0 0;
+  padding-left: 0;
+  list-style: none;
 }
 
-.checklist li {
-  padding: 10px 12px;
-  border-radius: 14px;
-  background: rgba(0, 0, 0, 0.24);
-  color: #a0aec0;
-  display: flex;
-  gap: 10px;
-  align-items: center;
+.diagnosis-board li {
+  padding: 10px;
+  border-radius: 8px;
+  color: #fee2e2;
+  background: rgba(127, 29, 29, 0.5);
 }
 
-.checklist li.completed {
-  color: #fff;
-  border: 1px solid rgba(46, 204, 113, 0.35);
-  background: rgba(46, 204, 113, 0.14);
+.diagnosis-board li.done {
+  color: #dcfce7;
+  background: rgba(20, 83, 45, 0.75);
 }
 
 .feedback-box {
-  margin-top: 18px;
+  min-height: 170px;
+  margin-top: 20px;
   padding: 16px;
-  border-radius: 18px;
-  background: #2c1e16;
-  border-left: 4px solid #f9d976;
-}
-
-.feedback-box strong {
-  color: #f9d976;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.95);
+  border-left: 5px solid #facc15;
 }
 
 .feedback-box p {
-  margin: 8px 0 0;
-  line-height: 1.7;
-  color: #f3e8e2;
+  margin-top: 10px;
+  color: #cbd5e1;
+  line-height: 1.55;
 }
 
-@media (max-width: 920px) {
-  .workspace {
+.complete-btn {
+  width: 100%;
+  margin-top: 18px;
+  padding: 15px 18px;
+  color: #111827;
+  background: #facc15;
+  border: 0;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.complete-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .clinic-header,
+  .clinic-workspace {
     grid-template-columns: 1fr;
+  }
+
+  .diagnosis-board {
+    position: static;
   }
 }
 </style>
