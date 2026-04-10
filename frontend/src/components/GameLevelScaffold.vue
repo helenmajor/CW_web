@@ -24,6 +24,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useAppI18n } from '@/composables/useAppI18n'
 import LevelGuideCard from '@/components/LevelGuideCard.vue'
 
 const props = defineProps({
@@ -37,7 +38,7 @@ const props = defineProps({
   },
   eyebrow: {
     type: String,
-    default: '关卡说明 / Stage Brief',
+    default: '',
   },
   guide: {
     type: Object,
@@ -53,7 +54,7 @@ const props = defineProps({
   },
   statusLabel: {
     type: String,
-    default: '当前状态 / Current Status',
+    default: '',
   },
   statusText: {
     type: String,
@@ -61,7 +62,13 @@ const props = defineProps({
   },
 })
 
+const { localize, t } = useAppI18n()
 const toneClass = computed(() => `tone-${props.tone}`)
+const eyebrow = computed(() => localize(props.eyebrow) || props.eyebrow || t('components.levelScaffold.stageBrief'))
+const title = computed(() => localize(props.title) || props.title)
+const subtitle = computed(() => localize(props.subtitle) || props.subtitle)
+const statusLabel = computed(() => localize(props.statusLabel) || props.statusLabel || t('components.levelScaffold.currentStatus'))
+const statusText = computed(() => localize(props.statusText) || props.statusText)
 </script>
 
 <style scoped>

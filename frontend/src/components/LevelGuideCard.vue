@@ -2,7 +2,7 @@
   <section class="guide-card">
     <div class="guide-header">
       <div>
-        <p class="eyebrow">{{ guide.eyebrow || '本关学习目标 / Learning Goal' }}</p>
+        <p class="eyebrow">{{ eyebrowText }}</p>
         <h2>{{ titleText }}</h2>
         <p v-if="summaryText" class="summary">{{ summaryText }}</p>
       </div>
@@ -13,22 +13,22 @@
 
     <div class="guide-grid">
       <article v-if="guide.learnBody || guide.learnBodyZh" class="guide-block">
-        <p class="block-label">{{ guide.learn || '你将学会什么 / What you will learn' }}</p>
+        <p class="block-label">{{ learnLabel }}</p>
         <p>{{ learningText }}</p>
       </article>
 
       <article v-if="guide.realTaskBody || guide.realTaskBodyZh" class="guide-block">
-        <p class="block-label">{{ guide.realTask || '本关对应的真实申请任务 / Real-world application task' }}</p>
+        <p class="block-label">{{ realTaskLabel }}</p>
         <p>{{ taskText }}</p>
       </article>
     </div>
 
     <div v-if="guide.mechanics?.length" class="guide-mechanics">
-      <p class="block-label">玩法映射 / Game Mechanic Mapping</p>
+      <p class="block-label">{{ t('components.guideCard.mechanics') }}</p>
       <div class="mechanics-grid">
         <article v-for="item in guide.mechanics" :key="item.term" class="mechanic-item">
-          <strong>{{ item.term }}</strong>
-          <p>{{ item.meaning }}</p>
+          <strong>{{ localize(item.term) || item.term }}</strong>
+          <p>{{ localize(item.meaning) || item.meaning }}</p>
         </article>
       </div>
     </div>
@@ -42,6 +42,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useAppI18n } from '@/composables/useAppI18n'
 
 const props = defineProps({
   guide: {
@@ -54,21 +55,34 @@ const props = defineProps({
   },
 })
 
-const titleText = computed(() => props.guide.summaryZh && props.guide.summary
-  ? `${props.guide.summaryZh} / ${props.guide.summary}`
-  : props.guide.summaryZh || props.guide.summary || '')
+const { currentLanguage, localize, t } = useAppI18n()
 
-const summaryText = computed(() => props.guide.summaryExtraZh && props.guide.summaryExtra
-  ? `${props.guide.summaryExtraZh} / ${props.guide.summaryExtra}`
-  : props.guide.summaryExtraZh || props.guide.summaryExtra || '')
+function pickGuideValue(key) {
+  const direct = props.guide[key]
+  const zhValue = props.guide[`${key}Zh`]
 
-const learningText = computed(() => props.guide.learnBodyZh && props.guide.learnBody
-  ? `${props.guide.learnBodyZh} / ${props.guide.learnBody}`
-  : props.guide.learnBodyZh || props.guide.learnBody || '')
+  if (direct && typeof direct === 'object') {
+    return localize(direct)
+  }
 
-const taskText = computed(() => props.guide.realTaskBodyZh && props.guide.realTaskBody
-  ? `${props.guide.realTaskBodyZh} / ${props.guide.realTaskBody}`
-  : props.guide.realTaskBodyZh || props.guide.realTaskBody || '')
+  if (zhValue && typeof zhValue === 'object') {
+    return localize(zhValue)
+  }
+
+  if (currentLanguage.value === 'zh') {
+    return zhValue || direct || ''
+  }
+
+  return direct || zhValue || ''
+}
+
+const eyebrowText = computed(() => pickGuideValue('eyebrow') || t('components.guideCard.defaultEyebrow'))
+const titleText = computed(() => pickGuideValue('summary'))
+const summaryText = computed(() => pickGuideValue('summaryExtra'))
+const learnLabel = computed(() => pickGuideValue('learn') || t('components.guideCard.learn'))
+const learningText = computed(() => pickGuideValue('learnBody'))
+const realTaskLabel = computed(() => pickGuideValue('realTask') || t('components.guideCard.realTask'))
+const taskText = computed(() => pickGuideValue('realTaskBody'))
 </script>
 
 <style scoped>

@@ -2,44 +2,45 @@
   <div class="modal-overlay" @click.self="$emit('close')">
     <div class="shop-modal-content">
       <div class="modal-header">
-        <span><i class="fas fa-gift"></i> 奖励兑换站 / Reward Exchange</span>
+        <span><i class="fas fa-gift"></i> {{ t('components.shop.title') }}</span>
       </div>
 
       <div class="shop-topbar">
         <div>
-          <h2>把学习进度换成温和的正反馈。/ Turn progress into gentle positive reinforcement.</h2>
-          <p>这里不是主线玩法，而是给长期申请规划一点可见成就感。/ This is a support loop for long-term planning, not the main learning task.</p>
+          <h2>{{ t('components.shop.headline') }}</h2>
+          <p>{{ t('components.shop.subline') }}</p>
         </div>
-        <div class="shop-balance">当前余额 / Current Balance: {{ balance }} {{ currencyLabel }}</div>
+        <div class="shop-balance">{{ t('components.shop.balance') }}: {{ balance }} {{ currencyLabel }}</div>
       </div>
 
       <div class="shop-learning-note">
-        <strong>系统说明 / Why this exists</strong>
-        <span>完成节点得到货币，兑换奖励是为了强化持续规划的节奏感。/ Currency rewards are here to reinforce consistent progress through the application-learning journey.</span>
+        <strong>{{ t('components.shop.systemTitle') }}</strong>
+        <span>{{ t('components.shop.systemBody') }}</span>
       </div>
 
       <div class="shop-grid">
         <div v-for="item in prizes" :key="item.id" class="prize-card">
           <div class="prize-emoji">{{ item.emoji }}</div>
-          <div class="prize-title">{{ item.nameZh }} / {{ item.name }}</div>
-          <div class="prize-desc">{{ item.descZh }} / {{ item.desc }}</div>
-          <div class="prize-cost">价格 / Cost {{ item.cost }} {{ currencyLabel }}</div>
+          <div class="prize-title">{{ item.name }}</div>
+          <div class="prize-desc">{{ item.desc }}</div>
+          <div class="prize-cost">{{ t('components.shop.cost') }} {{ item.cost }} {{ currencyLabel }}</div>
           <button class="prize-btn" :disabled="balance < item.cost" @click="$emit('redeem', item)">
-            {{ balance >= item.cost ? '兑换 / Redeem' : '余额不足 / Not Enough' }}
+            {{ balance >= item.cost ? t('components.shop.redeem') : t('components.shop.notEnough') }}
           </button>
         </div>
       </div>
 
       <div v-if="redeemMessage" class="redeem-log" v-html="redeemMessage"></div>
-      <div class="shop-note">把它当作阶段奖励而不是目标本身。/ Treat the shop as milestone feedback, not the goal itself.</div>
+      <div class="shop-note">{{ t('components.shop.note') }}</div>
 
-      <button class="btn-exit" @click="$emit('close')">离开兑换站 / Exit Shop</button>
+      <button class="btn-exit" @click="$emit('close')">{{ t('components.shop.exit') }}</button>
     </div>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
+import { useAppI18n } from '@/composables/useAppI18n'
 
 defineEmits(['close', 'redeem'])
 
@@ -58,15 +59,23 @@ const props = defineProps({
   },
 })
 
-const prizes = [
-  { id: 'bear', name: 'XJTLU Bear', nameZh: '西浦小熊', emoji: '\u{1F9F8}', cost: 40, desc: 'A cute milestone souvenir.', descZh: '适合作为小阶段完成后的纪念奖励。' },
-  { id: 'movie', name: 'Movie Ticket', nameZh: '电影票', emoji: '\u{1F3AC}', cost: 60, desc: 'A reminder that rest is part of strategy.', descZh: '提醒你休息也是长期规划的一部分。' },
-  { id: 'hotpot', name: 'Hotpot Voucher', nameZh: '火锅券', emoji: '\u{1F372}', cost: 80, desc: 'Celebrate a heavy week of progress.', descZh: '适合在高强度推进后给自己一个阶段庆祝。' },
-  { id: 'course', name: 'VIP Express Course', nameZh: '进阶课程券', emoji: '\u{1F393}', cost: 100, desc: 'A functional grand prize after sustained saving.', descZh: '更偏实用型的大额奖励，适合长期积累后兑换。' },
-  { id: 'vocab', name: 'Vocabulary Book', nameZh: '词汇书', emoji: '\u{1F4D8}', cost: 30, desc: 'A practical low-threshold study reward.', descZh: '门槛较低、也更贴近学习的实用奖励。' },
+const { t } = useAppI18n()
+
+const prizeDefs = [
+  { id: 'bear', emoji: '\u{1F9F8}', cost: 40 },
+  { id: 'movie', emoji: '\u{1F3AC}', cost: 60 },
+  { id: 'hotpot', emoji: '\u{1F372}', cost: 80 },
+  { id: 'course', emoji: '\u{1F393}', cost: 100 },
+  { id: 'vocab', emoji: '\u{1F4D8}', cost: 30 },
 ]
 
-const currencyLabel = computed(() => (props.activeYear === 'y2' ? 'Coins / 金币' : 'Gems / 宝石'))
+const prizes = computed(() => prizeDefs.map((item) => ({
+  ...item,
+  name: t(`components.shop.prizes.${item.id}.name`),
+  desc: t(`components.shop.prizes.${item.id}.desc`),
+})))
+
+const currencyLabel = computed(() => (props.activeYear === 'y2' ? t('common.labels.coins') : t('common.labels.gems')))
 </script>
 
 <style scoped>

@@ -1,14 +1,11 @@
 <template>
   <div class="ps-game">
-    <button class="close-btn" type="button" @click="$emit('close')">Back to Map</button>
+    <button class="close-btn" type="button" @click="$emit('close')">{{ t('pages.y3_4.back') }}</button>
 
     <section class="ps-header">
-      <p class="eyebrow">Y3-4 Constellation of Memories</p>
-      <h1>PS Story Weaving</h1>
-      <p class="intro">
-        Click five stars to weave a personal statement trajectory. Strong PS logic moves from your
-        evidence-backed past, to school fit, to future direction.
-      </p>
+      <p class="eyebrow">{{ t('pages.y3_4.eyebrow') }}</p>
+      <h1>{{ t('pages.y3_4.title') }}</h1>
+      <p class="intro">{{ t('pages.y3_4.intro') }}</p>
     </section>
 
     <main class="sky-panel">
@@ -36,9 +33,9 @@
     </main>
 
     <div class="action-row">
-      <button class="secondary-btn" type="button" @click="resetStars">Redraw Trajectory</button>
+      <button class="secondary-btn" type="button" @click="resetStars">{{ t('pages.y3_4.redraw') }}</button>
       <button class="primary-btn" type="button" :disabled="selectedOrder.length !== stars.length" @click="validateConstellation">
-        Validate Constellation
+        {{ t('pages.y3_4.validate') }}
       </button>
     </div>
 
@@ -47,14 +44,14 @@
         <h2>{{ result.title }}</h2>
         <p>{{ result.desc }}</p>
         <div class="action-row compact">
-          <button class="secondary-btn" type="button" @click="result.show = false">Keep Editing</button>
+          <button class="secondary-btn" type="button" @click="result.show = false">{{ t('pages.y3_4.keepEditing') }}</button>
           <button
             v-if="result.type === 'success'"
             class="primary-btn"
             type="button"
             @click="$emit('complete', { game: 'ps-story-weaving', order: selectedOrder })"
           >
-            Save PS Skeleton
+            {{ t('pages.y3_4.save') }}
           </button>
         </div>
       </section>
@@ -64,16 +61,26 @@
 
 <script setup>
 import { computed, reactive, ref } from 'vue'
+import { useAppI18n } from '@/composables/useAppI18n'
 
 defineEmits(['complete', 'close'])
+const { tm, t } = useAppI18n()
 
-const stars = [
-  { id: 'motive', x: 20, y: 20, mark: 'M', title: 'Awakening', desc: 'Why did this field first matter to you?' },
-  { id: 'incident', x: 12, y: 62, mark: '!', title: 'The Crucible', desc: 'What setback, question or bottleneck raised the stakes?' },
-  { id: 'action', x: 50, y: 82, mark: 'A', title: 'Forging', desc: 'What academic work, project or research proves your preparation?' },
-  { id: 'match', x: 88, y: 62, mark: 'FIT', title: 'Convergence', desc: 'Why this exact program, lab, module or ecosystem?' },
-  { id: 'goal', x: 80, y: 20, mark: 'G', title: 'The Zenith', desc: 'What future problem will your next training help you tackle?' }
+const starLayout = [
+  { id: 'motive', x: 20, y: 20 },
+  { id: 'incident', x: 12, y: 62 },
+  { id: 'action', x: 50, y: 82 },
+  { id: 'match', x: 88, y: 62 },
+  { id: 'goal', x: 80, y: 20 },
 ]
+
+const stars = computed(() => {
+  const localizedStars = tm('pages.y3_4.stars') || []
+  return starLayout.map((star, index) => ({
+    ...star,
+    ...(localizedStars[index] || {}),
+  }))
+})
 
 const selectedOrder = ref([])
 const result = reactive({
@@ -84,7 +91,7 @@ const result = reactive({
 })
 
 const linePoints = computed(() => selectedOrder.value
-  .map((id) => stars.find((star) => star.id === id))
+  .map((id) => stars.value.find((star) => star.id === id))
   .filter(Boolean)
   .map((star) => `${star.x},${star.y}`)
   .join(' '))
@@ -112,17 +119,17 @@ function validateConstellation() {
   const order = selectedOrder.value
 
   if (order[0] === 'match') {
-    showResult('error', 'Template Warning', 'Opening with school flattery sounds mass-produced. A PS should begin from your own question, context or challenge.')
+    showResult('error', t('pages.y3_4.results.templateWarning.title'), t('pages.y3_4.results.templateWarning.desc'))
     return
   }
 
   if (order.indexOf('goal') < order.indexOf('action') || order.indexOf('match') < order.indexOf('action')) {
-    showResult('error', 'Logical Collapse', 'Do not discuss school fit or grand vision before showing preparation. The goal needs an evidence foundation.')
+    showResult('error', t('pages.y3_4.results.logicalCollapse.title'), t('pages.y3_4.results.logicalCollapse.desc'))
     return
   }
 
   if (order.indexOf('motive') > order.indexOf('action')) {
-    showResult('error', 'Narrative Risk', 'You placed preparation before origin. Most academic PS drafts read clearer when motive and question lead into action.')
+    showResult('error', t('pages.y3_4.results.narrativeRisk.title'), t('pages.y3_4.results.narrativeRisk.desc'))
     return
   }
 
@@ -134,15 +141,13 @@ function validateConstellation() {
   if (isOrthodox || isHook) {
     showResult(
       'success',
-      isHook ? 'Advanced Suspense Hook' : "The Hero's Journey",
-      isHook
-        ? 'A challenge-first opening can work when it immediately returns to origin, preparation, school fit and future direction.'
-        : 'A clean arc: origin, catalyst, academic preparation, program fit, future direction. Now fill it with specific evidence.'
+      isHook ? t('pages.y3_4.results.suspenseHook.title') : t('pages.y3_4.results.heroJourney.title'),
+      isHook ? t('pages.y3_4.results.suspenseHook.desc') : t('pages.y3_4.results.heroJourney.desc'),
     )
     return
   }
 
-  showResult('error', 'The Starlight Flickers', 'The order is close but not yet persuasive. Try: motive or catalyst, preparation, school fit, future goal.')
+  showResult('error', t('pages.y3_4.results.fallback.title'), t('pages.y3_4.results.fallback.desc'))
 }
 
 function showResult(type, title, desc) {

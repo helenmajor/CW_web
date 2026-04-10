@@ -1,20 +1,17 @@
 <template>
   <div class="citadel-game">
     <section class="citadel-hud">
-      <button class="close-btn" type="button" @click="$emit('close')">Back to Map</button>
-      <div class="hud-stat">Cleared {{ clearedCount }} / 3</div>
-      <div class="hud-stat">Artifacts {{ gems }}</div>
-      <div class="hud-stat">Lv.{{ level }}</div>
-      <div class="hud-stat">Coffee {{ potions }}</div>
+      <button class="close-btn" type="button" @click="$emit('close')">{{ t('pages.y3_6.back') }}</button>
+      <div class="hud-stat">{{ t('pages.y3_6.cleared', { count: clearedCount }) }}</div>
+      <div class="hud-stat">{{ t('pages.y3_6.artifacts', { count: gems }) }}</div>
+      <div class="hud-stat">{{ t('pages.y3_6.level', { level }) }}</div>
+      <div class="hud-stat">{{ t('pages.y3_6.coffee', { count: potions }) }}</div>
     </section>
 
     <section v-if="mode === 'map'" class="citadel-map">
-      <p class="eyebrow">Y3-6 The Dark Citadel</p>
-      <h1>Battle of the Ordeals</h1>
-      <p class="intro">
-        Clear September language pressure, October essay pressure and November deadline pressure.
-        Each first clear levels you up and opens the next gate.
-      </p>
+      <p class="eyebrow">{{ t('pages.y3_6.eyebrow') }}</p>
+      <h1>{{ t('pages.y3_6.title') }}</h1>
+      <p class="intro">{{ t('pages.y3_6.intro') }}</p>
 
       <div class="door-grid">
         <button
@@ -32,26 +29,26 @@
         </button>
 
         <button class="stage-door final-door" :class="{ locked: clearedCount !== 3 }" type="button" @click="openFinal">
-          <span class="door-status">{{ clearedCount === 3 ? 'Unlocked' : 'Sealed' }}</span>
-          <b>Sanctuary</b>
-          <strong>Rain of Offers</strong>
-          <small>Open after all three bosses are defeated.</small>
+          <span class="door-status">{{ clearedCount === 3 ? t('pages.y3_6.unlocked') : t('pages.y3_6.sealed') }}</span>
+          <b>{{ t('pages.y3_6.finalDoorTitle') }}</b>
+          <strong>{{ t('pages.y3_6.finalDoorEnemy') }}</strong>
+          <small>{{ t('pages.y3_6.finalDoorDesc') }}</small>
         </button>
       </div>
     </section>
 
     <section v-else class="battle-modal">
-      <button class="close-btn modal-close" type="button" @click="returnToMap">Return to Citadel</button>
+      <button class="close-btn modal-close" type="button" @click="returnToMap">{{ t('pages.y3_6.returnToCitadel') }}</button>
 
       <template v-if="mode === 'intro' && currentStage">
         <div class="modal-scroll">
-          <p class="eyebrow">{{ currentStage.month }} Gate</p>
+          <p class="eyebrow">{{ currentStage.month }}</p>
           <h2>{{ currentStage.title }}</h2>
           <p class="intro">{{ currentStage.subtitle }}</p>
           <div class="intel-list">
             <p v-for="tip in currentStage.tips" :key="tip">{{ tip }}</p>
           </div>
-          <button class="primary-btn" type="button" @click="startBattle">Draw Sword & Engage</button>
+          <button class="primary-btn" type="button" @click="startBattle">{{ t('pages.y3_6.startBattle') }}</button>
         </div>
       </template>
 
@@ -66,9 +63,9 @@
 
             <article class="fighter hero">
               <span class="sprite">APP</span>
-              <h2>Applicant</h2>
+              <h2>{{ t('pages.y3_6.heroName') }}</h2>
               <HealthBar :value="hero.hp" :max="hero.maxHp" />
-              <small v-if="hero.shield" class="shield-tag">Cold Email Shield active</small>
+              <small v-if="hero.shield" class="shield-tag">{{ t('pages.y3_6.shieldActive') }}</small>
             </article>
           </div>
 
@@ -93,37 +90,32 @@
 
       <template v-else-if="mode === 'victory'">
         <div class="modal-scroll center">
-          <p class="eyebrow">Month Conquered</p>
-          <h2>{{ currentStage.enemy.name }} defeated</h2>
+          <p class="eyebrow">{{ t('pages.y3_6.monthConquered') }}</p>
+          <h2>{{ t('pages.y3_6.defeatedTitle', { enemy: currentStage.enemy.name }) }}</h2>
           <p class="intro">{{ settlementText }}</p>
-          <button class="primary-btn" type="button" @click="returnToMap">Return to Citadel</button>
+          <button class="primary-btn" type="button" @click="returnToMap">{{ t('pages.y3_6.returnToCitadel') }}</button>
           <button v-if="clearedCount === 3" class="danger-btn" type="button" @click="mode = 'final'">
-            Open The Sanctuary
+            {{ t('pages.y3_6.openSanctuary') }}
           </button>
         </div>
       </template>
 
       <template v-else-if="mode === 'defeat'">
         <div class="modal-scroll center">
-          <p class="eyebrow">Application Foiled</p>
-          <h2>You were crushed by pressure</h2>
-          <p class="intro">
-            Retry with burst damage, coffee heals and Cold Email Shield before a heavy boss turn.
-          </p>
-          <button class="primary-btn" type="button" @click="startBattle">Resurrect & Retaliate</button>
+          <p class="eyebrow">{{ t('pages.y3_6.defeatEyebrow') }}</p>
+          <h2>{{ t('pages.y3_6.defeatTitle') }}</h2>
+          <p class="intro">{{ t('pages.y3_6.defeatDesc') }}</p>
+          <button class="primary-btn" type="button" @click="startBattle">{{ t('pages.y3_6.retryBattle') }}</button>
         </div>
       </template>
 
       <template v-else-if="mode === 'final'">
         <div class="modal-scroll center">
-          <p class="eyebrow">Sanctuary Opened</p>
-          <h2>The Offer Rain Begins</h2>
-          <p class="intro">
-            Dragon, zombie and DDL reaper are defeated. You collected {{ gems }} artifacts and
-            survived the autumn application season.
-          </p>
+          <p class="eyebrow">{{ t('pages.y3_6.finalEyebrow') }}</p>
+          <h2>{{ t('pages.y3_6.finalTitle') }}</h2>
+          <p class="intro">{{ t('pages.y3_6.finalDesc', { gems }) }}</p>
           <button class="primary-btn" type="button" @click="$emit('complete', { game: 'dark-citadel', artifacts: gems })">
-            Return in Glory
+            {{ t('pages.y3_6.returnInGlory') }}
           </button>
         </div>
       </template>
@@ -133,6 +125,7 @@
 
 <script>
 import { computed, defineComponent, h, reactive, ref } from 'vue'
+import { useAppI18n } from '@/composables/useAppI18n'
 
 const HealthBar = defineComponent({
   props: {
@@ -153,42 +146,28 @@ export default {
   components: { HealthBar },
   emits: ['complete', 'close'],
   setup() {
-    const stages = [
-      {
-        id: 0,
-        month: 'September',
-        title: 'September Vanguard: The Language War',
-        subtitle: 'Without language scores, applications cannot advance a single step.',
-        tips: [
-          'Check official program pages for total score, sub-score, accepted tests, waiver and enrollment validity.',
-          'IELTS/TOEFL are usually valid for 2 years. Leave September-October for retakes instead of first attempts.',
-          'Use OG, Cambridge IELTS papers and TOEFL TPO-style practice before buying random shortcuts.'
-        ],
-        enemy: { name: 'IELTS Dragon', icon: 'DRG', hp: 150, atk: 20 }
-      },
-      {
-        id: 1,
-        month: 'October',
-        title: 'October Purgatory: The Essay War',
-        subtitle: 'Writer\'s block attacks while essays, CV and RL requests collide.',
-        tips: [
-          'Treat the CV as an evidence inventory and the PS as a story of motive, preparation, school fit and future direction.',
-          'Use a proofreader for logic and language, but keep the final审核权: the statement must sound like you.'
-        ],
-        enemy: { name: "Writer's Block Zombie", icon: 'ZMB', hp: 200, atk: 30 }
-      },
-      {
-        id: 2,
-        month: 'November',
-        title: 'November Abyss: The Application War',
-        subtitle: 'DDLs approach. Forms, payments and uploads leave no room for careless errors.',
-        tips: [
-          'Create a school-by-school checklist for portals, recommendation status, application fee, uploads and submission confirmation.',
-          'Keep login access and final review power. Screenshot confirmation pages and receipt emails after submission.'
-        ],
-        enemy: { name: 'The Reaper of DDLs', icon: 'DDL', hp: 280, atk: 45 }
-      }
+    const { t, tm } = useAppI18n()
+    const stageMeta = [
+      { id: 0, icon: 'DRG', hp: 150, atk: 20 },
+      { id: 1, icon: 'ZMB', hp: 200, atk: 30 },
+      { id: 2, icon: 'DDL', hp: 280, atk: 45 },
     ]
+    const stages = computed(() => {
+      const localizedStages = tm('pages.y3_6.stages') || []
+      return stageMeta.map((stage, index) => {
+        const localized = localizedStages[index] || {}
+        return {
+          ...stage,
+          ...localized,
+          enemy: {
+            name: localized.enemyName || '',
+            icon: stage.icon,
+            hp: stage.hp,
+            atk: stage.atk,
+          },
+        }
+      })
+    })
 
     const mode = ref('map')
     const currentStage = ref(null)
@@ -199,7 +178,7 @@ export default {
     const hero = reactive({ hp: 120, maxHp: 120, shield: false })
     const enemy = reactive({ name: '', icon: '', hp: 1, maxHp: 1, atk: 1 })
     const skills = reactive([])
-    const battleLog = ref('Awaiting your command.')
+    const battleLog = ref(t('pages.y3_6.logs.awaiting'))
     const settlementText = ref('')
 
     const clearedCount = computed(() => cleared.filter(Boolean).length)
@@ -209,25 +188,25 @@ export default {
     }
 
     function doorStatus(stageId) {
-      if (cleared[stageId]) return 'Slain'
-      if (isLocked(stageId)) return 'Sealed'
-      return stages[stageId].month
+      if (cleared[stageId]) return t('pages.y3_6.slain')
+      if (isLocked(stageId)) return t('pages.y3_6.sealed')
+      return stages.value[stageId]?.month || ''
     }
 
     function openStage(stageId) {
       if (isLocked(stageId)) {
-        battleLog.value = 'Clear the previous month first.'
+        battleLog.value = t('pages.y3_6.logs.previousFirst')
         return
       }
 
-      currentStage.value = stages[stageId]
+      currentStage.value = stages.value[stageId]
       mode.value = 'intro'
     }
 
     function openFinal() {
       mode.value = clearedCount.value === 3 ? 'final' : 'map'
       if (clearedCount.value !== 3) {
-        battleLog.value = 'The Sanctuary is still sealed.'
+        battleLog.value = t('pages.y3_6.logs.sanctuarySealed')
       }
     }
 
@@ -251,13 +230,13 @@ export default {
       skills.splice(
         0,
         skills.length,
-        { id: 'mock', name: 'Mock Exam Thrust', label: 'steady damage', pp: 15, maxPp: 15, power: 34, kind: 'attack' },
-        { id: 'proof', name: "Proofreader's Slash", label: 'burst edit', pp: 3, maxPp: 3, power: 86, kind: 'attack' },
-        { id: 'shield', name: 'Cold Email Shield', label: 'reduce next hit', pp: 5, maxPp: 5, power: 0, kind: 'shield' },
-        { id: 'coffee', name: 'Iced Americano', label: 'heal', pp: potions.value, maxPp: potions.value, power: 95, kind: 'heal' }
+        { id: 'mock', name: t('pages.y3_6.skills.mock.name'), label: t('pages.y3_6.skills.mock.label'), pp: 15, maxPp: 15, power: 34, kind: 'attack' },
+        { id: 'proof', name: t('pages.y3_6.skills.proof.name'), label: t('pages.y3_6.skills.proof.label'), pp: 3, maxPp: 3, power: 86, kind: 'attack' },
+        { id: 'shield', name: t('pages.y3_6.skills.shield.name'), label: t('pages.y3_6.skills.shield.label'), pp: 5, maxPp: 5, power: 0, kind: 'shield' },
+        { id: 'coffee', name: t('pages.y3_6.skills.coffee.name'), label: t('pages.y3_6.skills.coffee.label'), pp: potions.value, maxPp: potions.value, power: 95, kind: 'heal' }
       )
 
-      battleLog.value = `${enemy.name} appears. Choose a command; no typewriter lock is used in this version.`
+      battleLog.value = t('pages.y3_6.logs.battleStart', { enemy: enemy.name })
       mode.value = 'battle'
     }
 
@@ -269,14 +248,14 @@ export default {
       if (skill.kind === 'attack') {
         const damage = skill.power + 6 + (level.value - 1) * 12
         enemy.hp = Math.max(0, enemy.hp - damage)
-        battleLog.value = `${skill.name} hits ${enemy.name} for ${damage}.`
+        battleLog.value = t('pages.y3_6.logs.attack', { skill: skill.name, enemy: enemy.name, damage })
       } else if (skill.kind === 'shield') {
         hero.shield = true
-        battleLog.value = 'Cold Email Shield is active. Next boss hit is reduced by 70%.'
+        battleLog.value = t('pages.y3_6.logs.shield')
       } else if (skill.kind === 'heal') {
         potions.value = Math.max(0, potions.value - 1)
         hero.hp = Math.min(hero.maxHp, hero.hp + skill.power)
-        battleLog.value = `Iced Americano restored ${skill.power} HP.`
+        battleLog.value = t('pages.y3_6.logs.heal', { heal: skill.power })
       }
 
       if (enemy.hp <= 0) {
@@ -294,7 +273,7 @@ export default {
         hero.shield = false
       }
       hero.hp = Math.max(0, hero.hp - damage)
-      battleLog.value += ` ${enemy.name} counters for ${damage}.`
+      battleLog.value += ` ${t('pages.y3_6.logs.counter', { enemy: enemy.name, damage })}`
 
       if (hero.hp <= 0) {
         mode.value = 'defeat'
@@ -308,9 +287,9 @@ export default {
         gems.value += 1
         level.value += 1
         potions.value += 1
-        settlementText.value = `First clear: +1 Artifact, level up to ${level.value}, and +1 Iced Americano.`
+        settlementText.value = t('pages.y3_6.logs.firstClear', { level: level.value })
       } else {
-        settlementText.value = 'Boss already slain. Replays do not grant additional rewards.'
+        settlementText.value = t('pages.y3_6.logs.replayClear')
       }
 
       mode.value = 'victory'
@@ -329,6 +308,7 @@ export default {
       skills,
       battleLog,
       settlementText,
+      t,
       clearedCount,
       isLocked,
       doorStatus,

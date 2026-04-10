@@ -2,8 +2,8 @@
   <div class="archive-game">
     <section class="room">
       <div class="header">
-        <h2><i class="fas fa-scroll"></i> Senior Case Archives</h2>
-        <p>Predict each predecessor's fate. Then reveal what their profile actually teaches about GPA, internships, research, and projects.</p>
+        <h2><i class="fas fa-scroll"></i> {{ t('pages.y2_4.title') }}</h2>
+        <p>{{ t('pages.y2_4.intro') }}</p>
       </div>
 
       <div class="archives">
@@ -11,8 +11,8 @@
           <div class="portrait">{{ item.icon }}</div>
           <div class="profile-data">
             <div><b>{{ item.label }}:</b> {{ item.track }}</div>
-            <div><b>GPA:</b> <span :class="item.gpaClass">{{ item.gpa }}</span></div>
-            <div><b>Core Evidence:</b> <span class="evidence">{{ item.evidence }}</span></div>
+            <div><b>{{ t('pages.y2_4.labels.gpa') }}:</b> <span :class="item.gpaClass">{{ item.gpa }}</span></div>
+            <div><b>{{ t('pages.y2_4.labels.evidence') }}:</b> <span class="evidence">{{ item.evidence }}</span></div>
           </div>
 
           <div v-if="!revealedIds.has(item.id)" class="guess">
@@ -29,45 +29,31 @@
       </div>
 
       <button v-if="revealedIds.size === cases.length" type="button" class="btn-complete" @click="emit('complete')">
-        <i class="fas fa-gem"></i> Archive Wisdom & Return
+        <i class="fas fa-gem"></i> {{ t('pages.y2_4.complete') }}
       </button>
     </section>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { useAppI18n } from '@/composables/useAppI18n'
 
 const emit = defineEmits(['complete', 'close'])
+const { tm, t } = useAppI18n()
 
-const cases = [
-  {
-    id: 1,
-    icon: '🧑‍💻',
-    label: 'Senior A',
-    track: 'Info & Comp Sci track',
-    gpa: '80/100 (Perilous)',
-    gpaClass: 'danger',
-    evidence: 'SAP R&D Internship + High-Tier GitHub Project',
-    choices: ['A. The Abyss of Rejection', 'B. Miracle Ascension (Top 50)'],
-    truthTitle: 'The Truth: Miracle Ascension to Top 50.',
-    truthClass: 'success',
-    truth: 'For applied CS / software directions, a strong enterprise R&D internship and a serious engineering project can become a visible moat. A low GPA is still dangerous, but real technical evidence can change the story.',
-  },
-  {
-    id: 2,
-    icon: '👩‍🎓',
-    label: 'Senior B',
-    track: 'Data Science track',
-    gpa: '91/100 (Supreme)',
-    gpaClass: 'gold',
-    evidence: 'Zero Internship, Zero Research, Zero Serious Project',
-    choices: ['A. Slaughter the Top 30 Realms', 'B. Severe Crushing Defeat'],
-    truthTitle: 'The Truth: Severe Crushing Defeat.',
-    truthClass: 'danger',
-    truth: 'This is the Hollow Scholar trap. In STEM and business-related realms, pure academic scores are not the whole application. Programs look for relevant experience, projects, research, internships, motivation, and fit.',
-  },
+const caseMeta = [
+  { id: 1, icon: '🧑‍💻', gpaClass: 'danger', truthClass: 'success' },
+  { id: 2, icon: '👩‍🎓', gpaClass: 'gold', truthClass: 'danger' },
 ]
+
+const cases = computed(() => {
+  const localizedCases = tm('pages.y2_4.cases') || []
+  return caseMeta.map((meta, index) => ({
+    ...meta,
+    ...(localizedCases[index] || {}),
+  }))
+})
 
 const revealedIds = ref(new Set())
 

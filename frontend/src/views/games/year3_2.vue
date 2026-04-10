@@ -1,17 +1,14 @@
-﻿<template>
+<template>
   <div class="bureau-game">
-    <button class="close-btn" type="button" @click="$emit('close')">Back to Map</button>
+    <button class="close-btn" type="button" @click="$emit('close')">{{ t('pages.y3_2.back') }}</button>
 
     <section class="bureau-room">
-      <p class="eyebrow">Y3-2 Bureau of Magic</p>
-      <h1>Artifact Appraisal</h1>
-      <p class="intro">
-        The same experience should be written differently in CV, PS and RL. Stamp each fragment
-        onto the only document where it belongs.
-      </p>
+      <p class="eyebrow">{{ t('pages.y3_2.eyebrow') }}</p>
+      <h1>{{ t('pages.y3_2.title') }}</h1>
+      <p class="intro">{{ t('pages.y3_2.intro') }}</p>
 
       <div class="progress-line">
-        <span>Fragment {{ currentIndex + 1 }} / {{ fragments.length }}</span>
+        <span>{{ t('pages.y3_2.fragmentCounter', { current: currentIndex + 1, total: fragments.length }) }}</span>
         <div class="meter"><i :style="{ width: progressPercent + '%' }"></i></div>
       </div>
 
@@ -22,15 +19,15 @@
       <div class="stamp-grid">
         <button class="stamp-btn cv" type="button" @click="stamp('cv')">
           <b>CV</b>
-          <small>objective evidence, numbers, skills</small>
+          <small>{{ t('pages.y3_2.cvHint') }}</small>
         </button>
         <button class="stamp-btn ps" type="button" @click="stamp('ps')">
           <b>PS</b>
-          <small>motivation, reflection, future fit</small>
+          <small>{{ t('pages.y3_2.psHint') }}</small>
         </button>
         <button class="stamp-btn rl" type="button" @click="stamp('rl')">
           <b>RL</b>
-          <small>third-party evaluation and observation</small>
+          <small>{{ t('pages.y3_2.rlHint') }}</small>
         </button>
       </div>
     </section>
@@ -40,7 +37,7 @@
         <h2>{{ modal.title }}</h2>
         <p>{{ modal.message }}</p>
         <button class="modal-btn" type="button" @click="continueAfterModal">
-          {{ modal.type === 'success' ? 'Next Fragment' : 'Try This Fragment Again' }}
+          {{ modal.type === 'success' ? t('pages.y3_2.next') : t('pages.y3_2.retry') }}
         </button>
       </section>
     </div>
@@ -49,41 +46,19 @@
 
 <script setup>
 import { computed, reactive, ref } from 'vue'
+import { useAppI18n } from '@/composables/useAppI18n'
 
 const emit = defineEmits(['complete', 'close'])
+const { t, tm } = useAppI18n()
 
-const fragments = [
-  {
-    text: 'During my SAP internship, I refactored backend code, increasing system response speed by 25%.',
-    target: 'cv',
-    note: 'Quantified, objective outcomes are ideal CV bullets.'
-  },
-  {
-    text: 'A setback during a big-tech internship revealed my bottleneck in distributed systems and pushed me toward graduate study.',
-    target: 'ps',
-    note: 'A turning point, reflection and academic motivation belong in the PS.'
-  },
-  {
-    text: "The student showed leadership in the Advanced Algorithms group project and found core bugs when the team was stuck.",
-    target: 'rl',
-    note: 'Praise of teamwork and character sounds credible when it comes from a recommender.'
-  },
-  {
-    text: 'Proficient in Python, Java and C++; skilled in MySQL database management.',
-    target: 'cv',
-    note: 'Skill lists are scan-friendly on CVs. They become grocery lists inside a PS.'
-  },
-  {
-    text: 'My long-term vision is to lead enterprise-level cloud-computing architecture projects.',
-    target: 'ps',
-    note: 'Future vision is part of your application narrative, not a CV record.'
-  },
-  {
-    text: 'She remained calm under extreme deadlines and produced efficient work without lowering quality.',
-    target: 'rl',
-    note: 'Soft traits need third-party observation and concrete context.'
-  }
-]
+const targetByIndex = ['cv', 'ps', 'rl', 'cv', 'ps', 'rl']
+const fragments = computed(() => {
+  const localized = tm('pages.y3_2.fragments') || []
+  return localized.map((fragment, index) => ({
+    ...fragment,
+    target: targetByIndex[index],
+  }))
+})
 
 const currentIndex = ref(0)
 const advanceAfterClose = ref(false)
@@ -91,11 +66,11 @@ const modal = reactive({
   show: false,
   type: 'success',
   title: '',
-  message: ''
+  message: '',
 })
 
-const currentFragment = computed(() => fragments[currentIndex.value])
-const progressPercent = computed(() => Math.round((currentIndex.value / fragments.length) * 100))
+const currentFragment = computed(() => fragments.value[currentIndex.value])
+const progressPercent = computed(() => Math.round((currentIndex.value / fragments.value.length) * 100))
 
 function stamp(target) {
   const fragment = currentFragment.value
@@ -104,14 +79,14 @@ function stamp(target) {
   if (target !== fragment.target) {
     openModal(
       'error',
-      `Wrong Seal: this belongs to ${fragment.target.toUpperCase()}`,
-      fragment.note
+      t('pages.y3_2.wrongTitle', { target: fragment.target.toUpperCase() }),
+      fragment.note,
     )
     return
   }
 
   advanceAfterClose.value = true
-  openModal('success', 'Correct Seal', fragment.note)
+  openModal('success', t('pages.y3_2.correctTitle'), fragment.note)
 }
 
 function openModal(type, title, message) {
@@ -129,7 +104,7 @@ function continueAfterModal() {
   advanceAfterClose.value = false
   currentIndex.value += 1
 
-  if (currentIndex.value >= fragments.length) {
+  if (currentIndex.value >= fragments.value.length) {
     emit('complete', { game: 'artifact-appraisal' })
   }
 }

@@ -1,17 +1,14 @@
 <template>
   <div class="bog-game" :class="{ hit: damageFlash }">
-    <button class="close-btn" type="button" @click="$emit('close')">Back to Map</button>
+    <button class="close-btn" type="button" @click="$emit('close')">{{ t('pages.y3_7.back') }}</button>
 
     <section class="bog-header">
-      <p class="eyebrow">Y3-7 DIY Bog Sweeper</p>
-      <h1>Hidden Mine Casting</h1>
-      <p class="intro">
-        Identify each DIY/application blind spot. Fatal mines require Lethal Dispel; severe mines
-        need Bog Purge; minor mines need Thorn Pruning.
-      </p>
+      <p class="eyebrow">{{ t('pages.y3_7.eyebrow') }}</p>
+      <h1>{{ t('pages.y3_7.title') }}</h1>
+      <p class="intro">{{ t('pages.y3_7.intro') }}</p>
       <div class="status-row">
-        <span>Mine {{ Math.min(currentIndex + 1, mines.length) }} / {{ mines.length }}</span>
-        <span>Shield {{ hp }} / {{ maxHp }}</span>
+        <span>{{ t('pages.y3_7.mineCounter', { current: Math.min(currentIndex + 1, mines.length), total: mines.length }) }}</span>
+        <span>{{ t('pages.y3_7.shieldCounter', { current: hp, total: maxHp }) }}</span>
       </div>
     </section>
 
@@ -23,16 +20,16 @@
 
       <div class="spell-panel">
         <button class="spell-btn fatal" type="button" @click="castSpell('fatal')">
-          <b>Lethal Dispel</b>
-          <small>Deadline / hard threshold / immediate application-killer</small>
+          <b>{{ t('pages.y3_7.spells.fatal.name') }}</b>
+          <small>{{ t('pages.y3_7.spells.fatal.desc') }}</small>
         </button>
         <button class="spell-btn severe" type="button" @click="castSpell('severe')">
-          <b>Bog Purge</b>
-          <small>High-risk process, agency, contract, language or document issue</small>
+          <b>{{ t('pages.y3_7.spells.severe.name') }}</b>
+          <small>{{ t('pages.y3_7.spells.severe.desc') }}</small>
         </button>
         <button class="spell-btn minor" type="button" @click="castSpell('minor')">
-          <b>Thorn Pruning</b>
-          <small>Professionalism / efficiency problem that should still be fixed</small>
+          <b>{{ t('pages.y3_7.spells.minor.name') }}</b>
+          <small>{{ t('pages.y3_7.spells.minor.desc') }}</small>
         </button>
       </div>
 
@@ -53,122 +50,52 @@
 
 <script setup>
 import { computed, reactive, ref } from 'vue'
+import { useAppI18n } from '@/composables/useAppI18n'
 
 const emit = defineEmits(['complete', 'close'])
+const { t, tm } = useAppI18n()
 
 const maxHp = 6
-const mines = [
-  {
-    text: 'Missing the application deadline',
-    type: 'fatal',
-    title: 'Lethal Blunder',
-    desc: 'Most university systems close automatically when the deadline passes. There may be no appeal path.'
-  },
-  {
-    text: 'Recommendation letter is missing letterhead and signature',
-    type: 'severe',
-    title: 'Severe Document Wound',
-    desc: 'The school may request a re-upload and delay review. Check letter format before submission.'
-  },
-  {
-    text: 'IELTS sub-score is 0.5 below the program requirement',
-    type: 'fatal',
-    title: 'Language Threshold Trap',
-    desc: 'Overall score is not enough when a program sets minimum writing, speaking or other sub-score requirements.'
-  },
-  {
-    text: 'Only checking overall IELTS/TOEFL score and ignoring Writing/Speaking minimums',
-    type: 'fatal',
-    title: 'Sub-score Mine',
-    desc: 'Read the official program page and verify total score, every sub-score, accepted tests and waiver policy.'
-  },
-  {
-    text: 'Using a language score that expires before enrollment registration',
-    type: 'fatal',
-    title: 'Expired Scroll',
-    desc: 'IELTS/TOEFL scores are usually valid for two years from test date. Plan around enrollment, not only submission.'
-  },
-  {
-    text: 'Waiting until late October for your first language test attempt',
-    type: 'severe',
-    title: 'Timing Wound',
-    desc: 'Aim for a qualifying result before summer ends; reserve September-October for retakes and score delivery time.'
-  },
-  {
-    text: 'Trusting an agency screenshot instead of reading official program requirements',
-    type: 'severe',
-    title: 'Borrowed Eyes Curse',
-    desc: 'Admissions pages are the source of truth. Requirements vary by university, program and even track.'
-  },
-  {
-    text: 'Assuming an English-taught degree automatically waives language tests',
-    type: 'severe',
-    title: 'Waiver Mirage',
-    desc: 'Waiver policies differ. Confirm the exact rule before deleting IELTS/TOEFL from your plan.'
-  },
-  {
-    text: 'Agency promises guaranteed Top 10 admission or a private deal with admissions officers',
-    type: 'severe',
-    title: 'Agency Siren Song',
-    desc: 'No consultant can guarantee an offer. Treat guarantee language and insider-deal claims as red flags.'
-  },
-  {
-    text: 'Signing with an agency that refuses to share application email, account or password',
-    type: 'severe',
-    title: 'Locked Account Trap',
-    desc: 'You are the owner of the application. Keep portal access, submitted forms and final review power.'
-  },
-  {
-    text: "Contract says 'premium service' but skips school list, advisor name, revision limit and refund rules",
-    type: 'severe',
-    title: 'Foggy Contract',
-    desc: 'Make the contract concrete: program list, shared accounts, named advisor, revision rules, staged payment, refunds and extra fees.'
-  },
-  {
-    text: 'Paying the entire agency fee on day one',
-    type: 'severe',
-    title: 'Payment Lock',
-    desc: 'Prefer milestone payment. Do not give away all leverage before essay drafting, submission and result follow-up.'
-  },
-  {
-    text: 'All sample essays from an agency sound like the same polished stranger',
-    type: 'minor',
-    title: 'Template Smell',
-    desc: 'Template writing weakens the PS. Keep brainstorming, evidence, editing and final review in your hands.'
-  },
-  {
-    text: 'Choosing an agency only from its own success posters',
-    type: 'minor',
-    title: 'Reputation Blind Spot',
-    desc: 'Search outside reviews and talk to previous students when possible. Success posters are advertising, not due diligence.'
-  },
-  {
-    text: 'Buying random test-prep packages but skipping official guides, Cambridge IELTS papers and TOEFL TPO-style practice',
-    type: 'minor',
-    title: 'Resource Detour',
-    desc: 'Use core official-style prep, timed practice and error analysis before paying for shortcut promises.'
-  },
-  {
-    text: "Naming all documents '1.pdf'",
-    type: 'minor',
-    title: 'Impression Blunder',
-    desc: 'A messy attachment pile looks careless. Use predictable names such as Name_Program_CV.pdf.'
-  }
+const mineTypes = [
+  'fatal',
+  'severe',
+  'fatal',
+  'fatal',
+  'fatal',
+  'severe',
+  'severe',
+  'severe',
+  'severe',
+  'severe',
+  'severe',
+  'severe',
+  'minor',
+  'minor',
+  'minor',
+  'minor',
 ]
+const mines = computed(() => {
+  const localizedMines = tm('pages.y3_7.mines') || []
+  return localizedMines.map((mine, index) => ({
+    ...mine,
+    type: mineTypes[index],
+  }))
+})
 
 const currentIndex = ref(0)
 const hp = ref(maxHp)
 const damageFlash = ref(false)
-const hint = ref('Choose the spell that matches the risk level.')
+const hint = ref(t('pages.y3_7.hintInitial'))
 const feedback = reactive({
   show: false,
   correct: true,
   title: '',
   desc: '',
-  nextText: 'Continue Purging'
+  nextText: t('pages.y3_7.continuePurging')
 })
 
 const currentMine = computed(() => mines[currentIndex.value])
+const spellName = (type) => t(`pages.y3_7.spells.${type}.name`)
 
 function castSpell(spellType) {
   if (!currentMine.value || feedback.show) return
@@ -177,13 +104,15 @@ function castSpell(spellType) {
     feedback.correct = true
     feedback.title = currentMine.value.title
     feedback.desc = currentMine.value.desc
-    feedback.nextText = currentIndex.value === mines.length - 1 ? 'Proceed to Coronation' : 'Continue Purging'
+    feedback.nextText = currentIndex.value === mines.value.length - 1
+      ? t('pages.y3_7.proceedToCoronation')
+      : t('pages.y3_7.continuePurging')
     feedback.show = true
     return
   }
 
   hp.value -= 1
-  hint.value = `Wrong spell. This mine is not "${spellType}". Shield remaining: ${hp.value}.`
+  hint.value = t('pages.y3_7.wrongSpell', { spell: spellName(spellType), hp: hp.value })
   damageFlash.value = true
   window.setTimeout(() => {
     damageFlash.value = false
@@ -191,9 +120,9 @@ function castSpell(spellType) {
 
   if (hp.value <= 0) {
     feedback.correct = false
-    feedback.title = 'Shield Shattered'
-    feedback.desc = 'You stepped on too many hidden mines. Restart the trial and classify the risk before clicking.'
-    feedback.nextText = 'Retry Trial'
+    feedback.title = t('pages.y3_7.shieldBrokenTitle')
+    feedback.desc = t('pages.y3_7.shieldBrokenDesc')
+    feedback.nextText = t('pages.y3_7.retryTrial')
     feedback.show = true
   }
 }
@@ -202,7 +131,7 @@ function nextAfterFeedback() {
   if (!feedback.correct) {
     hp.value = maxHp
     currentIndex.value = 0
-    hint.value = 'Shield restored. Read the risk carefully before casting.'
+    hint.value = t('pages.y3_7.hintRestored')
     feedback.show = false
     return
   }
@@ -210,10 +139,10 @@ function nextAfterFeedback() {
   feedback.show = false
   currentIndex.value += 1
 
-  if (currentIndex.value >= mines.length) {
+  if (currentIndex.value >= mines.value.length) {
     emit('complete', { game: 'bog-sweeper', hpLeft: hp.value })
   } else {
-    hint.value = 'Mine purged. Continue scanning.'
+    hint.value = t('pages.y3_7.hintContinue')
   }
 }
 </script>

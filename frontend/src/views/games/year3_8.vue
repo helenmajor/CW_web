@@ -1,24 +1,21 @@
 <template>
   <div class="coronation-game">
-    <button class="close-btn" type="button" @click="$emit('close')">Back to Map</button>
+    <button class="close-btn" type="button" @click="$emit('close')">{{ t('pages.y3_8.back') }}</button>
 
     <div class="confetti-field" aria-hidden="true">
       <i v-for="piece in confettiPieces" :key="piece" :style="confettiStyle(piece)"></i>
     </div>
 
     <section class="ceremony-room">
-      <p class="eyebrow">Y3-8 Astral Coronation Hall</p>
-      <h1>The Astral Coronation Ceremony</h1>
+      <p class="eyebrow">{{ t('pages.y3_8.eyebrow') }}</p>
+      <h1>{{ t('pages.y3_8.title') }}</h1>
 
       <article class="certificate">
-        <div class="cert-header">GradQuest Scroll of Mastery</div>
-        <p>This certifies that the illustrious trailblazer</p>
+        <div class="cert-header">{{ t('pages.y3_8.certHeader') }}</div>
+        <p>{{ t('pages.y3_8.certIntro') }}</p>
         <div class="cert-name">{{ playerName }}</div>
-        <p>
-          has navigated the fogs of Year 2 and the dark bogs of Year 3, mastering the
-          application arc from self-positioning to final submission.
-        </p>
-        <strong class="title-grant">Title Granted: Archmage Applicant</strong>
+        <p>{{ t('pages.y3_8.certBody') }}</p>
+        <strong class="title-grant">{{ t('pages.y3_8.titleGrant') }}</strong>
         <div class="wax-seal">GQ<br>OFFICIAL</div>
       </article>
 
@@ -29,7 +26,7 @@
       </div>
 
       <button class="complete-btn" type="button" @click="$emit('complete', { game: 'astral-coronation' })">
-        Complete Coronation
+        {{ t('pages.y3_8.complete') }}
       </button>
     </section>
   </div>
@@ -37,19 +34,16 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useAppI18n } from '@/composables/useAppI18n'
 import { useGameStore } from '@/stores/game'
 
 defineEmits(['complete', 'close'])
 
 const store = useGameStore()
-const playerName = computed(() => store.travelerProfile?.name || 'Brave Adventurer')
+const { t, tm } = useAppI18n()
+const playerName = computed(() => store.travelerProfile?.name || t('pages.y3_8.defaultPlayerName'))
 const confettiPieces = Array.from({ length: 60 }, (_, index) => index)
-const rewards = [
-  '1-on-1 Elite Academy Prophecy Ticket',
-  'Deep Counsel with Senior Phantoms',
-  "Archmage's Handwritten Recommendation",
-  'Ticket to the Artifact Forging Workshop'
-]
+const rewards = computed(() => tm('pages.y3_8.rewards') || [])
 
 function confettiStyle(index) {
   const colors = ['#fde047', '#38bdf8', '#86efac', '#fca5a5']

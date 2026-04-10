@@ -17,6 +17,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useAppI18n } from '@/composables/useAppI18n'
 
 const props = defineProps({
   modelValue: {
@@ -41,7 +42,7 @@ const props = defineProps({
   },
   primaryText: {
     type: String,
-    default: '继续 / Continue',
+    default: '',
   },
   secondaryText: {
     type: String,
@@ -51,7 +52,9 @@ const props = defineProps({
 
 defineEmits(['update:modelValue', 'primary', 'secondary'])
 
+const { t } = useAppI18n()
 const toneClass = computed(() => `tone-${props.tone}`)
+const primaryText = computed(() => props.primaryText || t('common.actions.continue'))
 </script>
 
 <style scoped>

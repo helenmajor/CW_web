@@ -2,13 +2,13 @@
   <div class="action-game">
     <section class="astrolabe-room">
       <div class="header">
-        <h2><i class="fas fa-atom"></i> Astrolabe of Destiny</h2>
-        <p>You possess <b>10 drops of Stardust</b>. Allocate them into actions with the highest real return.</p>
+        <h2><i class="fas fa-atom"></i> {{ t('pages.y2_5.title') }}</h2>
+        <p v-html="t('pages.y2_5.subtitle')"></p>
       </div>
 
       <div class="energy-panel">
         <i class="fas fa-star energy-icon"></i>
-        <span>Available Stardust</span>
+        <span>{{ t('pages.y2_5.available') }}</span>
         <strong>{{ availableAP }}</strong>
       </div>
 
@@ -27,13 +27,13 @@
 
       <div class="action-area">
         <button type="button" class="btn-predict" @click="generateProphecy">
-          <i class="fas fa-eye"></i> Gaze into the Astrolabe
+          <i class="fas fa-eye"></i> {{ t('pages.y2_5.predict') }}
         </button>
       </div>
 
       <section v-if="prophecy" class="prophecy-panel">
-        <div class="prophecy-title"><i class="fas fa-scroll"></i> Prophecy: Personalized Action Guide</div>
-        <p class="muted">Based on your allocation, the system extracted your top 3 priorities:</p>
+        <div class="prophecy-title"><i class="fas fa-scroll"></i> {{ t('pages.y2_5.prophecyTitle') }}</div>
+        <p class="muted">{{ t('pages.y2_5.prophecyIntro') }}</p>
 
         <div class="top-3-list">
           <div v-for="item in topTasks" :key="item.id" class="top-item">
@@ -43,12 +43,8 @@
         </div>
 
         <div class="analysis-text" v-html="prophecy"></div>
-        <div class="seasonal-pact">
-          <b>Seasonal Pact:</b> screen agencies around <b>February-April</b> and decide before <b>July-August</b>.
-          Finish a target language score by the <b>end of summer</b>; reserve <b>September-October</b> for retakes, essays, forms, and official requirement checks.
-          A consultant may assist, but you must keep the application email/portal access and final approval.
-        </div>
-        <button type="button" class="btn-complete" @click="emit('complete')">Commit This Allocation & Return</button>
+        <div class="seasonal-pact" v-html="t('pages.y2_5.pact')"></div>
+        <button type="button" class="btn-complete" @click="emit('complete')">{{ t('pages.y2_5.complete') }}</button>
       </section>
     </section>
   </div>
@@ -56,29 +52,37 @@
 
 <script setup>
 import { computed, reactive, ref } from 'vue'
+import { useAppI18n } from '@/composables/useAppI18n'
 
 const emit = defineEmits(['complete', 'close'])
+const { t } = useAppI18n()
 
 const maxAP = 10
 const maxTaskAP = 5
-const tasks = [
-  { id: 'gpa', emoji: '📚', name: 'Study Grimoires', desc: 'Boost GPA', icon: 'fa-book' },
-  { id: 'lang', emoji: '🗣️', name: "Siren's Song", desc: 'Ace IELTS / TOEFL', icon: 'fa-language' },
-  { id: 'proj', emoji: '⚙️', name: 'Alchemical Constructs', desc: 'Hardcore Projects', icon: 'fa-cogs' },
-  { id: 'res', emoji: '🔬', name: 'Assist Archmage', desc: 'Academic Research', icon: 'fa-microscope' },
-  { id: 'int', emoji: '💼', name: 'Guild Commission', desc: 'Top-tier Internship', icon: 'fa-briefcase' },
-  { id: 'comp', emoji: '⚔️', name: 'Royal Colosseum', desc: 'ACM / Pro Contests', icon: 'fa-trophy' },
-  { id: 'info', emoji: '🔮', name: 'Truth Crystal', desc: 'Research Programs', icon: 'fa-globe' },
-  { id: 'net', emoji: '🦉', name: 'Phantom Seers', desc: 'Networking / Emails', icon: 'fa-comments' },
+const taskDefs = [
+  { id: 'gpa', emoji: '📚', icon: 'fa-book' },
+  { id: 'lang', emoji: '🗣️', icon: 'fa-language' },
+  { id: 'proj', emoji: '⚙️', icon: 'fa-cogs' },
+  { id: 'res', emoji: '🔬', icon: 'fa-microscope' },
+  { id: 'int', emoji: '💼', icon: 'fa-briefcase' },
+  { id: 'comp', emoji: '⚔️', icon: 'fa-trophy' },
+  { id: 'info', emoji: '🔮', icon: 'fa-globe' },
+  { id: 'net', emoji: '🦉', icon: 'fa-comments' },
 ]
 
-const points = reactive(Object.fromEntries(tasks.map((task) => [task.id, 0])))
+const tasks = computed(() => taskDefs.map((task) => ({
+  ...task,
+  name: t(`pages.y2_5.tasks.${task.id}.name`),
+  desc: t(`pages.y2_5.tasks.${task.id}.desc`),
+})))
+
+const points = reactive(Object.fromEntries(taskDefs.map((task) => [task.id, 0])))
 const prophecy = ref('')
 
 const spentAP = computed(() => Object.values(points).reduce((sum, value) => sum + value, 0))
 const availableAP = computed(() => maxAP - spentAP.value)
 const topTasks = computed(() => (
-  [...tasks].sort((a, b) => points[b.id] - points[a.id]).slice(0, 3)
+  [...tasks.value].sort((a, b) => points[b.id] - points[a.id]).slice(0, 3)
 ))
 
 function updateAP(taskId, delta) {
@@ -90,31 +94,27 @@ function updateAP(taskId, delta) {
 
 function generateProphecy() {
   if (availableAP.value > 0) {
-    window.alert(`Your astrolabe still holds ${availableAP.value} unallocated Stardust.`)
+    window.alert(t('pages.y2_5.alertUnspent', { count: availableAP.value }))
     return
   }
 
   const softInfo = points.info + points.net
   if (softInfo >= 4) {
-    prophecy.value = `<strong>Seer's Warning: the illusion of "working hard".</strong><br>
-    You are spending too much Stardust on researching lists or vague networking. Seniors, consultants, and agency scripts cannot replace GPA, projects, research output, or internships. Move energy back into evidence.`
+    prophecy.value = t('pages.y2_5.prophecy.softInfo')
     return
   }
 
   if (points.int >= 3 && points.proj >= 2 && points.gpa >= 2) {
-    prophecy.value = `<strong>The stars align for a tech-heavy path.</strong><br>
-    You identified a strong moat: <span class="highlight-roi">hardcore project + meaningful internship + stable GPA</span>. Keep language on schedule and turn these experiences into quantified essay / CV evidence.`
+    prophecy.value = t('pages.y2_5.prophecy.techPath')
     return
   }
 
   if (points.res >= 4 && points.lang === 0) {
-    prophecy.value = `<strong>The lopsided academic eccentric.</strong><br>
-    Research is valuable, but language scores are hard thresholds. If IELTS / TOEFL misses the requirement, elite portals may stay sealed even for a strong laboratory profile.`
+    prophecy.value = t('pages.y2_5.prophecy.researchNoLang')
     return
   }
 
-  prophecy.value = `<strong>A steady, but ordinary cultivation route.</strong><br>
-  No fatal allocation error appeared. Now choose an explosive focus: a high-value internship, a heavyweight project, publishable research, or a serious competition result.`
+  prophecy.value = t('pages.y2_5.prophecy.steady')
 }
 </script>
 

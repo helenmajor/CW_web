@@ -1,25 +1,22 @@
 <template>
   <div class="final-trial">
-    <button class="close-btn" type="button" @click="$emit('close')">Back to Map</button>
+    <button class="close-btn" type="button" @click="$emit('close')">{{ t('pages.y2_7.back') }}</button>
 
     <section class="trial-room">
-      <p class="eyebrow">Y2-7 Ultimate Trial</p>
-      <h1>Golden Ticket Gacha</h1>
+      <p class="eyebrow">{{ t('pages.y2_7.eyebrow') }}</p>
+      <h1>{{ t('pages.y2_7.title') }}</h1>
 
       <div v-if="!quizPassed" class="quiz-panel">
-        <p class="question">
-          After reading senior cases, comparing target tiers and planning artifacts, what mindset
-          should guide the next application stage?
-        </p>
+        <p class="question">{{ t('pages.y2_7.question') }}</p>
 
         <button class="answer-btn" type="button" @click="checkAnswer(false)">
-          A. Join every trend, panic-scroll rankings and copy someone else's route.
+          {{ t('pages.y2_7.answers.a') }}
         </button>
         <button class="answer-btn featured" type="button" @click="checkAnswer(true)">
-          B. Define a target tier early, then build evidence, language score and story around it.
+          {{ t('pages.y2_7.answers.b') }}
         </button>
         <button class="answer-btn" type="button" @click="checkAnswer(false)">
-          C. Wait for Year 4 deadlines; applications become clearer when time is almost gone.
+          {{ t('pages.y2_7.answers.c') }}
         </button>
 
         <p v-if="error" class="error-text" :class="{ shake: errorShake }">
@@ -28,8 +25,8 @@
       </div>
 
       <div v-else class="gacha-panel">
-        <h2>Trial Passed</h2>
-        <p>Spin the relic machine and carry your Year 2 strategy into application season.</p>
+        <h2>{{ t('pages.y2_7.passedTitle') }}</h2>
+        <p>{{ t('pages.y2_7.passedDesc') }}</p>
 
         <button
           class="gacha-machine"
@@ -38,26 +35,23 @@
           :disabled="isSpinning || ticketOpen"
           @click="playGacha"
         >
-          <span class="machine-top">GQ</span>
+          <span class="machine-top">{{ t('pages.y2_7.machineTop') }}</span>
           <span class="machine-orb"></span>
-          <span class="machine-base">SPIN</span>
+          <span class="machine-base">{{ t('pages.y2_7.machineBottom') }}</span>
         </button>
       </div>
     </section>
 
     <div class="ticket-layer" :class="{ active: ticketOpen }" @click.self="ticketOpen = false">
-      <section class="golden-ticket" :class="{ active: ticketOpen }" aria-label="Golden ticket reward">
-        <p class="ticket-kicker">Golden Ticket</p>
-        <h2>Year 2 Perfect Clear Voucher</h2>
+      <section class="golden-ticket" :class="{ active: ticketOpen }" :aria-label="t('pages.y2_7.ticketTitle')">
+        <p class="ticket-kicker">{{ t('pages.y2_7.ticketKicker') }}</p>
+        <h2>{{ t('pages.y2_7.ticketTitle') }}</h2>
         <div class="reward-box">
-          1-on-1 Prophecy Consultation with an Elite Application Archmage
+          {{ t('pages.y2_7.rewardBox') }}
         </div>
-        <p class="ticket-copy">
-          Pack your evidence, school tiers, timeline and contract-defense notes. Year 3 begins
-          with a sharper plan.
-        </p>
+        <p class="ticket-copy">{{ t('pages.y2_7.ticketCopy') }}</p>
         <button class="claim-btn" type="button" @click="claimTicket">
-          Claim Ticket & Advance
+          {{ t('pages.y2_7.claim') }}
         </button>
       </section>
     </div>
@@ -66,8 +60,10 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useAppI18n } from '@/composables/useAppI18n'
 
 const emit = defineEmits(['complete', 'close'])
+const { t } = useAppI18n()
 
 const quizPassed = ref(false)
 const error = ref('')
@@ -84,7 +80,7 @@ function checkAnswer(isCorrect) {
     return
   }
 
-  error.value = 'Blind anxiety and procrastination are traps. Build a target-based artifact plan.'
+  error.value = t('pages.y2_7.error')
   errorShake.value = false
   window.requestAnimationFrame(() => {
     errorShake.value = true

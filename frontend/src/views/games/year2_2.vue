@@ -1,19 +1,19 @@
 ﻿<template>
   <div class="crossroads-game">
     <div class="header">
-      <h2><i class="fas fa-compass"></i> Crossroads of Destiny</h2>
-      <p>The portals are dormant. Your choices will manifest the energy required to open them.</p>
+      <h2><i class="fas fa-compass"></i> {{ t('pages.y2_2.title') }}</h2>
+      <p>{{ t('pages.y2_2.subtitle') }}</p>
     </div>
 
     <div class="portals">
       <div class="portal portal-uk" :class="portalClass('uk')">
         <div class="portal-icon">🏰</div>
-        <div class="portal-name">Path of Albion<br>(UK)</div>
+        <div class="portal-name">{{ t('pages.y2_2.routes.uk') }}</div>
       </div>
 
       <div class="portal portal-hk" :class="portalClass('hk')">
         <div class="portal-icon">🌆</div>
-        <div class="portal-name">Path of the Orient<br>(HK)</div>
+        <div class="portal-name">{{ t('pages.y2_2.routes.hk') }}</div>
       </div>
     </div>
 
@@ -39,7 +39,7 @@
         <div class="tarot-title">{{ result.title }}</div>
         <div class="tarot-icon">{{ result.icon }}</div>
         <div class="tarot-desc" v-html="result.desc"></div>
-        <button type="button" class="btn-claim" @click="emit('complete')">Accept Visa & Proceed</button>
+        <button type="button" class="btn-claim" @click="emit('complete')">{{ t('pages.y2_2.claim') }}</button>
       </div>
     </div>
   </div>
@@ -47,52 +47,34 @@
 
 <script setup>
 import { computed, reactive, ref } from 'vue'
+import { useAppI18n } from '@/composables/useAppI18n'
 
 const emit = defineEmits(['complete', 'close'])
+const { t, tm } = useAppI18n()
 
-const questions = [
-  {
-    q: 'Facing the unknown journey of cultivation, where do you wish to go?',
+const questions = computed(() => {
+  const localizedQuestions = tm('pages.y2_2.questions') || []
+  return localizedQuestions.map((item) => ({
+    q: item.q,
     choices: [
-      { text: 'Travel across the ocean to immerse myself in authentic western magic academy culture.', type: 'uk' },
-      { text: 'Stay in the familiar Pearl of the Orient, where diet and culture seamlessly connect.', type: 'hk' },
+      { text: item.choices[0], type: 'uk' },
+      { text: item.choices[1], type: 'hk' },
     ],
-  },
-  {
-    q: 'Where do you plan to unroll your magic scroll after graduation?',
-    choices: [
-      { text: 'Pursue elite prestige, aiming to shine in top global giants or domestic tech titans.', type: 'uk' },
-      { text: 'Seek high-intensity practical internships to rapidly establish roots in Asian finance / tech.', type: 'hk' },
-    ],
-  },
-  {
-    q: 'Which resource is currently more abundant in your inventory?',
-    choices: [
-      { text: 'I have an ample budget of gold coins and wish to experience foreign life more leisurely.', type: 'uk' },
-      { text: 'My time and budget are tactical; I seek cost-effectiveness and rapid employment.', type: 'hk' },
-    ],
-  },
-]
+  }))
+})
 
 const currentQ = ref(0)
 const scores = reactive({ uk: 0, hk: 0 })
 const showResult = ref(false)
 const winner = ref('uk')
 
-const question = computed(() => questions[currentQ.value] || null)
+const question = computed(() => questions.value[currentQ.value] || null)
 const result = computed(() => {
-  if (winner.value === 'uk') {
-    return {
-      title: 'Visa: Explorer of Albion',
-      icon: '🏰',
-      desc: '<b>Your soul resonates with: The United Kingdom</b><br><br>You pursue elite academies and orthodox scholarly experiences. Prepare your resources, check each program carefully, and embrace a broad magical horizon.',
-    }
-  }
-
+  const localizedResult = tm(`pages.y2_2.results.${winner.value}`)
   return {
-    title: 'Visa: Pragmatist of the Orient',
-    icon: '🌆',
-    desc: '<b>Your soul resonates with: Hong Kong</b><br><br>You value pace, cost-effectiveness, and proximity to Asian finance / tech hubs. Build a focused list and move quickly when portals open.',
+    title: localizedResult?.title || '',
+    icon: winner.value === 'uk' ? '🏰' : '🌆',
+    desc: localizedResult?.desc || '',
   }
 })
 
@@ -105,7 +87,7 @@ function answerQuestion(type) {
   scores[type] += 1
   currentQ.value += 1
 
-  if (currentQ.value >= questions.length) {
+  if (currentQ.value >= questions.value.length) {
     winner.value = scores.uk > scores.hk ? 'uk' : 'hk'
     showResult.value = true
   }

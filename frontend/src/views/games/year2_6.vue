@@ -1,24 +1,21 @@
 <template>
   <div class="contract-game">
     <section class="hero-strip">
-      <button class="close-btn" type="button" @click="$emit('close')">Back to Map</button>
+      <button class="close-btn" type="button" @click="$emit('close')">{{ t('pages.y2_6.back') }}</button>
       <div>
-        <p class="eyebrow">Y2-6 Contract Guardian</p>
-        <h1>Seal Every Risky Clause</h1>
-        <p class="intro">
-          Match each safety shield to the suspicious agency contract clause. You keep the login,
-          final review power and payment leverage.
-        </p>
+        <p class="eyebrow">{{ t('pages.y2_6.eyebrow') }}</p>
+        <h1>{{ t('pages.y2_6.title') }}</h1>
+        <p class="intro">{{ t('pages.y2_6.intro') }}</p>
       </div>
       <div class="progress-pill">
-        Protected {{ protectedCount }} / {{ clauses.length }}
+        {{ t('pages.y2_6.progress', { current: protectedCount, total: clauses.length }) }}
       </div>
     </section>
 
     <main class="workspace">
-      <section class="shield-pool" aria-label="Safety shields">
-        <h2>Safety Shields</h2>
-        <p class="hint">Click a shield, then click the matching clause. Desktop drag also works.</p>
+      <section class="shield-pool" :aria-label="t('pages.y2_6.shieldsTitle')">
+        <h2>{{ t('pages.y2_6.shieldsTitle') }}</h2>
+        <p class="hint">{{ t('pages.y2_6.shieldsHint') }}</p>
 
         <div class="shield-grid">
           <button
@@ -39,13 +36,15 @@
         </div>
       </section>
 
-      <section class="contract-scroll" aria-label="Agency contract draft">
+      <section class="contract-scroll" :aria-label="t('pages.y2_6.contractTitle')">
         <div class="contract-header">
           <div>
-            <p class="eyebrow dark">Draft Service Contract</p>
-            <h2>Find the trap. Attach the shield.</h2>
+            <p class="eyebrow dark">{{ t('pages.y2_6.contractEyebrow') }}</p>
+            <h2>{{ t('pages.y2_6.contractTitle') }}</h2>
           </div>
-          <span class="seal" :class="{ ready: protectedCount === clauses.length }">SEALED</span>
+          <span class="seal" :class="{ ready: protectedCount === clauses.length }">
+            {{ protectedCount === clauses.length ? t('pages.y2_6.sealReady') : t('pages.y2_6.sealPending') }}
+          </span>
         </div>
 
         <article
@@ -63,25 +62,25 @@
         >
           <div class="clause-topline">
             <h3>{{ clause.title }}</h3>
-            <span>{{ protectedIds.has(clause.id) ? 'Protected' : 'Risky' }}</span>
+            <span>{{ protectedIds.has(clause.id) ? t('pages.y2_6.protected') : t('pages.y2_6.risky') }}</span>
           </div>
           <p class="draft-text">"{{ clause.draft }}"</p>
           <div class="drop-zone">
             <template v-if="protectedIds.has(clause.id)">
-              <b>{{ shieldMap[clause.id].name }}</b>
+              <b>{{ shieldMap[clause.id]?.name }}</b>
               <small>{{ clause.explanation }}</small>
             </template>
             <template v-else-if="selectedShieldId === clause.id">
-              Release: this is the correct clause.
+              {{ t('pages.y2_6.correctClause') }}
             </template>
             <template v-else>
-              Select or drop the matching shield here.
+              {{ t('pages.y2_6.dropHere') }}
             </template>
           </div>
         </article>
 
         <button class="complete-btn" type="button" :disabled="protectedCount !== clauses.length" @click="finish">
-          Seal Contract & Return to Map
+          {{ t('pages.y2_6.complete') }}
         </button>
       </section>
     </main>
@@ -94,141 +93,51 @@
 
 <script setup>
 import { computed, reactive, ref } from 'vue'
+import { useAppI18n } from '@/composables/useAppI18n'
 
 const emit = defineEmits(['complete', 'close'])
+const { t, tm } = useAppI18n()
 
-const shields = [
-  {
-    id: 'guarantee',
-    icon: '!',
-    name: 'Reject Guaranteed Offers',
-    short: 'No one can promise Top 10 / Top 30 admission'
-  },
-  {
-    id: 'email',
-    icon: '@',
-    name: 'Shared Application Email',
-    short: 'You must own the accounts and passwords'
-  },
-  {
-    id: 'template',
-    icon: 'PS',
-    name: 'Personal Essay Review',
-    short: 'Template statements erase your real story'
-  },
-  {
-    id: 'consultant',
-    icon: 'ID',
-    name: 'Named Advisor in Contract',
-    short: 'Lock advisor name, role and handover rules'
-  },
-  {
-    id: 'research',
-    icon: 'R',
-    name: 'Independent Reputation Check',
-    short: 'Cross-check reviews and past students'
-  },
-  {
-    id: 'timing',
-    icon: '2-8',
-    name: 'Choose Agency by Summer',
-    short: 'Research after Spring Festival; decide before July/Aug'
-  },
-  {
-    id: 'payment',
-    icon: '$',
-    name: 'Milestone Payment',
-    short: 'Pay in stages; avoid full payment at signing'
-  },
-  {
-    id: 'refund',
-    icon: '%',
-    name: 'Clear Refund Rule',
-    short: 'Define refusal refund ratio and missing-school refund'
-  },
-  {
-    id: 'fees',
-    icon: '+',
-    name: 'Third-party Fee Inventory',
-    short: 'Application, postage, translation and verification costs'
-  }
+const shieldMeta = [
+  { id: 'guarantee', icon: '!' },
+  { id: 'email', icon: '@' },
+  { id: 'template', icon: 'PS' },
+  { id: 'consultant', icon: 'ID' },
+  { id: 'research', icon: 'R' },
+  { id: 'timing', icon: '2-8' },
+  { id: 'payment', icon: '$' },
+  { id: 'refund', icon: '%' },
+  { id: 'fees', icon: '+' },
 ]
 
-const clauses = [
-  {
-    id: 'guarantee',
-    title: 'Clause 1 - Admission Promise',
-    draft: 'We guarantee a Top 30 offer and have private access to famous university admission officers.',
-    explanation: 'Application outcomes depend on fit, evidence and that year\'s competition. A guarantee is a red flag.'
-  },
-  {
-    id: 'email',
-    title: 'Clause 2 - Portal Access',
-    draft: 'The agency manages all application emails and portals. Account names and passwords are not provided to students.',
-    explanation: 'You need direct login, final review power and the ability to verify every submitted material.'
-  },
-  {
-    id: 'template',
-    title: 'Clause 3 - Personal Statement',
-    draft: 'We provide standardized high-quality essays. Students do not need deep brainstorming.',
-    explanation: 'A strong statement is specific to your academic path, evidence and motivation.'
-  },
-  {
-    id: 'consultant',
-    title: 'Clause 4 - Advisor Assignment',
-    draft: 'The company will assign or replace consultants internally according to business needs.',
-    explanation: 'Ask for the consultant name, experience and replacement process in writing.'
-  },
-  {
-    id: 'research',
-    title: 'Clause 5 - Agency Reputation',
-    draft: 'Our selected success cases are enough. No additional student references are necessary.',
-    explanation: 'Check multiple public channels and try to contact previous students for real feedback.'
-  },
-  {
-    id: 'timing',
-    title: 'Clause 6 - Signing Schedule',
-    draft: 'Signing in October is perfectly fine. We can rush every application near the deadline.',
-    explanation: 'Start screening agencies around February to April; finalize before summer if you need one.'
-  },
-  {
-    id: 'payment',
-    title: 'Clause 7 - Payment Method',
-    draft: 'Students should pay the full consulting fee when signing the contract to secure a discount.',
-    explanation: 'Milestone payment keeps service quality visible: signing, essay approval and offer/results.'
-  },
-  {
-    id: 'refund',
-    title: 'Clause 8 - Refund',
-    draft: 'If no offer arrives, the company may return part of the fee at its final discretion.',
-    explanation: 'Put exact refund conditions, ratios and school-count obligations into the contract.'
-  },
-  {
-    id: 'fees',
-    title: 'Clause 9 - Extra Fees',
-    draft: 'Third-party expenses are excluded and the agency will notify the student about exact amounts later.',
-    explanation: 'List what is included and excluded before signing, especially application and credential fees.'
-  }
-]
+const shields = computed(() => {
+  const localizedShields = tm('pages.y2_6.shields') || []
+  return shieldMeta.map((shield, index) => ({
+    ...shield,
+    ...(localizedShields[index] || {}),
+  }))
+})
+
+const clauses = computed(() => tm('pages.y2_6.clauses') || [])
 
 const protectedIds = reactive(new Set())
 const selectedShieldId = ref('')
 const draggedShieldId = ref('')
-const feedback = ref('Select a safety shield. Matching correctly will protect one clause.')
+const feedback = ref(t('pages.y2_6.feedback.initial'))
 
-const shieldMap = computed(() => Object.fromEntries(shields.map((shield) => [shield.id, shield]))).value
+const shieldMap = computed(() => Object.fromEntries(shields.value.map((shield) => [shield.id, shield])))
 const protectedCount = computed(() => protectedIds.size)
 
 function selectShield(id) {
   if (protectedIds.has(id)) {
-    feedback.value = 'That shield is already attached to its clause.'
+    feedback.value = t('pages.y2_6.feedback.alreadyUsed')
     return
   }
 
   selectedShieldId.value = selectedShieldId.value === id ? '' : id
   feedback.value = selectedShieldId.value
-    ? `Selected: ${shieldMap[id].name}. Now attach it to the matching clause.`
-    : 'Selection cleared.'
+    ? t('pages.y2_6.feedback.selected', { name: shieldMap.value[id]?.name || '' })
+    : t('pages.y2_6.feedback.cleared')
 }
 
 function startDrag(event, id) {
@@ -258,27 +167,30 @@ function tryApply(shieldId, clauseId) {
   if (!shieldId) return
 
   if (protectedIds.has(clauseId)) {
-    feedback.value = 'This clause is already protected.'
+    feedback.value = t('pages.y2_6.feedback.clauseProtected')
     return
   }
 
   if (shieldId !== clauseId) {
-    feedback.value = `Mismatch. "${shieldMap[shieldId].name}" protects a different risk.`
+    feedback.value = t('pages.y2_6.feedback.mismatch', { name: shieldMap.value[shieldId]?.name || '' })
     return
   }
 
   protectedIds.add(clauseId)
   selectedShieldId.value = ''
-  feedback.value = `${shieldMap[clauseId].name} attached. ${clauses.find((clause) => clause.id === clauseId).explanation}`
+  feedback.value = t('pages.y2_6.feedback.attached', {
+    name: shieldMap.value[clauseId]?.name || '',
+    explanation: clauses.value.find((clause) => clause.id === clauseId)?.explanation || '',
+  })
 }
 
 function finish() {
-  if (protectedCount.value !== clauses.length) {
-    feedback.value = `Protect ${clauses.length - protectedCount.value} more clause(s) before sealing.`
+  if (protectedCount.value !== clauses.value.length) {
+    feedback.value = t('pages.y2_6.feedback.remaining', { count: clauses.value.length - protectedCount.value })
     return
   }
 
-  emit('complete', { game: 'contract-guardian', protected: clauses.length })
+  emit('complete', { game: 'contract-guardian', protected: clauses.value.length })
 }
 </script>
 

@@ -6,12 +6,9 @@
       </button>
 
       <div class="drawer-header">
-        <p class="drawer-eyebrow">查看状态面板 / View Status Dashboard</p>
-        <h2>我的申请画像 / My Planning Profile</h2>
-        <p class="drawer-copy">
-          这里用于回顾进度、路线偏好和阶段性收获，不再作为默认首屏。
-          / This drawer is for review and reflection, not the first impression of the app.
-        </p>
+        <p class="drawer-eyebrow">{{ t('components.dashboard.eyebrow') }}</p>
+        <h2>{{ t('components.dashboard.title') }}</h2>
+        <p class="drawer-copy">{{ t('components.dashboard.copy') }}</p>
       </div>
 
       <div class="overview-grid">
@@ -23,9 +20,9 @@
         />
 
         <section class="journey-panel">
-          <p class="journey-eyebrow">学习地图 / Learning Dashboard</p>
-          <h2>{{ activeYearMeta.shortLabel }} · {{ activeYearMeta.titleZh }} / {{ activeYearMeta.title }}</h2>
-          <p class="journey-copy">{{ activeYearMeta.subtitleZh }} / {{ activeYearMeta.subtitle }}</p>
+          <p class="journey-eyebrow">{{ t('components.dashboard.learningDashboard') }}</p>
+          <h2>{{ activeYearTitle }}</h2>
+          <p class="journey-copy">{{ activeYearSubtitle }}</p>
 
           <div class="journey-progress-grid">
             <article v-for="item in progress" :key="item.year" class="journey-progress-card" :class="{ active: item.year === currentYear }">
@@ -41,15 +38,15 @@
 
           <div class="journey-helper-grid">
             <article class="journey-helper-card">
-              <p class="helper-label">路线偏好 / Route Preference</p>
+              <p class="helper-label">{{ t('components.dashboard.routePreference') }}</p>
               <p>{{ routePreferenceText }}</p>
             </article>
             <article class="journey-helper-card">
-              <p class="helper-label">学习流 / Learning Flow</p>
-              <p>阅读目标 -> 做出选择 -> 提交结果 -> 查看解释 / Read goal -> act -> submit -> review explanation</p>
+              <p class="helper-label">{{ t('components.dashboard.learningFlow') }}</p>
+              <p>{{ t('components.dashboard.learningFlowText') }}</p>
             </article>
             <article class="journey-helper-card">
-              <p class="helper-label">当前提醒 / Guidance</p>
+              <p class="helper-label">{{ t('components.dashboard.guidance') }}</p>
               <p>{{ currentGuidance }}</p>
             </article>
           </div>
@@ -60,11 +57,14 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { useAppI18n } from '@/composables/useAppI18n'
 import TravelerStatusCard from '@/components/TravelerStatusCard.vue'
 
 defineEmits(['close'])
+const { localize, t } = useAppI18n()
 
-defineProps({
+const props = defineProps({
   travelerProfile: {
     type: Object,
     default: null,
@@ -98,6 +98,14 @@ defineProps({
     required: true,
   },
 })
+
+const activeYearTitle = computed(() => (
+  localize(props.activeYearMeta?.shortLabel) || props.activeYearMeta?.shortLabel || ''
+))
+
+const activeYearSubtitle = computed(() => (
+  localize(props.activeYearMeta?.subtitle) || props.activeYearMeta?.subtitle || ''
+))
 </script>
 
 <style scoped>

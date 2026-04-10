@@ -2,10 +2,10 @@
   <div class="tier-game">
     <section class="balance-room">
       <div class="header">
-        <h2><i class="fas fa-balance-scale-right"></i> Scales of Destiny</h2>
-        <p>For a STEM / CS applicant with GPA 82 and one ordinary internship, place every academy into a realistic tier.</p>
+        <h2><i class="fas fa-balance-scale-right"></i> {{ t('pages.y2_3.title') }}</h2>
+        <p>{{ t('pages.y2_3.subtitle') }}</p>
         <div class="user-profile">
-          <i class="fas fa-user-graduate"></i> Current Avatar: GPA 82/100 | STEM/CS Track | 1 Ordinary Internship
+          <i class="fas fa-user-graduate"></i> {{ t('pages.y2_3.currentAvatar') }}
         </div>
       </div>
 
@@ -49,13 +49,13 @@
 
       <div class="controls">
         <button type="button" class="btn-predict" @click="evaluateTiers">
-          <i class="fas fa-crystal-ball"></i> Divinate the Scales
+          <i class="fas fa-crystal-ball"></i> {{ t('pages.y2_3.predict') }}
         </button>
       </div>
 
       <section v-if="feedback.length" class="feedback-panel">
         <div class="fb-title">
-          <span><i class="fas fa-scroll"></i> Prophecy of Tiers</span>
+          <span><i class="fas fa-scroll"></i> {{ t('pages.y2_3.feedbackTitle') }}</span>
           <span class="fb-score">+{{ score }} <i class="fas fa-coins"></i></span>
         </div>
 
@@ -67,7 +67,7 @@
           </div>
         </div>
 
-        <button type="button" class="btn-complete" @click="emit('complete')">Seal This Tier Plan & Return</button>
+        <button type="button" class="btn-complete" @click="emit('complete')">{{ t('pages.y2_3.seal') }}</button>
       </section>
     </section>
   </div>
@@ -75,8 +75,10 @@
 
 <script setup>
 import { computed, defineComponent, h, reactive, ref } from 'vue'
+import { useAppI18n } from '@/composables/useAppI18n'
 
 const emit = defineEmits(['complete', 'close'])
+const { t } = useAppI18n()
 
 const SchoolCard = defineComponent({
   props: {
@@ -100,30 +102,36 @@ const SchoolCard = defineComponent({
   },
 })
 
-const schoolCards = [
-  { id: 'ic', icon: '👑', name: 'Imperial College', tag: 'QS Top 10' },
-  { id: 'ucl', icon: '🏛️', name: 'UCL', tag: 'QS Top 10' },
-  { id: 'kcl', icon: '🦁', name: "King's College", tag: 'QS Top 40' },
-  { id: 'soton', icon: '⚓', name: 'Southampton', tag: 'QS Top 80' },
-  { id: 'cardiff', icon: '🐉', name: 'Cardiff Univ.', tag: 'QS 150+' },
+const schoolCardDefs = [
+  { id: 'ic', icon: '👑' },
+  { id: 'ucl', icon: '🏛️' },
+  { id: 'kcl', icon: '🦁' },
+  { id: 'soton', icon: '⚓' },
+  { id: 'cardiff', icon: '🐉' },
 ]
 
-const tiers = [
-  { id: 'reach', label: 'Reach / Miracle', icon: 'fa-fire' },
-  { id: 'match', label: 'Match / Battleground', icon: 'fa-bullseye' },
-  { id: 'safety', label: 'Safety / Sanctuary', icon: 'fa-shield-alt' },
-]
+const schoolCards = computed(() => schoolCardDefs.map((card) => ({
+  ...card,
+  name: t(`pages.y2_3.cards.${card.id}.name`),
+  tag: t(`pages.y2_3.cards.${card.id}.tag`),
+})))
 
-const locations = reactive(Object.fromEntries(schoolCards.map((card) => [card.id, 'deck'])))
+const tiers = computed(() => ([
+  { id: 'reach', label: t('pages.y2_3.tiers.reach'), icon: 'fa-fire' },
+  { id: 'match', label: t('pages.y2_3.tiers.match'), icon: 'fa-bullseye' },
+  { id: 'safety', label: t('pages.y2_3.tiers.safety'), icon: 'fa-shield-alt' },
+]))
+
+const locations = reactive(Object.fromEntries(schoolCardDefs.map((card) => [card.id, 'deck'])))
 const selectedCardId = ref('')
 const draggingCardId = ref('')
 const feedback = ref([])
 const score = ref(50)
 
-const cardById = computed(() => Object.fromEntries(schoolCards.map((card) => [card.id, card])))
+const cardById = computed(() => Object.fromEntries(schoolCards.value.map((card) => [card.id, card])))
 
 function cardsIn(location) {
-  return schoolCards.filter((card) => locations[card.id] === location)
+  return schoolCards.value.filter((card) => locations[card.id] === location)
 }
 
 function selectCard(cardId) {
@@ -163,7 +171,7 @@ function addFeedback(status, icon, title, text) {
 
 function evaluateTiers() {
   if (cardsIn('deck').length) {
-    window.alert('The Seer warns: distribute all Academy Cards before divination.')
+    window.alert(t('pages.y2_3.alertCompleteDeck'))
     return
   }
 
@@ -174,33 +182,33 @@ function evaluateTiers() {
   const safeties = idsIn('safety')
 
   if (matches.includes('ic') || safeties.includes('ic')) {
-    addFeedback('danger', 'fa-skull-crossbones', 'Fatal Hubris: IC as Match / Safety', 'With GPA 82 in STEM, Imperial is an extreme gamble. Treat it as a fantasy-level reach, not a secure slot.')
+    addFeedback('danger', 'fa-skull-crossbones', t('pages.y2_3.feedback.icLow.title'), t('pages.y2_3.feedback.icLow.text'))
     score.value -= 10
   }
 
   if (matches.includes('ucl') || safeties.includes('ucl')) {
-    addFeedback('danger', 'fa-exclamation-triangle', 'Blind Optimism: UCL Ranked Too Low', 'UCL engineering / CS can be a bloodbath. A realistic plan places it as a reach for this profile.')
+    addFeedback('danger', 'fa-exclamation-triangle', t('pages.y2_3.feedback.uclLow.title'), t('pages.y2_3.feedback.uclLow.text'))
     score.value -= 10
   } else if (reaches.includes('ucl')) {
-    addFeedback('perfect', 'fa-check-circle', 'Perfect Trajectory: UCL as Reach', 'This is a rational high-ceiling option. Keep it exciting, but do not let it replace match and safety schools.')
+    addFeedback('perfect', 'fa-check-circle', t('pages.y2_3.feedback.uclReach.title'), t('pages.y2_3.feedback.uclReach.text'))
   }
 
   if (reaches.includes('kcl') || reaches.includes('soton')) {
-    addFeedback('waste', 'fa-arrow-down', 'Excessive Timidity', 'KCL / Southampton can function as match-style battlefields here. If every workable option is pushed into Reach, the list becomes too conservative.')
+    addFeedback('waste', 'fa-arrow-down', t('pages.y2_3.feedback.kclSotonTooHigh.title'), t('pages.y2_3.feedback.kclSotonTooHigh.text'))
     score.value -= 10
   } else if (safeties.includes('kcl')) {
-    addFeedback('danger', 'fa-exclamation', 'Match as Safety: Fragile Defense', 'KCL is attractive, but it is not a guaranteed backup for this profile. Do not build a safety net out of match schools.')
+    addFeedback('danger', 'fa-exclamation', t('pages.y2_3.feedback.kclSafety.title'), t('pages.y2_3.feedback.kclSafety.text'))
   }
 
   if (reaches.includes('cardiff') || matches.includes('cardiff')) {
-    addFeedback('waste', 'fa-arrow-down', 'Severe Self-Doubt', 'Cardiff is closer to a safety role for this profile. Raising it too high leaves your real safety layer empty.')
+    addFeedback('waste', 'fa-arrow-down', t('pages.y2_3.feedback.cardiffTooHigh.title'), t('pages.y2_3.feedback.cardiffTooHigh.text'))
     score.value -= 10
   } else if (safeties.includes('cardiff')) {
-    addFeedback('perfect', 'fa-shield-alt', 'Indestructible Sanctuary', 'A real safety lets you take controlled risks elsewhere. This is what a bottom layer is for.')
+    addFeedback('perfect', 'fa-shield-alt', t('pages.y2_3.feedback.cardiffSafety.title'), t('pages.y2_3.feedback.cardiffSafety.text'))
   }
 
   if (!feedback.value.length) {
-    addFeedback('waste', 'fa-question-circle', 'Chaotic Formation', 'Your list is complete, but the hierarchy still needs a clearer reach / match / safety logic.')
+    addFeedback('waste', 'fa-question-circle', t('pages.y2_3.feedback.fallback.title'), t('pages.y2_3.feedback.fallback.text'))
   }
 
   score.value = Math.max(10, score.value)

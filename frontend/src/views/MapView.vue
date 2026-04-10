@@ -2,18 +2,18 @@
   <div class="map-page">
     <div class="app-shell">
       <div class="top-switcher">
-        <button class="switch-btn" :class="store.year === 'y2' ? 'primary' : 'secondary'" @click="switchYear('y2')"><i class="fas fa-map"></i> Year 2</button>
-        <button class="switch-btn" :class="store.year === 'y3' ? 'primary' : 'secondary'" @click="switchYear('y3')"><i class="fas fa-fire"></i> Year 3</button>
-        <button class="switch-btn danger" @click="showResetConfirm = true"><i class="fas fa-rotate-left"></i> Reset</button>
+        <button class="switch-btn" :class="store.year === 'y2' ? 'primary' : 'secondary'" @click="switchYear('y2')"><i class="fas fa-map"></i> {{ t('nav.year2') }}</button>
+        <button class="switch-btn" :class="store.year === 'y3' ? 'primary' : 'secondary'" @click="switchYear('y3')"><i class="fas fa-fire"></i> {{ t('nav.year3') }}</button>
+        <button class="switch-btn danger" @click="showResetConfirm = true"><i class="fas fa-rotate-left"></i> {{ t('nav.reset') }}</button>
       </div>
 
       <section class="board y2" :class="{ active: store.year === 'y2' }">
         <div class="header">
-          <h1><i class="fas fa-route"></i> Year 2 · The Foggy Exploration</h1>
+          <h1><i class="fas fa-route"></i> {{ t('map.year2Title') }}</h1>
           <div class="header-right">
-            <button class="btn-action" @click="showPrizeShop = true"><i class="fas fa-gift"></i> Loot Exchange</button>
-            <button class="btn-action" @click="showHealingSandbox = true"><i class="fas fa-leaf"></i> Sanctuary</button>
-            <div class="coin-panel"><i class="fas fa-coins"></i><span>{{ store.currentCoins }}</span></div>
+            <button class="btn-action" @click="showPrizeShop = true"><i class="fas fa-gift"></i> {{ t('map.shop') }}</button>
+            <button class="btn-action" @click="showHealingSandbox = true"><i class="fas fa-leaf"></i> {{ t('map.sanctuary') }}</button>
+            <div class="coin-panel"><i class="fas fa-coins"></i><span>{{ store.currentCoins }}</span><small>{{ t('common.labels.coins') }}</small></div>
           </div>
         </div>
 
@@ -57,11 +57,11 @@
 
       <section class="board y3" :class="{ active: store.year === 'y3' }">
         <div class="header">
-          <h1><i class="fas fa-star"></i> Year 3 · The Astral Sprint</h1>
+          <h1><i class="fas fa-star"></i> {{ t('map.year3Title') }}</h1>
           <div class="header-right">
-            <button class="btn-action" @click="showPrizeShop = true"><i class="fas fa-gift"></i> Loot Exchange</button>
-            <button class="btn-action" @click="showHealingSandbox = true"><i class="fas fa-leaf"></i> Sanctuary</button>
-            <div class="coin-panel"><i class="fas fa-coins"></i><span>{{ store.currentCoins }}</span></div>
+            <button class="btn-action" @click="showPrizeShop = true"><i class="fas fa-gift"></i> {{ t('map.shop') }}</button>
+            <button class="btn-action" @click="showHealingSandbox = true"><i class="fas fa-leaf"></i> {{ t('map.sanctuary') }}</button>
+            <div class="coin-panel"><i class="fas fa-coins"></i><span>{{ store.currentCoins }}</span><small>{{ t('common.labels.gems') }}</small></div>
           </div>
         </div>
 
@@ -101,10 +101,10 @@
     <div v-if="activeLevel" class="modal-overlay">
       <div class="game-modal-content">
         <button class="absolute-close-btn" @click="closeGame"><i class="fas fa-times"></i></button>
-        <div class="modal-header"><span>{{ activeLevel.title }}</span></div>
+        <div class="modal-header"><span>{{ activeLevelTitle }}</span></div>
         <div class="game-stage native-stage">
           <component v-if="nativeGameComponent" :is="nativeGameComponent" @complete="handleNativeComplete" @close="closeGame" />
-          <div v-else class="missing-native-game">This level is still being wired into Vue.</div>
+          <div v-else class="missing-native-game">{{ t('map.missingLevel') }}</div>
         </div>
       </div>
     </div>
@@ -114,11 +114,11 @@
 
     <div v-if="showResetConfirm" class="modal-overlay" @click.self="showResetConfirm = false">
       <div class="confirm-modal-content">
-        <h2>Reset all progress?</h2>
-        <p>This will clear Year 2, Year 3, coins, unlocked nodes, and your traveler profile.</p>
+        <h2>{{ t('map.resetTitle') }}</h2>
+        <p>{{ t('map.resetDescription') }}</p>
         <div class="confirm-actions">
-          <button class="confirm-btn cancel" @click="showResetConfirm = false">Cancel</button>
-          <button class="confirm-btn reset" @click="resetGame">Yes, Reset Everything</button>
+          <button class="confirm-btn cancel" @click="showResetConfirm = false">{{ t('common.actions.cancel') }}</button>
+          <button class="confirm-btn reset" @click="resetGame">{{ t('map.resetConfirm') }}</button>
         </div>
       </div>
     </div>
@@ -127,20 +127,36 @@
 
 <script setup>
 import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { useAppI18n } from '@/composables/useAppI18n'
 import PrizeShop from '@/components/PrizeShop.vue'
 import HealingSandbox from '@/components/HealingSandbox.vue'
 import { LEVEL_DEFINITIONS } from '@/config/levels'
 import { useGameStore } from '@/stores/game'
 
 const store = useGameStore()
+const { t } = useAppI18n()
 store.hydrate()
 
 const y2Path = 'M572.3 368.6C575.8 325.1 579.2 281.6 573.5 243.1 567.7 204.7 558.2 165.2 537.6 137.9 517 110.6 482.5 87.3 449.8 79.3c-32.8-8-78.8-5-108.7 10.7-29.9 15.7-55.7 49.8-70.5 83.7-14.8 33.9-17.9 79.3-18.5 119.5-.6 40.3 4.1 91.5 15.1 122 11 30.5 27.7 45.4 50.9 61 23.2 15.5 56.5 30.6 87.9 32.2 31.4 1.6 75.7-10 100.6-22.7 24.9-12.7 40.5-34.3 48.6-53.8 8.1-19.5 6.2-51.4 0-63.4-6.2-12-28-12.4-37-8.4-9 4-15.6 18.7-17.3 32.3-1.7 13.5-5.8 31.3 6.9 49 12.7 17.7 30.4 36 68.7 50.6 38.3 14.6 100.9 28.7 160.7 29.9 59.7 1.2 155.7-4.8 197.7-22.7 42-17.9 51.4-59.8 54.3-84.9 2.9-25.1-9.4-48.6-37-65.7-27.6-17.1-89.6-23.7-128.3-37.1-38.7-13.4-82.1-22.9-104-43-22-20.1-29.1-51.6-27.8-77.7 1.4-26.1 19.1-58.6 35.9-78.9 16.8-20.3 39.7-36.2 64.8-43 25-6.8 61.5-3.4 85.5 2.4 24 5.7 36.8 10.9 53.6 21.7 16.8 10.8 52.7 56.4 59.7 61.9'
 const y3Path = 'M284 351.5 388.257 259.513 383.437 124.872 526.06 129.423 623.5 31 720.94 129.423 863.563 124.872 858.743 259.513 963 351.5 858.743 443.487 863.563 578.128 720.94 573.577 623.5 672 526.06 573.577 383.437 578.128 388.257 443.487Z'
 const meta = { y2: Object.fromEntries(LEVEL_DEFINITIONS.y2.map((l) => [l.id, l])), y3: Object.fromEntries(LEVEL_DEFINITIONS.y3.map((l) => [l.id, l])) }
 const gameModules = import.meta.glob('./games/*.vue')
-const y2Nodes = [{ id: 1, icon: '\uf2bb', radius: 28, x: 572, y: 368, textY: 48 }, { id: 2, icon: '\uf0ac', radius: 26, x: 341, y: 90, textY: 48 }, { id: 3, icon: '\uf54e', radius: 26, x: 252, y: 293, textY: 48 }, { id: 4, icon: '\uf0c3', radius: 27, x: 506, y: 485, textY: 50 }, { id: 5, icon: '\uf017', radius: 26, x: 737, y: 528, textY: 48 }, { id: 6, icon: '\uf002', radius: 26, x: 952, y: 355, textY: 48 }, { id: 7, icon: '\uf005', radius: 32, x: 992, y: 161, textY: 55, final: true }].map((n) => ({ ...n, label: `${n.id}. ${meta.y2[n.id].name}`, title: meta.y2[n.id].title, sharedFile: meta.y2[n.id].sharedFile, file: meta.y2[n.id].file, engine: meta.y2[n.id].engine }))
-const y3Nodes = [{ id: 1, positionClass: 'n1', iconClass: 'fas fa-hourglass-half' }, { id: 2, positionClass: 'n2', iconClass: 'fas fa-cubes' }, { id: 3, positionClass: 'n3', iconClass: 'fas fa-microscope' }, { id: 4, positionClass: 'n4', iconClass: 'fas fa-book-open', iconTopClass: 'fas fa-pen-nib', stacked: true }, { id: 5, positionClass: 'n5', iconClass: 'fas fa-cat' }, { id: 6, positionClass: 'n6', iconClass: 'fas fa-calendar-alt' }, { id: 7, positionClass: 'n7', iconClass: 'fas fa-biohazard' }, { id: 8, positionClass: 'n8', iconClass: 'fas fa-crown', final: true }].map((n) => ({ ...n, label: `${n.id}. ${meta.y3[n.id].name}`, title: meta.y3[n.id].title, sharedFile: meta.y3[n.id].sharedFile, file: meta.y3[n.id].file, engine: meta.y3[n.id].engine }))
+const y2NodeLayout = [{ id: 1, icon: '\uf2bb', radius: 28, x: 572, y: 368, textY: 48 }, { id: 2, icon: '\uf0ac', radius: 26, x: 341, y: 90, textY: 48 }, { id: 3, icon: '\uf54e', radius: 26, x: 252, y: 293, textY: 48 }, { id: 4, icon: '\uf0c3', radius: 27, x: 506, y: 485, textY: 50 }, { id: 5, icon: '\uf017', radius: 26, x: 737, y: 528, textY: 48 }, { id: 6, icon: '\uf002', radius: 26, x: 952, y: 355, textY: 48 }, { id: 7, icon: '\uf005', radius: 32, x: 992, y: 161, textY: 55, final: true }]
+const y3NodeLayout = [{ id: 1, positionClass: 'n1', iconClass: 'fas fa-hourglass-half' }, { id: 2, positionClass: 'n2', iconClass: 'fas fa-cubes' }, { id: 3, positionClass: 'n3', iconClass: 'fas fa-microscope' }, { id: 4, positionClass: 'n4', iconClass: 'fas fa-book-open', iconTopClass: 'fas fa-pen-nib', stacked: true }, { id: 5, positionClass: 'n5', iconClass: 'fas fa-cat' }, { id: 6, positionClass: 'n6', iconClass: 'fas fa-calendar-alt' }, { id: 7, positionClass: 'n7', iconClass: 'fas fa-biohazard' }, { id: 8, positionClass: 'n8', iconClass: 'fas fa-crown', final: true }]
+const y2Nodes = computed(() => y2NodeLayout.map((node) => ({
+  ...node,
+  label: `${node.id}. ${t(`${meta.y2[node.id].i18nKey}.mapLabel`)}`,
+  title: t(`${meta.y2[node.id].i18nKey}.title`),
+  file: meta.y2[node.id].file,
+  i18nKey: meta.y2[node.id].i18nKey,
+})))
+const y3Nodes = computed(() => y3NodeLayout.map((node) => ({
+  ...node,
+  label: `${node.id}. ${t(`${meta.y3[node.id].i18nKey}.mapLabel`)}`,
+  title: t(`${meta.y3[node.id].i18nKey}.title`),
+  file: meta.y3[node.id].file,
+  i18nKey: meta.y3[node.id].i18nKey,
+})))
 const showPrizeShop = ref(false)
 const showHealingSandbox = ref(false)
 const showResetConfirm = ref(false)
@@ -151,11 +167,12 @@ const nodeRefs = reactive({ y2: {}, y3: {} })
 const traveler = reactive({ y2: { left: '50%', top: '50%', walking: false, reached: false }, y3: { left: '50%', top: '50%', walking: false, reached: false } })
 const travelerStyle = computed(() => ({ '--traveler-hair': store.travelerAvatar.hairColor, '--traveler-outfit': store.travelerAvatar.outfitColor }))
 const nativeGameComponent = computed(() => {
-  if (!activeLevel.value || activeLevel.value.engine !== 'vue') return null
+  if (!activeLevel.value) return null
   const loader = gameModules[`./games/${activeLevel.value.file}`]
   if (!loader) return null
   return defineAsyncComponent(loader)
 })
+const activeLevelTitle = computed(() => activeLevel.value?.i18nKey ? t(`${activeLevel.value.i18nKey}.title`) : '')
 let openLevelTimer = null
 const travelerTimers = { y2: null, y3: null }
 const setMapAreaRef = (year) => (element) => { mapAreas[year] = element || null }
@@ -167,9 +184,9 @@ function getNodeCenter(year, nodeId) { const map = mapAreas[year]; const node = 
 function moveTravelerToNode(year, nodeId) { const center = getNodeCenter(year, nodeId); if (!center) return; traveler[year].left = `${center.left}px`; traveler[year].top = `${center.top}px`; traveler[year].walking = true; traveler[year].reached = false; if (travelerTimers[year]) clearTimeout(travelerTimers[year]); travelerTimers[year] = window.setTimeout(() => { traveler[year].walking = false; traveler[year].reached = true }, 850) }
 function syncTraveler(year, nodeId = store[year].currentNode) { nextTick(() => window.requestAnimationFrame(() => moveTravelerToNode(year, nodeId))) }
 function switchYear(year) { if (store.year === year) { syncTraveler(year); return } store.switchYear(year) }
-function openLevel(year, node) { if (!isAccessible(year, node.id)) { window.alert(`Finish node ${node.id - 1} first before entering node ${node.id}.`); return } if (openLevelTimer) clearTimeout(openLevelTimer); if (store.year !== year) store.switchYear(year); store.setCurrentNode(year, node.id); moveTravelerToNode(year, node.id); openLevelTimer = window.setTimeout(() => { activeLevel.value = { ...node, year } }, 420) }
+function openLevel(year, node) { if (!isAccessible(year, node.id)) { window.alert(t('map.lockedAlert', { previous: node.id - 1, current: node.id })); return } if (openLevelTimer) clearTimeout(openLevelTimer); if (store.year !== year) store.switchYear(year); store.setCurrentNode(year, node.id); moveTravelerToNode(year, node.id); openLevelTimer = window.setTimeout(() => { activeLevel.value = { ...node, year } }, 420) }
 function closeGame() { if (openLevelTimer) { clearTimeout(openLevelTimer); openLevelTimer = null } activeLevel.value = null }
-function redeemPrize(prize) { const label = 'Coins'; if (!store.redeemCurrentCurrency(prize.cost)) { redeemMessage.value = `Not enough ${label}. Go clear some nodes to earn rewards!`; return } redeemMessage.value = `&#x1F389; Redemption Successful! You obtained <b>${prize.emoji} ${prize.name}</b><br>Consumed <b>${prize.cost}</b> ${label}. Remaining Balance: <b>${store.currentCoins}</b> ${label}` }
+function redeemPrize(prize) { const label = store.year === 'y2' ? t('common.labels.coins') : t('common.labels.gems'); if (!store.redeemCurrentCurrency(prize.cost)) { redeemMessage.value = t('map.redeemNotEnough'); return } redeemMessage.value = `&#x1F389; ${t('map.redeemSuccess', { name: prize.name, cost: prize.cost, currency: label, balance: store.currentCoins })}` }
 function handleNativeComplete(payload = {}) { if (!activeLevel.value) return; const year = activeLevel.value.year; const levelId = activeLevel.value.id; const profile = payload.profile || payload; const rewardCoins = Number(payload.rewardCoins) || 0; store.completeNode(year, levelId, { rewardCoins, profile }); closeGame(); syncTraveler(year, store[year].currentNode) }
 function resetGame() { closeGame(); showPrizeShop.value = false; showHealingSandbox.value = false; showResetConfirm.value = false; redeemMessage.value = ''; store.resetStore(); syncTraveler('y2', 1) }
 function handleEscape(event) { if (event.key !== 'Escape') return; if (showResetConfirm.value) { showResetConfirm.value = false; return } if (activeLevel.value) { closeGame(); return } if (showPrizeShop.value) { showPrizeShop.value = false; return } if (showHealingSandbox.value) showHealingSandbox.value = false }
@@ -186,8 +203,8 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', handleEscape); win
 .map-page::before, .map-page::after { content: ''; position: fixed; inset: 0; pointer-events: none; }
 .map-page::before { z-index: 0; opacity: 0.92; background-image: radial-gradient(2.2px 2.2px at 24px 36px, rgba(255, 255, 255, 0.95), transparent 58%), radial-gradient(1.8px 1.8px at 84px 118px, rgba(255, 255, 255, 0.8), transparent 58%), radial-gradient(1.9px 1.9px at 156px 58px, rgba(147, 197, 253, 0.82), transparent 58%), radial-gradient(1.7px 1.7px at 208px 174px, rgba(244, 114, 182, 0.76), transparent 58%), radial-gradient(1.4px 1.4px at 116px 196px, rgba(196, 181, 253, 0.78), transparent 58%), radial-gradient(1.6px 1.6px at 52px 162px, rgba(250, 204, 21, 0.7), transparent 58%); background-size: 220px 220px, 280px 280px, 320px 320px, 360px 360px, 260px 260px, 300px 300px; background-position: 0 0, 42px 58px, 112px 36px, 180px 100px, 74px 146px, 150px 14px; filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.2)); animation: star-twinkle 6.5s ease-in-out infinite alternate; }
 .map-page::after { z-index: 0; opacity: 0.5; background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.06) 0%, transparent 52%), radial-gradient(circle at 50% -10%, rgba(79, 172, 254, 0.1) 0%, transparent 36%), radial-gradient(circle at 50% 110%, rgba(236, 72, 153, 0.1) 0%, transparent 34%); animation: nebula-shift 14s ease-in-out infinite alternate; }
-.app-shell { width: 100%; max-width: 1380px; position: relative; padding-top: 70px; z-index: 1; margin: 0 auto; }
-.top-switcher { display: flex; gap: 10px; margin-bottom: 16px; position: absolute; top: 10px; right: 0; z-index: 50; }
+.app-shell { width: 100%; max-width: 1380px; position: relative; padding-top: 118px; z-index: 1; margin: 0 auto; }
+.top-switcher { display: flex; gap: 10px; margin-bottom: 16px; position: absolute; top: 62px; right: 0; z-index: 50; }
 .switch-btn { border: none; border-radius: 999px; padding: 10px 25px; min-width: 130px; font-weight: 900; cursor: pointer; box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2); transition: 0.2s; font-size: 1.05rem; }
 .switch-btn.primary { background: #2c5a6e; color: #fff3c0; border: 2px solid #ffcf7a; }
 .switch-btn.secondary { background: #f6e7be; color: #2c5a6e; border: 2px solid #e3be73; }
@@ -204,6 +221,7 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', handleEscape); win
 .btn-action:hover { filter: brightness(1.05); }
 .btn-action:active { transform: translateY(4px); box-shadow: 0 0 0 transparent; }
 .coin-panel { padding: 10px 20px; border-radius: 999px; font-size: 1.1rem; font-weight: 900; display: flex; align-items: center; gap: 8px; }
+.coin-panel small { font-size: 0.76rem; font-weight: 800; opacity: 0.82; letter-spacing: 0.02em; }
 .map-area { flex: 1; position: relative; overflow: hidden; }
 .y2.board { background: rgba(15, 23, 42, 0.74); border: 3px solid rgba(243, 207, 154, 0.22); box-shadow: 0 0 60px rgba(0, 0, 0, 0.65), inset 0 0 40px rgba(112, 48, 160, 0.18); }
 .y2 .header { background: linear-gradient(to bottom, rgba(243, 207, 154, 0.08), transparent); border-bottom: 1px solid rgba(243, 207, 154, 0.14); }

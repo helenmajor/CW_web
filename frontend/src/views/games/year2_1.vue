@@ -2,15 +2,15 @@
   <div class="forge">
     <div class="topbar">
       <div>
-        <h1><i class="fas fa-id-card"></i> Identity Forge</h1>
-        <p>Forge a brand-new student identity for Y2-1. This replaces the repeated portal game and sends your traveler back to the map.</p>
+        <h1><i class="fas fa-id-card"></i> {{ t('pages.y2_1.title') }}</h1>
+        <p>{{ t('pages.y2_1.subtitle') }}</p>
       </div>
-      <div class="charge">Forge Charge {{ chargedChoices }} / 4</div>
+      <div class="charge">{{ t('pages.y2_1.charge', { current: chargedChoices }) }}</div>
     </div>
 
     <div class="main">
       <section class="preview">
-        <p class="label">Live Preview</p>
+        <p class="label">{{ t('pages.y2_1.preview') }}</p>
         <div class="stage">
           <div class="avatar" :style="avatarStyle">
             <div class="halo"></div>
@@ -24,29 +24,29 @@
 
         <div class="card">
           <div class="cardhead">
-            <h2>Arcane Student Card</h2>
+            <h2>{{ t('pages.y2_1.cardTitle') }}</h2>
             <div class="badge"><i class="fas" :class="selectedRoleIcon"></i></div>
           </div>
-          <div class="row"><span class="key">Codename</span><span class="value">{{ displayName }}</span></div>
-          <div class="row"><span class="key">Archetype</span><span class="value">{{ selectedRole?.name || 'Awaiting choice' }}</span></div>
-          <div class="row"><span class="key">Hair Rune</span><span class="value">{{ selectedHair?.name || 'Awaiting choice' }}</span></div>
-          <div class="row"><span class="key">Uniform Aura</span><span class="value">{{ selectedOutfit?.name || 'Awaiting choice' }}</span></div>
-          <div class="row"><span class="key">Familiar Tool</span><span class="value">{{ selectedTool?.name || 'Awaiting choice' }}</span></div>
+          <div class="row"><span class="key">{{ t('pages.y2_1.fields.codename') }}</span><span class="value">{{ displayName }}</span></div>
+          <div class="row"><span class="key">{{ t('pages.y2_1.fields.archetype') }}</span><span class="value">{{ selectedRole?.name || t('pages.y2_1.awaitingChoice') }}</span></div>
+          <div class="row"><span class="key">{{ t('pages.y2_1.fields.hair') }}</span><span class="value">{{ selectedHair?.name || t('pages.y2_1.awaitingChoice') }}</span></div>
+          <div class="row"><span class="key">{{ t('pages.y2_1.fields.outfit') }}</span><span class="value">{{ selectedOutfit?.name || t('pages.y2_1.awaitingChoice') }}</span></div>
+          <div class="row"><span class="key">{{ t('pages.y2_1.fields.tool') }}</span><span class="value">{{ selectedTool?.name || t('pages.y2_1.awaitingChoice') }}</span></div>
         </div>
       </section>
 
       <section class="panel">
-        <p class="label">Forging Console</p>
+        <p class="label">{{ t('pages.y2_1.console') }}</p>
 
         <div class="box">
-          <label for="codename">1. Choose your codename</label>
-          <input id="codename" v-model.trim="state.name" maxlength="18" placeholder="Example: Nova / Atlas / Iris">
+          <label for="codename">{{ t('pages.y2_1.nameLabel') }}</label>
+          <input id="codename" v-model.trim="state.name" maxlength="18" :placeholder="t('pages.y2_1.namePlaceholder')">
         </div>
 
         <div class="groups">
           <div class="group">
-            <h3>2. Select your study archetype</h3>
-            <p>This determines the sigil shown on your card.</p>
+            <h3>{{ t('pages.y2_1.roleTitle') }}</h3>
+            <p>{{ t('pages.y2_1.roleDesc') }}</p>
             <div class="grid3">
               <button
                 v-for="role in roles"
@@ -64,8 +64,8 @@
           </div>
 
           <div class="group">
-            <h3>3. Infuse a hair rune</h3>
-            <p>A small visual signature for the traveler on the map.</p>
+            <h3>{{ t('pages.y2_1.hairTitle') }}</h3>
+            <p>{{ t('pages.y2_1.hairDesc') }}</p>
             <div class="grid3">
               <button
                 v-for="hair in hairs"
@@ -82,8 +82,8 @@
           </div>
 
           <div class="group">
-            <h3>4. Choose a uniform aura</h3>
-            <p>This becomes the main outfit color for your traveler.</p>
+            <h3>{{ t('pages.y2_1.outfitTitle') }}</h3>
+            <p>{{ t('pages.y2_1.outfitDesc') }}</p>
             <div class="grid3">
               <button
                 v-for="outfit in outfits"
@@ -100,8 +100,8 @@
           </div>
 
           <div class="group">
-            <h3>5. Carry one familiar tool</h3>
-            <p>Every explorer needs one item that represents how they solve problems.</p>
+            <h3>{{ t('pages.y2_1.toolTitle') }}</h3>
+            <p>{{ t('pages.y2_1.toolDesc') }}</p>
             <div class="grid3">
               <button
                 v-for="tool in tools"
@@ -120,7 +120,7 @@
         </div>
 
         <div class="progress">
-          <strong>{{ chargedChoices }} / 4 sigils charged</strong>
+          <strong>{{ t('pages.y2_1.progressTitle', { current: chargedChoices }) }}</strong>
           <div class="progressbar">
             <div class="fill" :style="{ width: `${chargedChoices * 25}%` }"></div>
           </div>
@@ -128,22 +128,22 @@
         </div>
 
         <div class="foot">
-          <span>This native Vue version sends appearance data straight into the Pinia store.</span>
-          <button class="primary" :disabled="!sealReady" @click="showSummary = true">Seal Identity</button>
+          <span>{{ t('pages.y2_1.footnote') }}</span>
+          <button class="primary" :disabled="!sealReady" @click="showSummary = true">{{ t('pages.y2_1.seal') }}</button>
         </div>
       </section>
     </div>
 
     <div v-if="showSummary" class="modal" @click.self="showSummary = false">
       <div class="modalcard">
-        <h2><i class="fas fa-wand-sparkles"></i> Identity Sealed</h2>
-        <p>Your traveler is ready. Returning will unlock Y2-2 and apply this appearance to the little character on the main map.</p>
+        <h2><i class="fas fa-wand-sparkles"></i> {{ t('pages.y2_1.modalTitle') }}</h2>
+        <p>{{ t('pages.y2_1.modalDesc') }}</p>
         <div class="pill"><i class="fas fa-user"></i> {{ forgedProfile.name }}</div>
         <div class="pill"><i class="fas" :class="selectedRoleIcon"></i> {{ forgedProfile.archetype }}</div>
         <div class="pill"><i class="fas fa-wand-sparkles"></i> {{ forgedProfile.familiar }}</div>
         <div class="actions">
-          <button class="secondary" @click="showSummary = false">Refine Again</button>
-          <button class="primary2" @click="returnToMap">Return To Map</button>
+          <button class="secondary" @click="showSummary = false">{{ t('common.actions.refineAgain') }}</button>
+          <button class="primary2" @click="returnToMap">{{ t('common.actions.returnToMap') }}</button>
         </div>
       </div>
     </div>
@@ -152,31 +152,33 @@
 
 <script setup>
 import { computed, reactive, ref } from 'vue'
+import { useAppI18n } from '@/composables/useAppI18n'
 
 const emit = defineEmits(['complete', 'close'])
+const { t } = useAppI18n()
 
-const roles = [
-  { id: 'analyst', name: 'Quiet Analyst', icon: 'fa-chart-line', copy: 'Plans with structure and evidence.' },
-  { id: 'storyweaver', name: 'Story Weaver', icon: 'fa-feather-pointed', copy: 'Turns ideas into memorable stories.' },
-  { id: 'trailblazer', name: 'Trailblazer', icon: 'fa-compass', copy: 'Explores first and learns fast.' },
+const roleDefs = [
+  { id: 'analyst', icon: 'fa-chart-line' },
+  { id: 'storyweaver', icon: 'fa-feather-pointed' },
+  { id: 'trailblazer', icon: 'fa-compass' },
 ]
 
-const hairs = [
-  { id: 'walnut', name: 'Walnut', color: '#3a2a25' },
-  { id: 'midnight', name: 'Midnight', color: '#1f2937' },
-  { id: 'ember', name: 'Ember', color: '#8a3f1f' },
+const hairDefs = [
+  { id: 'walnut', color: '#3a2a25' },
+  { id: 'midnight', color: '#1f2937' },
+  { id: 'ember', color: '#8a3f1f' },
 ]
 
-const outfits = [
-  { id: 'amber', name: 'Amber', color: '#ffd46d' },
-  { id: 'azure', name: 'Azure', color: '#7dc6ff' },
-  { id: 'rose', name: 'Rose', color: '#ff9f9f' },
+const outfitDefs = [
+  { id: 'amber', color: '#ffd46d' },
+  { id: 'azure', color: '#7dc6ff' },
+  { id: 'rose', color: '#ff9f9f' },
 ]
 
-const tools = [
-  { id: 'quill', name: 'Quill of Clarity', icon: 'fa-pen-nib', copy: 'Shapes messy thoughts into crisp language.' },
-  { id: 'prism', name: 'Prism Lens', icon: 'fa-gem', copy: 'Breaks one problem into clean angles.' },
-  { id: 'satchel', name: 'Compass Satchel', icon: 'fa-bag-shopping', copy: 'Keeps essentials ready when plans shift.' },
+const toolDefs = [
+  { id: 'quill', icon: 'fa-pen-nib' },
+  { id: 'prism', icon: 'fa-gem' },
+  { id: 'satchel', icon: 'fa-bag-shopping' },
 ]
 
 const state = reactive({
@@ -189,12 +191,34 @@ const state = reactive({
 
 const showSummary = ref(false)
 
-const selectedRole = computed(() => roles.find((item) => item.id === state.roleId) ?? null)
-const selectedHair = computed(() => hairs.find((item) => item.id === state.hairId) ?? null)
-const selectedOutfit = computed(() => outfits.find((item) => item.id === state.outfitId) ?? null)
-const selectedTool = computed(() => tools.find((item) => item.id === state.toolId) ?? null)
+const roles = computed(() => roleDefs.map((role) => ({
+  ...role,
+  name: t(`pages.y2_1.roles.${role.id}.name`),
+  copy: t(`pages.y2_1.roles.${role.id}.copy`),
+})))
 
-const displayName = computed(() => state.name || 'Unforged')
+const hairs = computed(() => hairDefs.map((hair) => ({
+  ...hair,
+  name: t(`pages.y2_1.hairs.${hair.id}`),
+})))
+
+const outfits = computed(() => outfitDefs.map((outfit) => ({
+  ...outfit,
+  name: t(`pages.y2_1.outfits.${outfit.id}`),
+})))
+
+const tools = computed(() => toolDefs.map((tool) => ({
+  ...tool,
+  name: t(`pages.y2_1.tools.${tool.id}.name`),
+  copy: t(`pages.y2_1.tools.${tool.id}.copy`),
+})))
+
+const selectedRole = computed(() => roles.value.find((item) => item.id === state.roleId) ?? null)
+const selectedHair = computed(() => hairs.value.find((item) => item.id === state.hairId) ?? null)
+const selectedOutfit = computed(() => outfits.value.find((item) => item.id === state.outfitId) ?? null)
+const selectedTool = computed(() => tools.value.find((item) => item.id === state.toolId) ?? null)
+
+const displayName = computed(() => state.name || t('common.unnamedTraveler'))
 const selectedRoleIcon = computed(() => selectedRole.value?.icon || 'fa-star')
 
 const chargedChoices = computed(() => {
@@ -215,9 +239,9 @@ const sealReady = computed(() => Boolean(
 ))
 
 const progressCopy = computed(() => {
-  if (!state.name) return 'Start by giving your traveler a codename.'
-  if (chargedChoices.value < 4) return 'Keep charging the remaining sigils until the identity is stable enough to seal.'
-  return 'All four sigils are charged. Your student card is ready.'
+  if (!state.name) return t('pages.y2_1.progressNeedName')
+  if (chargedChoices.value < 4) return t('pages.y2_1.progressCharging')
+  return t('pages.y2_1.progressReady')
 })
 
 const avatarStyle = computed(() => ({
@@ -227,8 +251,8 @@ const avatarStyle = computed(() => ({
 
 const forgedProfile = computed(() => ({
   name: displayName.value,
-  archetype: selectedRole.value?.name || 'Awaiting role',
-  familiar: selectedTool.value?.name || 'Awaiting tool',
+  archetype: selectedRole.value?.name || t('pages.y2_1.awaitingChoice'),
+  familiar: selectedTool.value?.name || t('pages.y2_1.awaitingChoice'),
   avatar: {
     hairColor: selectedHair.value?.color || '#3a2a25',
     outfitColor: selectedOutfit.value?.color || '#ffd46d',

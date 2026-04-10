@@ -11,13 +11,13 @@
       </div>
 
       <div class="identity-copy">
-        <p class="eyebrow">旅者状态 / Traveler Status</p>
+        <p class="eyebrow">{{ t('components.travelerStatus.title') }}</p>
         <h2>{{ displayName }}</h2>
-        <p class="stage-title">{{ stage.titleZh }} / {{ stage.title }}</p>
+        <p class="stage-title">{{ stageTitle }}</p>
         <div class="badge-row">
-          <span class="badge">{{ stage.badgeZh }} / {{ stage.badge }}</span>
+          <span class="badge">{{ stageBadge }}</span>
           <span v-if="applicationProfile.preferredRoute" class="badge accent">
-            {{ applicationProfile.preferredRoute.labelZh }} / {{ applicationProfile.preferredRoute.label }}
+            {{ preferredRouteBadge }}
           </span>
         </div>
       </div>
@@ -25,20 +25,20 @@
 
     <div class="detail-grid">
       <article class="detail-item">
-        <p class="item-label">当前画像 / Current profile</p>
-        <p>{{ travelerProfile?.archetype || '待定义 / Unassigned' }}</p>
+        <p class="item-label">{{ t('components.travelerStatus.currentProfile') }}</p>
+        <p>{{ travelerProfile?.archetype || t('common.unassigned') }}</p>
       </article>
       <article class="detail-item">
-        <p class="item-label">代表工具 / Familiar tool</p>
-        <p>{{ travelerProfile?.familiar || '待定义 / Unassigned' }}</p>
+        <p class="item-label">{{ t('components.travelerStatus.familiarTool') }}</p>
+        <p>{{ travelerProfile?.familiar || t('common.unassigned') }}</p>
       </article>
       <article class="detail-item">
-        <p class="item-label">路线偏好 / Route preference</p>
+        <p class="item-label">{{ t('components.travelerStatus.routePreference') }}</p>
         <p>{{ routeSummary }}</p>
       </article>
       <article class="detail-item">
-        <p class="item-label">最近收获 / Latest takeaway</p>
-        <p>{{ applicationProfile.latestTakeaway || '继续完成节点，系统会逐步记录你的申请判断。/ Complete more nodes to build your planning memory.' }}</p>
+        <p class="item-label">{{ t('components.travelerStatus.latestTakeaway') }}</p>
+        <p>{{ applicationProfile.latestTakeaway || t('components.travelerStatus.latestTakeawayFallback') }}</p>
       </article>
     </div>
 
@@ -54,14 +54,13 @@
       </div>
     </div>
 
-    <p class="footnote">
-      已完成或跳过的节点可以重新打开复习。/ Cleared or skipped nodes can be reopened for review.
-    </p>
+    <p class="footnote">{{ t('components.travelerStatus.footnote') }}</p>
   </section>
 </template>
 
 <script setup>
 import { computed } from 'vue'
+import { useAppI18n } from '@/composables/useAppI18n'
 
 const props = defineProps({
   travelerProfile: {
@@ -82,15 +81,40 @@ const props = defineProps({
   },
 })
 
-const displayName = computed(() => props.travelerProfile?.name || '未命名旅者 / Unnamed traveler')
+const { currentLanguage, localize, t } = useAppI18n()
+
+const displayName = computed(() => props.travelerProfile?.name || t('common.unnamedTraveler'))
+
+const stageTitle = computed(() => {
+  const localized = localize(props.stage?.title)
+  if (localized) return localized
+  if (currentLanguage.value === 'zh') return props.stage?.titleZh || props.stage?.title || ''
+  return props.stage?.title || props.stage?.titleZh || ''
+})
+
+const stageBadge = computed(() => {
+  const localized = localize(props.stage?.badge)
+  if (localized) return localized
+  if (currentLanguage.value === 'zh') return props.stage?.badgeZh || props.stage?.badge || ''
+  return props.stage?.badge || props.stage?.badgeZh || ''
+})
+
+const preferredRouteBadge = computed(() => {
+  const route = props.applicationProfile.preferredRoute
+  if (!route) return ''
+  if (currentLanguage.value === 'zh') return route.labelZh || route.label || ''
+  return route.label || route.labelZh || ''
+})
 
 const routeSummary = computed(() => {
   if (props.applicationProfile.preferredRoute) {
     const route = props.applicationProfile.preferredRoute
-    return `${route.labelZh} / ${route.label}`
+    return currentLanguage.value === 'zh'
+      ? route.labelZh || route.label || ''
+      : route.label || route.labelZh || ''
   }
 
-  return '尚未确认 / Not decided yet'
+  return t('components.travelerStatus.routeUndecided')
 })
 
 const avatarStyle = computed(() => ({

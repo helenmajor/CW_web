@@ -1,77 +1,74 @@
 ﻿<template>
   <div class="clinic-game">
-    <button class="close-btn" type="button" @click="$emit('close')">Back to Map</button>
+    <button class="close-btn" type="button" @click="$emit('close')">{{ t('pages.y3_3.back') }}</button>
 
     <section class="clinic-header">
-      <p class="eyebrow">Y3-3 Clinic of Truth</p>
-      <h1>CV Surgery</h1>
-      <p class="intro">
-        Diagnose the six fatal CV problems. Click suspicious text on the resume; green checks appear
-        only when you have found a core bug.
-      </p>
-      <div class="progress-pill">Core bugs {{ foundCoreCount }} / {{ coreBugIds.length }}</div>
+      <p class="eyebrow">{{ t('pages.y3_3.eyebrow') }}</p>
+      <h1>{{ t('pages.y3_3.title') }}</h1>
+      <p class="intro">{{ t('pages.y3_3.intro') }}</p>
+      <div class="progress-pill">{{ t('pages.y3_3.progress', { current: foundCoreCount, total: coreBugIds.length }) }}</div>
     </section>
 
     <main class="clinic-workspace">
       <article class="cv-paper">
         <button class="bug-line name-line" :class="{ fixed: isFound('font') }" type="button" @click="findBug('font')">
-          Zhang San
+          {{ t('pages.y3_3.cv.name') }}
         </button>
         <button class="bug-line filename-line" :class="{ fixed: isFound('filename') }" type="button" @click="findBug('filename')">
-          final_final_REALLY_final_cv_3.pdf
+          {{ t('pages.y3_3.cv.filename') }}
         </button>
         <button class="bug-line contact-line" :class="{ fixed: isFound('email') }" type="button" @click="findBug('email')">
-          dark_dragon_99@randommail.com
+          {{ t('pages.y3_3.cv.email') }}
         </button>
 
         <hr>
 
-        <h2>Education</h2>
+        <h2>{{ t('pages.y3_3.sections.education') }}</h2>
         <p>
-          Miskatonic University - Computer Science
+          {{ t('pages.y3_3.cv.school') }}
           <button class="bug-chip" :class="{ fixed: isFound('gpa') }" type="button" @click="findBug('gpa')">
-            GPA: excellent, top student
+            {{ t('pages.y3_3.cv.gpa') }}
           </button>
         </p>
 
-        <h2>Experience</h2>
+        <h2>{{ t('pages.y3_3.sections.experience') }}</h2>
         <p>
-          <b>Software Engineering Intern</b>
+          <b>{{ t('pages.y3_3.cv.role') }}</b>
           <button class="bug-chip hidden-tip" type="button" @click="findBug('passive')">
-            learned how to use Spring Boot
+            {{ t('pages.y3_3.cv.passive') }}
           </button>
         </p>
         <p>
           <button class="bug-chip" :class="{ fixed: isFound('vague') }" type="button" @click="findBug('vague')">
-            worked very hard on an impressive project and helped the team a lot
+            {{ t('pages.y3_3.cv.vague') }}
           </button>
         </p>
 
-        <h2>Skills & Interests</h2>
-        <p>Python / Java / SQL / Git</p>
+        <h2>{{ t('pages.y3_3.sections.skills') }}</h2>
+        <p>{{ t('pages.y3_3.cv.skillsLine') }}</p>
         <p>
           <button class="bug-chip hidden-tip" type="button" @click="findBug('score')">
-            Machine Learning: self-rated 5 stars
+            {{ t('pages.y3_3.cv.score') }}
           </button>
         </p>
         <p>
           <button class="bug-chip" :class="{ fixed: isFound('hobby') }" type="button" @click="findBug('hobby')">
-            Gaming guild leader; platinum ranked night owl
+            {{ t('pages.y3_3.cv.hobby') }}
           </button>
         </p>
       </article>
 
       <aside class="diagnosis-board">
-        <h2>Diagnosis Checklist</h2>
+        <h2>{{ t('pages.y3_3.checklistTitle') }}</h2>
         <ul>
           <li v-for="id in coreBugIds" :key="id" :class="{ done: isFound(id) }">
-            {{ isFound(id) ? 'FIXED' : 'OPEN' }} - {{ bugDatabase[id].short }}
+            {{ isFound(id) ? t('pages.y3_3.fixed') : t('pages.y3_3.open') }} - {{ bugDatabase[id].short }}
           </li>
         </ul>
 
         <div class="feedback-box" :class="{ visible: feedback.title }">
-          <h3>{{ feedback.title || 'Click a suspicious CV part' }}</h3>
-          <p>{{ feedback.desc || 'Precise filenames, clean contact info, quantified evidence and formal presentation matter.' }}</p>
+          <h3>{{ feedback.title || t('pages.y3_3.defaultTitle') }}</h3>
+          <p>{{ feedback.desc || t('pages.y3_3.defaultDesc') }}</p>
         </div>
 
         <button
@@ -80,7 +77,7 @@
           :disabled="foundCoreCount !== coreBugIds.length"
           @click="$emit('complete', { game: 'cv-surgery', fixed: foundCoreCount })"
         >
-          Submit Diagnosis
+          {{ t('pages.y3_3.submit') }}
         </button>
       </aside>
     </main>
@@ -89,51 +86,14 @@
 
 <script setup>
 import { computed, reactive } from 'vue'
+import { useAppI18n } from '@/composables/useAppI18n'
 
 defineEmits(['complete', 'close'])
+const { tm, t } = useAppI18n()
 
 const coreBugIds = ['filename', 'email', 'gpa', 'vague', 'hobby', 'font']
 
-const bugDatabase = {
-  filename: {
-    short: 'Chaotic filename',
-    title: 'Chaotic Filename',
-    desc: 'Use a predictable file name such as Name_Program_CV.pdf. Mentors and reviewers handle too many attachments.'
-  },
-  email: {
-    short: 'Unprofessional email',
-    title: 'Edgy Email',
-    desc: 'Register a clean name-based mailbox for applications. Contact details are part of the first impression.'
-  },
-  gpa: {
-    short: 'Vague academic metric',
-    title: 'Subjective GPA Claim',
-    desc: 'State exact GPA and scale, such as 3.8/4.0. "Excellent" is not an academic metric.'
-  },
-  vague: {
-    short: 'No STAR/result evidence',
-    title: 'Empty Fluff',
-    desc: 'Replace vague effort with action, technology, scope and result: implemented X, reduced Y by Z%.'
-  },
-  hobby: {
-    short: 'Irrelevant hobby',
-    title: 'Off-target Hobby',
-    desc: 'CV space is scarce. Keep hobbies only when they connect to the target program or rare achievements.'
-  },
-  font: {
-    short: 'Informal typography',
-    title: 'Blasphemous Typography',
-    desc: 'Use standard CV fonts and consistent spacing. A playful fantasy display font hurts credibility.'
-  },
-  passive: {
-    title: 'Hidden Tip: Passive Verbs',
-    desc: 'Prefer active verbs: implemented, optimized, evaluated, designed. "Learned how to" centers the process, not impact.'
-  },
-  score: {
-    title: 'Hidden Tip: Subjective Rating',
-    desc: 'Self-rated stars are hard to compare. Show skill through projects, technologies, outcomes or standard certifications.'
-  }
-}
+const bugDatabase = computed(() => tm('pages.y3_3.bugs') || {})
 
 const foundIds = reactive(new Set())
 const feedback = reactive({ title: '', desc: '' })
@@ -145,7 +105,7 @@ function isFound(id) {
 }
 
 function findBug(id) {
-  const bug = bugDatabase[id]
+  const bug = bugDatabase.value[id]
   feedback.title = bug.title
   feedback.desc = bug.desc
 

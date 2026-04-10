@@ -1,19 +1,16 @@
 <template>
   <div class="alchemy-game">
-    <button class="close-btn" type="button" @click="$emit('close')">Back to Map</button>
+    <button class="close-btn" type="button" @click="$emit('close')">{{ t('pages.y3_1.back') }}</button>
 
     <section class="alchemy-stage">
       <div class="stage-copy">
-        <p class="eyebrow">Y3-1 Crucible of Truth</p>
-        <h1>Application Alchemy</h1>
-        <p class="intro">
-          Click two ingredients, fuse them, and discover the real Year 3 material sequence:
-          CV, language score, PS, recommendation letter, complete package, offer.
-        </p>
+        <p class="eyebrow">{{ t('pages.y3_1.eyebrow') }}</p>
+        <h1>{{ t('pages.y3_1.title') }}</h1>
+        <p class="intro">{{ t('pages.y3_1.intro') }}</p>
       </div>
 
       <div class="progress-book">
-        <h2>Recipe Book</h2>
+        <h2>{{ t('pages.y3_1.recipeBook') }}</h2>
         <ol>
           <li v-for="recipe in recipes" :key="recipe.result" :class="{ done: inventory.includes(recipe.result) }">
             {{ itemDB[recipe.ing[0]].name }} + {{ itemDB[recipe.ing[1]].name }}
@@ -25,7 +22,7 @@
 
     <main class="lab-grid">
       <section class="inventory-panel">
-        <h2>Inventory</h2>
+        <h2>{{ t('pages.y3_1.inventory') }}</h2>
         <div class="item-grid">
           <button
             v-for="itemId in inventory"
@@ -42,7 +39,7 @@
       </section>
 
       <section class="cauldron-panel">
-        <h2>The Crucible</h2>
+        <h2>{{ t('pages.y3_1.crucible') }}</h2>
         <div class="slot-row">
           <button
             v-for="(slot, index) in slots"
@@ -54,18 +51,18 @@
             <template v-if="slot">
               <span class="item-icon">{{ itemDB[slot].icon }}</span>
               <strong>{{ itemDB[slot].name }}</strong>
-              <small>Click to remove</small>
+              <small>{{ t('pages.y3_1.clickToRemove') }}</small>
             </template>
             <template v-else>
               <span class="empty-mark">+</span>
-              <strong>Empty Slot</strong>
-              <small>Add one material</small>
+              <strong>{{ t('pages.y3_1.emptySlot') }}</strong>
+              <small>{{ t('pages.y3_1.addMaterial') }}</small>
             </template>
           </button>
         </div>
 
         <button class="mix-btn" type="button" :disabled="!canMix" @click="mixSlots">
-          Fuse Selected Ingredients
+          {{ t('pages.y3_1.fuse') }}
         </button>
 
         <div class="toast" :class="toast.type">
@@ -77,14 +74,11 @@
 
     <div class="success-layer" :class="{ show: inventory.includes('offer') }">
       <section class="success-card">
-        <p class="eyebrow">Grand Slam Achieved</p>
+        <p class="eyebrow">{{ t('pages.y3_1.successEyebrow') }}</p>
         <h2>{{ itemDB.offer.icon }} {{ itemDB.offer.name }}</h2>
-        <p>
-          You fused evidence, target requirements, English preparation, PS logic and mentor support
-          into one complete application package.
-        </p>
+        <p>{{ t('pages.y3_1.successDesc') }}</p>
         <button class="mix-btn" type="button" @click="$emit('complete', { game: 'application-alchemy' })">
-          Save Artifact & Return
+          {{ t('pages.y3_1.saveAndReturn') }}
         </button>
       </section>
     </div>
@@ -93,45 +87,57 @@
 
 <script setup>
 import { computed, reactive, ref } from 'vue'
+import { useAppI18n } from '@/composables/useAppI18n'
 
 defineEmits(['complete', 'close'])
+const { t } = useAppI18n()
 
-const itemDB = {
-  exp: { name: 'Rambling Memories', icon: 'EXP', tier: 'tier-1' },
-  school: { name: 'Academy Requirements', icon: 'REQ', tier: 'tier-1' },
-  hair: { name: 'Sacrificed Sanity', icon: 'HP', tier: 'tier-1' },
-  prof: { name: "Mentor's Goodwill", icon: 'PROF', tier: 'tier-1' },
-  eng: { name: 'Basic English Lore', icon: 'ENG', tier: 'tier-1' },
-  cv: { name: 'Draft CV', icon: 'CV', tier: 'tier-2' },
-  ielts: { name: 'Language Score Scroll', icon: '7.0', tier: 'tier-2' },
-  ps: { name: 'Flawless PS', icon: 'PS', tier: 'tier-3' },
-  rl: { name: 'Strong RL', icon: 'RL', tier: 'tier-3' },
-  package: { name: 'Application Package', icon: 'PKG', tier: 'tier-4' },
-  offer: { name: 'Grand Slam Offer', icon: 'OFFER', tier: 'tier-4' }
+const itemDefs = {
+  exp: { icon: 'EXP', tier: 'tier-1' },
+  school: { icon: 'REQ', tier: 'tier-1' },
+  hair: { icon: 'HP', tier: 'tier-1' },
+  prof: { icon: 'PROF', tier: 'tier-1' },
+  eng: { icon: 'ENG', tier: 'tier-1' },
+  cv: { icon: 'CV', tier: 'tier-2' },
+  ielts: { icon: '7.0', tier: 'tier-2' },
+  ps: { icon: 'PS', tier: 'tier-3' },
+  rl: { icon: 'RL', tier: 'tier-3' },
+  package: { icon: 'PKG', tier: 'tier-4' },
+  offer: { icon: 'OFFER', tier: 'tier-4' },
 }
 
+const itemDB = computed(() => Object.fromEntries(
+  Object.entries(itemDefs).map(([id, item]) => [
+    id,
+    {
+      ...item,
+      name: t(`pages.y3_1.items.${id}`),
+    },
+  ]),
+))
+
 const recipes = [
-  { ing: ['exp', 'school'], result: 'cv', msg: 'You aligned memories with target requirements and forged a Draft CV.' },
-  { ing: ['eng', 'hair'], result: 'ielts', msg: 'You traded sanity for timed practice and obtained a Language Score Scroll.' },
-  { ing: ['cv', 'hair'], result: 'ps', msg: 'You used the CV skeleton, then dug deeper until a real PS began to glow.' },
-  { ing: ['cv', 'prof'], result: 'rl', msg: "You sent a concise CV and awakened the mentor's memory. Strong RL obtained." },
-  { ing: ['ps', 'rl'], result: 'package', msg: 'The PS and recommendation letter resonate. Your package now has a story and evidence.' },
-  { ing: ['package', 'ielts'], result: 'offer', msg: 'All hard thresholds and materials align. A Grand Slam Offer appears.' }
+  { ing: ['exp', 'school'], result: 'cv', messageKey: 'pages.y3_1.recipes.cv' },
+  { ing: ['eng', 'hair'], result: 'ielts', messageKey: 'pages.y3_1.recipes.ielts' },
+  { ing: ['cv', 'hair'], result: 'ps', messageKey: 'pages.y3_1.recipes.ps' },
+  { ing: ['cv', 'prof'], result: 'rl', messageKey: 'pages.y3_1.recipes.rl' },
+  { ing: ['ps', 'rl'], result: 'package', messageKey: 'pages.y3_1.recipes.package' },
+  { ing: ['package', 'ielts'], result: 'offer', messageKey: 'pages.y3_1.recipes.offer' },
 ]
 
 const failMsgs = [
-  { check: ['exp', 'hair'], text: 'Rambling plus all-nighters only produces dark circles. Anchor memories to target requirements first.' },
-  { check: ['ps', 'prof'], text: 'Do not throw a massive PS at the mentor. Send a concise CV and highlight summary.' },
-  { check: ['package', 'hair'], text: 'The package is ready. More panic cannot improve it. Check and submit.' },
-  { check: ['school', 'prof'], text: 'A professor needs evidence of your work, not a ranking list of your dream schools.' }
+  { check: ['exp', 'hair'], textKey: 'pages.y3_1.failMessages.expHair' },
+  { check: ['ps', 'prof'], textKey: 'pages.y3_1.failMessages.psProf' },
+  { check: ['package', 'hair'], textKey: 'pages.y3_1.failMessages.packageHair' },
+  { check: ['school', 'prof'], textKey: 'pages.y3_1.failMessages.schoolProf' },
 ]
 
 const inventory = reactive(['exp', 'school', 'hair', 'prof', 'eng'])
 const slots = ref([null, null])
 const toast = reactive({
   type: 'info',
-  title: 'Start the chain',
-  message: 'Hint: combine messy experience with official target requirements.'
+  title: t('pages.y3_1.toastStartTitle'),
+  message: t('pages.y3_1.toastStartMessage'),
 })
 
 const canMix = computed(() => Boolean(slots.value[0] && slots.value[1]))
@@ -139,7 +145,7 @@ const canMix = computed(() => Boolean(slots.value[0] && slots.value[1]))
 function addToSlot(itemId) {
   const emptyIndex = slots.value.findIndex((slot) => slot === null)
   if (emptyIndex === -1) {
-    setToast('error', 'Crucible full', 'Clear a slot or fuse the current pair first.')
+    setToast('error', t('pages.y3_1.toastFullTitle'), t('pages.y3_1.toastFullMessage'))
     return
   }
   slots.value[emptyIndex] = itemId
@@ -155,7 +161,7 @@ function mixSlots() {
 
   if (!recipe) {
     const fail = failMsgs.find(({ check }) => check.every((item) => pair.includes(item)))
-    setToast('error', 'No resonance', fail?.text || 'These ingredients do not make a useful application artifact.')
+    setToast('error', t('pages.y3_1.toastNoResonanceTitle'), fail ? t(fail.textKey) : t('pages.y3_1.toastNoResonanceMessage'))
     slots.value = [null, null]
     return
   }
@@ -163,7 +169,7 @@ function mixSlots() {
   if (!inventory.includes(recipe.result)) {
     inventory.push(recipe.result)
   }
-  setToast('success', itemDB[recipe.result].name, recipe.msg)
+  setToast('success', itemDB.value[recipe.result].name, t(recipe.messageKey))
   slots.value = [null, null]
 }
 

@@ -1,15 +1,12 @@
 <template>
   <div class="mentor-game">
-    <button class="close-btn" type="button" @click="$emit('close')">Back to Map</button>
+    <button class="close-btn" type="button" @click="$emit('close')">{{ t('pages.y3_5.back') }}</button>
 
     <section class="mentor-room">
       <div class="office-side">
-        <p class="eyebrow">Y3-5 Tsundere Mentor</p>
-        <h1>Recommendation Letter Visit</h1>
-        <p class="intro">
-          Ask early, introduce yourself, give target/deadline context and prepare a recommender
-          package. The wildcat professor respects students who reduce uncertainty.
-        </p>
+        <p class="eyebrow">{{ t('pages.y3_5.eyebrow') }}</p>
+        <h1>{{ t('pages.y3_5.title') }}</h1>
+        <p class="intro">{{ t('pages.y3_5.intro') }}</p>
 
         <div class="cat-avatar" :class="currentNode.mood">
           <span>{{ currentNode.emoji }}</span>
@@ -40,99 +37,39 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import { useAppI18n } from '@/composables/useAppI18n'
 
 const emit = defineEmits(['complete', 'close'])
+const { tm, t } = useAppI18n()
 
-const storyTree = {
-  start: {
-    text: 'Meow? Another application season, huh? What do you want? Speak quickly. I am extremely busy.',
-    emoji: ':3',
-    mood: 'normal',
-    hearts: 'Approval: 2 / 5',
-    choices: [
-      { text: 'Professor! I want you to write me a recommendation letter! Right now!', nextId: 'bad_start' },
-      { text: "Greetings, Prof. Wildcat. I am XXX from your Advanced Algorithms class. May I consult you about a recommendation letter?", nextId: 'good_start' }
-    ]
-  },
-  bad_start: {
-    text: 'Hiss! No introduction? I have taught hundreds of students. Which applicant are you?',
-    emoji: ':<',
-    mood: 'angry',
-    hearts: 'Approval: 1 / 5',
-    choices: [
-      { text: 'Sorry. I was in your class last semester and worked on the scheduling-optimizer final project.', nextId: 'recover_start' },
-      { text: "Do not worry about details. Just write a few casual sentences; that's enough.", nextId: 'game_over_rude' }
-    ]
-  },
-  recover_start: {
-    text: 'I faintly remember. Which program are you applying to, and when is the deadline?',
-    emoji: ':|',
-    mood: 'normal',
-    hearts: 'Approval: 2 / 5',
-    choices: [
-      { text: 'I have not decided specific academies yet. Please write a generic backup letter.', nextId: 'game_over_vague' },
-      { text: 'I plan to apply to the CS program at XX University. The deadline is at the end of next month.', nextId: 'good_timing' }
-    ]
-  },
-  good_start: {
-    text: 'Oh, the student who got an A on the final project. What program are you applying to, and when do you need the letter?',
-    emoji: ':)',
-    mood: 'happy',
-    hearts: 'Approval: 3 / 5',
-    choices: [
-      { text: 'The portal closes tomorrow night. Please save me, Professor!', nextId: 'game_over_rush' },
-      { text: 'The program is due at the end of next month. I came one month early to ask whether you would be comfortable recommending me.', nextId: 'good_timing' }
-    ]
-  },
-  good_timing: {
-    text: 'A month in advance. At least you know the rules. I am busy; do you have materials that help me recall your strongest evidence?',
-    emoji: ':|',
-    mood: 'normal',
-    hearts: 'Approval: 3 / 5',
-    choices: [
-      { text: 'My transcript should be enough. For the rest, please freestyle based on your impression.', nextId: 'game_over_lazy' },
-      { text: 'Yes. I prepared a package: latest CV, transcript, target program list, deadline table, project highlight summary and points you observed in class.', nextId: 'perfect_ending' }
-    ]
-  },
-  game_over_rude: {
-    text: 'Casual sentences? A recommendation letter carries my academic reputation. Reload and enter the office with etiquette.',
-    emoji: '!!',
-    mood: 'angry',
-    hearts: 'Approval: 0 / 5',
-    choices: [{ text: 'Reload: introduce yourself before asking.', nextId: 'start' }]
-  },
-  game_over_vague: {
-    text: 'A generic letter cannot fit a specific program. Decide target/program context before requesting a tailored recommendation.',
-    emoji: '??',
-    mood: 'angry',
-    hearts: 'Approval: 1 / 5',
-    choices: [{ text: 'Reload: do the school/program homework first.', nextId: 'start' }]
-  },
-  game_over_rush: {
-    text: 'Due tomorrow? I am not an emergency printer. Ask at least several weeks ahead, preferably around a month.',
-    emoji: 'NO',
-    mood: 'angry',
-    hearts: 'Approval: 0 / 5',
-    choices: [{ text: 'Reload: request earlier and give the deadline clearly.', nextId: 'start' }]
-  },
-  game_over_lazy: {
-    text: 'Freestyle? Professors are not obligated to remember every detail. Prepare a concise info package and highlight summary.',
-    emoji: '...',
-    mood: 'angry',
-    hearts: 'Approval: 0 / 5',
-    choices: [{ text: 'Reload: prepare the recommender care package.', nextId: 'start' }]
-  },
-  perfect_ending: {
-    text: 'Purr. This is organized: CV, transcript, targets, deadline and project highlights. I can write something concrete. Leave it with me.',
-    emoji: ':D',
-    mood: 'happy',
-    hearts: 'Approval: 5 / 5',
-    choices: [{ text: 'Claim the recommendation letter and return to map', nextId: 'exit' }]
-  }
+const storyMeta = {
+  start: { emoji: ':3', mood: 'normal', nextIds: ['bad_start', 'good_start'] },
+  bad_start: { emoji: ':<', mood: 'angry', nextIds: ['recover_start', 'game_over_rude'] },
+  recover_start: { emoji: ':|', mood: 'normal', nextIds: ['game_over_vague', 'good_timing'] },
+  good_start: { emoji: ':)', mood: 'happy', nextIds: ['game_over_rush', 'good_timing'] },
+  good_timing: { emoji: ':|', mood: 'normal', nextIds: ['game_over_lazy', 'perfect_ending'] },
+  game_over_rude: { emoji: '!!', mood: 'angry', nextIds: ['start'] },
+  game_over_vague: { emoji: '??', mood: 'angry', nextIds: ['start'] },
+  game_over_rush: { emoji: 'NO', mood: 'angry', nextIds: ['start'] },
+  game_over_lazy: { emoji: '...', mood: 'angry', nextIds: ['start'] },
+  perfect_ending: { emoji: ':D', mood: 'happy', nextIds: ['exit'] },
 }
 
 const currentNodeId = ref('start')
-const currentNode = computed(() => storyTree[currentNodeId.value])
+const storyTree = computed(() => tm('pages.y3_5.tree') || {})
+const currentNode = computed(() => {
+  const copy = storyTree.value[currentNodeId.value] || { text: '', hearts: '', choices: [] }
+  const meta = storyMeta[currentNodeId.value] || { emoji: ':|', mood: 'normal', nextIds: [] }
+  return {
+    ...copy,
+    emoji: meta.emoji,
+    mood: meta.mood,
+    choices: (copy.choices || []).map((text, index) => ({
+      text,
+      nextId: meta.nextIds[index],
+    })),
+  }
+})
 
 function choose(nextId) {
   if (nextId === 'exit') {

@@ -3,10 +3,10 @@
     <div class="game-modal-content">
       <div class="modal-header">
         <button class="back-btn" @click="goBack">
-          <i class="fas fa-arrow-left"></i> Back To Map
+          <i class="fas fa-arrow-left"></i> {{ t('components.gameContainer.backToMap') }}
         </button>
         <span>{{ levelTitle }}</span>
-        <span class="year-chip">{{ store.year === 'y2' ? 'Year 2' : 'Year 3' }}</span>
+        <span class="year-chip">{{ yearChip }}</span>
       </div>
 
       <div class="game-stage">
@@ -15,7 +15,7 @@
 
       <div class="game-actions" v-if="!isMissingLevel">
         <button class="action-btn secondary" @click="skipLevel">
-          Skip And Unlock Next
+          {{ t('components.gameContainer.skipUnlockNext') }}
         </button>
       </div>
     </div>
@@ -23,7 +23,8 @@
 </template>
 
 <script setup>
-import { computed, defineAsyncComponent, watchEffect } from 'vue'
+import { computed, defineAsyncComponent, defineComponent, h, watchEffect } from 'vue'
+import { useAppI18n } from '@/composables/useAppI18n'
 import { useRoute, useRouter } from 'vue-router'
 import { getLevelDefinition } from '@/config/levels'
 import { useGameStore } from '@/stores/game'
@@ -31,6 +32,7 @@ import { useGameStore } from '@/stores/game'
 const route = useRoute()
 const router = useRouter()
 const store = useGameStore()
+const { t } = useAppI18n()
 
 store.hydrate()
 
@@ -46,16 +48,24 @@ watchEffect(() => {
 
 const levelDefinition = computed(() => getLevelDefinition(store.year, levelId.value))
 
-const MissingLevelView = {
-  template: `
-    <div style="min-height: 360px; display: grid; place-items: center; padding: 24px; background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%); border-radius: 16px;">
-      <div style="max-width: 520px; text-align: center; background: #fffcf3; border: 3px solid #e2bc7c; border-radius: 24px; padding: 32px; box-shadow: 0 25px 40px rgba(0, 0, 0, 0.12);">
-        <h2 style="margin-bottom: 12px; color: #2d5a6e;">Level not available yet</h2>
-        <p style="color: #4b5563; line-height: 1.6;">The Vue route could not find a matching level component. Return to the map and choose another node.</p>
-      </div>
-    </div>
-  `,
-}
+const MissingLevelView = defineComponent({
+  setup() {
+    return () => h('div', {
+      style: 'min-height: 360px; display: grid; place-items: center; padding: 24px; background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%); border-radius: 16px;',
+    }, [
+      h('div', {
+        style: 'max-width: 520px; text-align: center; background: #fffcf3; border: 3px solid #e2bc7c; border-radius: 24px; padding: 32px; box-shadow: 0 25px 40px rgba(0, 0, 0, 0.12);',
+      }, [
+        h('h2', {
+          style: 'margin-bottom: 12px; color: #2d5a6e;',
+        }, t('components.gameContainer.missingTitle')),
+        h('p', {
+          style: 'color: #4b5563; line-height: 1.6;',
+        }, t('components.gameContainer.missingDescription')),
+      ]),
+    ])
+  },
+})
 
 const isMissingLevel = computed(() => {
   if (!levelDefinition.value) return true
@@ -72,9 +82,13 @@ const currentGame = computed(() => {
 })
 
 const levelTitle = computed(() => {
-  if (!levelDefinition.value) return 'Loading Level...'
-  return `${store.year === 'y2' ? 'Y2' : 'Y3'}-${levelDefinition.value.id}: ${levelDefinition.value.name}`
+  if (!levelDefinition.value) return t('components.gameContainer.loadingLevel')
+  return t(`${levelDefinition.value.i18nKey}.title`)
 })
+
+const yearChip = computed(() => (
+  t(`components.gameContainer.yearChip.${store.year}`)
+))
 
 function goBack() {
   router.push({ name: 'map' })
