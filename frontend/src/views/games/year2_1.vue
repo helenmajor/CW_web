@@ -327,6 +327,8 @@ function returnToMap() {
 }
 
 .avatar {
+  --hair: #3a2a25;
+  --outfit: #ffd46d;
   position: relative;
   width: 180px;
   height: 210px;
@@ -373,7 +375,7 @@ function returnToMap() {
   transform: translateX(-50%);
   width: 74px;
   height: 34px;
-  background: var(--hair);
+  background: var(--hair, #3a2a25);
   border: 4px solid #273640;
   border-bottom: none;
   border-radius: 24px 24px 12px 12px;
@@ -419,7 +421,7 @@ function returnToMap() {
   transform: translateX(-50%);
   width: 74px;
   height: 60px;
-  background: var(--outfit);
+  background: var(--outfit, #ffd46d);
   border: 4px solid #273640;
   border-radius: 18px 18px 12px 12px;
 }
