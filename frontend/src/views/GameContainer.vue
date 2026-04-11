@@ -1,6 +1,8 @@
 <template>
   <div class="game-shell">
     <div class="game-modal-content" :class="{ 'chrome-free-modal': isChromeFreeLevel }">
+      <button v-if="!isChromeFreeLevel" class="modal-close-btn" type="button" @click="goBack">×</button>
+
       <div v-if="!isChromeFreeLevel" class="modal-header">
         <button class="back-btn" @click="goBack">
           <i class="fas fa-arrow-left"></i> {{ t('components.gameContainer.backToMap') }}
@@ -33,7 +35,7 @@ const route = useRoute()
 const router = useRouter()
 const store = useGameStore()
 const { t } = useAppI18n()
-const chromeFreeFiles = new Set(['year3_5.vue', 'year3_6.vue'])
+const chromeFreeFiles = new Set(['year3_8.vue'])
 
 store.hydrate()
 
@@ -124,6 +126,7 @@ function skipLevel() {
 }
 
 .game-modal-content {
+  position: relative;
   background: #fffcf3;
   width: 95%;
   max-width: 1200px;
@@ -146,6 +149,7 @@ function skipLevel() {
 }
 
 .modal-header {
+  padding-right: 56px;
   font-size: 1.5rem;
   color: #2d5a6e;
   border-bottom: 2px dashed #e7bc7a;
@@ -160,6 +164,7 @@ function skipLevel() {
 }
 
 .back-btn,
+.modal-close-btn,
 .action-btn {
   border: none;
   border-radius: 999px;
@@ -176,6 +181,24 @@ function skipLevel() {
 }
 
 .back-btn:hover {
+  transform: translateY(-2px);
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(44, 90, 110, 0.1);
+  color: #2d5a6e;
+  border: 2px solid rgba(227, 178, 73, 0.35);
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.modal-close-btn:hover {
   transform: translateY(-2px);
 }
 
@@ -241,6 +264,11 @@ function skipLevel() {
   .action-btn,
   .back-btn {
     width: 100%;
+  }
+
+  .modal-close-btn {
+    top: 16px;
+    right: 16px;
   }
 }
 </style>
