@@ -1,86 +1,114 @@
 <template>
-  <div class="final-trial">
-    <button class="close-btn" type="button" @click="$emit('close')">{{ t('pages.y2_7.back') }}</button>
+  <div class="ultimate-trial-page">
+    <div class="room">
+      <h2 class="header-title"><i class="fas fa-star"></i> {{ t('pages.y2_7.title') }}</h2>
 
-    <section class="trial-room">
-      <p class="eyebrow">{{ t('pages.y2_7.eyebrow') }}</p>
-      <h1>{{ t('pages.y2_7.title') }}</h1>
-
-      <div v-if="!quizPassed" class="quiz-panel">
-        <p class="question">{{ t('pages.y2_7.question') }}</p>
-
-        <button class="answer-btn" type="button" @click="checkAnswer(false)">
-          {{ t('pages.y2_7.answers.a') }}
-        </button>
-        <button class="answer-btn featured" type="button" @click="checkAnswer(true)">
-          {{ t('pages.y2_7.answers.b') }}
-        </button>
-        <button class="answer-btn" type="button" @click="checkAnswer(false)">
-          {{ t('pages.y2_7.answers.c') }}
-        </button>
-
-        <p v-if="error" class="error-text" :class="{ shake: errorShake }">
-          {{ error }}
-        </p>
-      </div>
-
-      <div v-else class="gacha-panel">
-        <h2>{{ t('pages.y2_7.passedTitle') }}</h2>
-        <p>{{ t('pages.y2_7.passedDesc') }}</p>
+      <div v-if="!quizPassed" class="question-box">
+        <p class="question-desc">{{ t('pages.y2_7.question') }}</p>
 
         <button
-          class="gacha-machine"
-          :class="{ spinning: isSpinning }"
+          v-for="answer in answers"
+          :key="answer.key"
+          class="btn-ans"
+          type="button"
+          @click="checkAnswer(answer.correct)"
+        >
+          {{ answer.label }}
+        </button>
+
+        <div v-if="errorMessage" class="error-msg" :class="{ shaking: errorShake }">
+          {{ errorMessage }}
+        </div>
+      </div>
+
+      <div v-else class="success-box">
+        <h3 class="success-title">
+          <span class="success-mark">✅</span>
+          {{ t('pages.y2_7.successTitle') }}
+          <br>
+          {{ t('pages.y2_7.successPrompt') }}
+        </h3>
+
+        <button
+          v-show="machineVisible"
+          class="gacha"
+          :class="{ shaking: isSpinning }"
           type="button"
           :disabled="isSpinning || ticketOpen"
           @click="playGacha"
         >
-          <span class="machine-top">{{ t('pages.y2_7.machineTop') }}</span>
-          <span class="machine-orb"></span>
-          <span class="machine-base">{{ t('pages.y2_7.machineBottom') }}</span>
+          🎰
         </button>
       </div>
-    </section>
+    </div>
 
-    <div class="ticket-layer" :class="{ active: ticketOpen }" @click.self="ticketOpen = false">
-      <section class="golden-ticket" :class="{ active: ticketOpen }" :aria-label="t('pages.y2_7.ticketTitle')">
-        <p class="ticket-kicker">{{ t('pages.y2_7.ticketKicker') }}</p>
-        <h2>{{ t('pages.y2_7.ticketTitle') }}</h2>
-        <div class="reward-box">
-          {{ t('pages.y2_7.rewardBox') }}
-        </div>
-        <p class="ticket-copy">{{ t('pages.y2_7.ticketCopy') }}</p>
-        <button class="claim-btn" type="button" @click="claimTicket">
-          {{ t('pages.y2_7.claim') }}
-        </button>
-      </section>
+    <div class="overlay" :class="{ active: ticketOpen }"></div>
+
+    <div class="golden-ticket" :class="{ active: ticketOpen }" :aria-hidden="(!ticketOpen).toString()">
+      <div class="ticket-title">{{ t('pages.y2_7.ticketTitle') }}</div>
+      <div class="ticket-subtitle">{{ t('pages.y2_7.ticketSubtitle') }}</div>
+
+      <div class="reward-content">
+        <i class="fas fa-gem" aria-hidden="true"></i>{{ t('pages.y2_7.rewardBox') }}
+      </div>
+
+      <p class="lore-text" v-html="t('pages.y2_7.ticketCopy')"></p>
+      <button class="btn-claim" type="button" @click="claimTicket">
+        {{ t('pages.y2_7.claim') }}
+      </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
 import { useAppI18n } from '@/composables/useAppI18n'
 
 const emit = defineEmits(['complete', 'close'])
 const { t } = useAppI18n()
 
 const quizPassed = ref(false)
-const error = ref('')
+const machineVisible = ref(false)
+const errorMessage = ref('')
 const errorShake = ref(false)
 const isSpinning = ref(false)
 const ticketOpen = ref(false)
 
+let machineRevealTimer = 0
 let spinTimer = 0
+
+const answers = computed(() => ([
+  { key: 'a', label: t('pages.y2_7.answers.a'), correct: false },
+  { key: 'b', label: t('pages.y2_7.answers.b'), correct: true },
+  { key: 'c', label: t('pages.y2_7.answers.c'), correct: false },
+]))
+
+function clearTimers() {
+  if (machineRevealTimer) {
+    window.clearTimeout(machineRevealTimer)
+    machineRevealTimer = 0
+  }
+
+  if (spinTimer) {
+    window.clearTimeout(spinTimer)
+    spinTimer = 0
+  }
+}
 
 function checkAnswer(isCorrect) {
   if (isCorrect) {
     quizPassed.value = true
-    error.value = ''
+    errorMessage.value = ''
+    errorShake.value = false
+    machineVisible.value = false
+    clearTimers()
+    machineRevealTimer = window.setTimeout(() => {
+      machineVisible.value = true
+    }, 100)
     return
   }
 
-  error.value = t('pages.y2_7.error')
+  errorMessage.value = t('pages.y2_7.error')
   errorShake.value = false
   window.requestAnimationFrame(() => {
     errorShake.value = true
@@ -91,7 +119,7 @@ function playGacha() {
   if (isSpinning.value || ticketOpen.value) return
 
   isSpinning.value = true
-  window.clearTimeout(spinTimer)
+  clearTimers()
   spinTimer = window.setTimeout(() => {
     isSpinning.value = false
     ticketOpen.value = true
@@ -102,266 +130,281 @@ function claimTicket() {
   ticketOpen.value = false
   emit('complete', { game: 'golden-ticket', reward: 'prophecy-consultation' })
 }
+
+onBeforeUnmount(() => {
+  clearTimers()
+})
 </script>
 
 <style scoped>
-.final-trial {
-  position: relative;
+.ultimate-trial-page {
   min-height: 100%;
-  display: grid;
-  place-items: center;
-  padding: clamp(18px, 4vw, 70px);
-  overflow: hidden;
-  color: #fff7ed;
-  background:
-    radial-gradient(circle at 50% 0%, rgba(250, 204, 21, 0.28), transparent 38%),
-    radial-gradient(circle at 90% 90%, rgba(22, 163, 74, 0.18), transparent 30%),
-    linear-gradient(145deg, #18181b, #3f1f46 52%, #0f172a);
-}
-
-.close-btn,
-.answer-btn,
-.gacha-machine,
-.claim-btn {
-  border-radius: 8px;
-  font: inherit;
-}
-
-.close-btn {
-  position: absolute;
-  top: 18px;
-  left: 18px;
-  z-index: 3;
-  padding: 10px 14px;
-  color: #fef3c7;
-  background: rgba(15, 23, 42, 0.86);
-  border: 1px solid rgba(250, 204, 21, 0.48);
-  cursor: pointer;
-}
-
-.trial-room {
-  width: min(760px, 100%);
-  padding: clamp(22px, 5vw, 64px);
-  border-radius: 8px;
-  text-align: center;
-  background: rgba(2, 6, 23, 0.78);
-  border: 2px dashed rgba(250, 204, 21, 0.68);
-  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.42);
-}
-
-h1,
-h2,
-p {
-  margin: 0;
-}
-
-h1 {
-  margin-top: 8px;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(2.5rem, 8vw, 7rem);
-  line-height: 0.9;
-  color: #facc15;
-}
-
-.eyebrow,
-.ticket-kicker {
-  color: #a7f3d0;
-  font-weight: 1000;
-  text-transform: uppercase;
-  letter-spacing: 0;
-}
-
-.quiz-panel,
-.gacha-panel {
-  margin-top: clamp(24px, 5vw, 58px);
-}
-
-.question,
-.gacha-panel p,
-.ticket-copy {
-  color: #e5e7eb;
-  line-height: 1.65;
-  font-size: 1.05rem;
-}
-
-.answer-btn {
-  width: 100%;
-  margin-top: 14px;
-  padding: 16px 18px;
-  color: #fef3c7;
-  background: transparent;
-  border: 1px solid rgba(250, 204, 21, 0.7);
-  text-align: left;
-  cursor: pointer;
-  line-height: 1.45;
-  transition: transform 0.16s ease, color 0.16s ease, background 0.16s ease;
-}
-
-.answer-btn:hover,
-.answer-btn.featured:hover {
-  transform: translateX(5px);
-  color: #111827;
-  background: #facc15;
-}
-
-.answer-btn.featured {
-  border-color: #86efac;
-  color: #dcfce7;
-}
-
-.error-text {
-  margin-top: 16px;
-  color: #fca5a5;
-  font-weight: 800;
-  line-height: 1.45;
-}
-
-.shake {
-  animation: shake-error 0.32s ease;
-}
-
-@keyframes shake-error {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  25% {
-    transform: translateX(-8px);
-  }
-  75% {
-    transform: translateX(8px);
-  }
-}
-
-.gacha-panel h2,
-.golden-ticket h2 {
-  color: #facc15;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(2rem, 5vw, 4.5rem);
-  line-height: 0.95;
-}
-
-.gacha-panel p {
-  margin: 16px auto 0;
-  max-width: 560px;
-}
-
-.gacha-machine {
-  width: clamp(190px, 42vw, 330px);
-  aspect-ratio: 0.78;
-  margin-top: 32px;
-  padding: 18px;
-  border: 0;
-  cursor: pointer;
-  color: #111827;
-  background: linear-gradient(180deg, #fef3c7, #facc15 56%, #ca8a04);
-  box-shadow: 0 28px 48px rgba(0, 0, 0, 0.35), inset 0 0 0 8px rgba(255, 255, 255, 0.24);
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  justify-items: center;
+  padding: 24px;
+  display: flex;
+  justify-content: center;
   align-items: center;
+  color: #fff;
+  background: radial-gradient(circle, #2b1b3d 0%, #0a0a0a 100%);
+  position: relative;
+  overflow: hidden;
 }
 
-.gacha-machine:disabled {
-  cursor: wait;
+.room {
+  width: min(600px, 100%);
+  text-align: center;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 40px;
+  border-radius: 20px;
+  border: 2px dashed #f9d976;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  position: relative;
+  z-index: 1;
 }
 
-.machine-top,
-.machine-base {
-  font-weight: 1000;
+.header-title {
+  margin: 0 0 20px;
+  color: #f9d976;
+  font-family: Georgia, serif;
+  letter-spacing: 1px;
+  font-size: 2.2rem;
 }
 
-.machine-orb {
-  width: 70%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 35% 28%, #fff, rgba(255, 255, 255, 0.25) 22%, transparent 34%),
-    radial-gradient(circle, #ef4444, #7f1d1d);
-  border: 10px solid #111827;
+.question-desc {
+  margin: 0 0 25px;
+  font-size: 1.15rem;
+  color: #e0e6ed;
+  line-height: 1.5;
+  font-family: Georgia, serif;
 }
 
-.spinning {
-  animation: machine-shake 0.22s linear infinite;
+.btn-ans {
+  width: 100%;
+  margin-bottom: 15px;
+  padding: 15px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.3s ease, background 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-align: left;
+  line-height: 1.4;
+  background: transparent;
+  color: #f9d976;
+  border: 1px solid #f9d976;
 }
 
-@keyframes machine-shake {
-  0%,
-  100% {
-    transform: rotate(0) scale(1.03);
-  }
-  25% {
-    transform: rotate(4deg) scale(1.03);
-  }
-  75% {
-    transform: rotate(-4deg) scale(1.03);
-  }
+.btn-ans:hover {
+  background: #f9d976;
+  color: #000;
+  transform: translateX(5px);
+  box-shadow: 0 5px 15px rgba(249, 217, 118, 0.4);
 }
 
-.ticket-layer {
+.error-msg {
+  margin-top: 15px;
+  color: #e74c3c;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.success-box {
+  min-height: 220px;
+}
+
+.success-title {
+  margin: 0;
+  color: #2ecc71;
+  font-family: Georgia, serif;
+  line-height: 1.5;
+  font-size: 1.3rem;
+}
+
+.success-mark {
+  margin-right: 6px;
+}
+
+.gacha {
+  display: block;
+  margin: 20px auto 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 6rem;
+  cursor: pointer;
+  transition: transform 0.3s ease, filter 0.3s ease;
+  filter: drop-shadow(0 0 20px rgba(249, 217, 118, 0.5));
+}
+
+.gacha:hover {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 30px rgba(249, 217, 118, 0.8));
+}
+
+.gacha:disabled {
+  cursor: default;
+}
+
+.shaking {
+  animation: shake 0.5s infinite;
+  pointer-events: none;
+}
+
+.overlay {
   position: fixed;
   inset: 0;
-  z-index: 10;
-  display: grid;
-  place-items: center;
-  padding: 20px;
-  pointer-events: none;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(5px);
+  z-index: 90;
   opacity: 0;
-  background: rgba(0, 0, 0, 0.78);
-  backdrop-filter: blur(8px);
-  transition: opacity 0.22s ease;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
 }
 
-.ticket-layer.active {
-  pointer-events: auto;
+.overlay.active {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .golden-ticket {
-  width: min(600px, 100%);
-  padding: clamp(24px, 5vw, 60px);
-  border-radius: 8px;
-  color: #4a3000;
-  text-align: center;
-  background: linear-gradient(135deg, #fff7ad, #facc15 50%, #b7791f);
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  width: min(500px, calc(100% - 32px));
+  z-index: 100;
+  background: linear-gradient(135deg, #ffd700 0%, #fdb931 50%, #996515 100%);
+  padding: 40px;
+  border-radius: 15px;
   border: 4px dashed #fff;
-  box-shadow: 0 30px 80px rgba(250, 204, 21, 0.4);
-  transform: scale(0.78) translateY(28px);
-  transition: transform 0.32s cubic-bezier(.2, .88, .2, 1.25);
+  box-shadow: 0 20px 60px rgba(255, 215, 0, 0.6), inset 0 0 20px rgba(255, 255, 255, 0.5);
+  text-align: center;
+  color: #5c3a00;
+  transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .golden-ticket.active {
-  transform: scale(1) translateY(0);
+  transform: translate(-50%, -50%) scale(1);
 }
 
-.golden-ticket h2 {
-  color: #4a3000;
+.ticket-title {
+  font-size: 2.2rem;
+  font-weight: 900;
+  margin-bottom: 10px;
+  text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
+  letter-spacing: 2px;
+  font-family: Georgia, serif;
 }
 
-.reward-box {
-  margin: 24px 0;
-  padding: 18px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.34);
-  border: 1px solid rgba(255, 255, 255, 0.68);
-  font-size: clamp(1.1rem, 3vw, 1.65rem);
-  line-height: 1.35;
-  font-weight: 1000;
-}
-
-.ticket-copy {
-  color: #5c3a00;
+.ticket-subtitle {
+  font-size: 1.1rem;
   font-weight: 700;
+  margin-bottom: 25px;
+  border-bottom: 2px solid #5c3a00;
+  padding-bottom: 15px;
 }
 
-.claim-btn {
+.reward-content {
+  background: rgba(255, 255, 255, 0.3);
+  padding: 20px;
+  border-radius: 10px;
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin-bottom: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  line-height: 1.4;
+}
+
+.reward-content i {
+  color: #d4af37;
+  margin-right: 10px;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3));
+}
+
+.lore-text {
+  font-size: 1rem;
+  margin: 0 0 20px;
+  line-height: 1.6;
+  font-weight: 600;
+  font-family: Georgia, serif;
+}
+
+.btn-claim {
   width: 100%;
-  margin-top: 24px;
-  padding: 16px 20px;
-  color: #facc15;
-  background: #4a3000;
-  border: 0;
+  background: #5c3a00;
+  color: #ffd700;
+  border: none;
+  padding: 15px 40px;
+  border-radius: 30px;
+  font-size: 1.15rem;
+  font-weight: 700;
   cursor: pointer;
-  font-weight: 1000;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  box-shadow: 0 5px 15px rgba(92, 58, 0, 0.5);
+}
+
+.btn-claim:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(92, 58, 0, 0.7);
+  background: #3d2600;
+}
+
+.shaking.error-msg,
+.error-msg.shaking {
+  animation: error-shake 0.3s ease;
+}
+
+@keyframes error-shake {
+  0% {
+    transform: translateX(-5px);
+  }
+  50% {
+    transform: translateX(5px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: rotate(0) scale(1.1);
+  }
+  25% {
+    transform: rotate(15deg) scale(1.1);
+  }
+  75% {
+    transform: rotate(-15deg) scale(1.1);
+  }
+}
+
+@media (max-width: 640px) {
+  .ultimate-trial-page {
+    padding: 14px;
+  }
+
+  .room {
+    padding: 24px 18px;
+  }
+
+  .header-title {
+    font-size: 1.8rem;
+  }
+
+  .question-desc {
+    font-size: 1rem;
+  }
+
+  .golden-ticket {
+    padding: 28px 20px;
+  }
+
+  .ticket-title {
+    font-size: 1.7rem;
+  }
+
+  .reward-content {
+    font-size: 1.1rem;
+  }
 }
 </style>
