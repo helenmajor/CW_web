@@ -2,7 +2,7 @@
   <div class="wildcat-root">
     <div class="game-screen">
       <div class="status-bar">
-        <div><i class="fas fa-paw" style="color:#f5b342;"></i> Mentor's Favorability</div>
+        <div><i class="fas fa-paw" style="color:#f5b342;"></i> {{ pageCopy.statusLabel }}</div>
         <div class="hearts">{{ currentNode.hearts }}</div>
       </div>
 
@@ -11,12 +11,12 @@
       </div>
 
       <div class="dialogue-box">
-        <div class="speaker-name">Prof. Wildcat (Archmage)</div>
+        <div class="speaker-name">{{ pageCopy.speakerName }}</div>
         <div class="text-content" v-html="currentNode.text"></div>
         <div class="choices-area">
           <button
-            v-for="choice in currentNode.choices"
-            :key="choice.text"
+            v-for="(choice, index) in currentNode.choices"
+            :key="`${currentNodeId}-${index}`"
             class="choice-btn"
             type="button"
             v-html="choice.text"
@@ -29,112 +29,24 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watchEffect } from 'vue'
+import { useAppI18n } from '@/composables/useAppI18n'
 
 const emit = defineEmits(['complete'])
-
-const storyTree = {
-  start: {
-    text: "(You peek into the office)<br>😼 Meow? Another application season, huh? What do you want? Speak quickly, I am extremely busy.",
-    emoji: '😼',
-    mood: 'normal',
-    hearts: '❤️❤️🤍🤍🤍',
-    choices: [
-      { text: 'Professor! I want you to write me a recommendation letter! (Straight to the point, slightly abrupt)', nextId: 'bad_start' },
-      { text: "Greetings, Prof. Wildcat. I am XXX from your 'Advanced Yarn Ball Catching' class. I'm here to consult you regarding a recommendation letter.", nextId: 'good_start' },
-    ],
-  },
-  bad_start: {
-    text: "😾 MEOW! Barking orders right off the bat? Not even an introduction! I've taught countless students, how am I supposed to remember which mouse you are!",
-    emoji: '😾',
-    mood: 'angry',
-    hearts: '❤️🤍🤍🤍🤍',
-    choices: [
-      { text: 'Ah, my deepest apologies! I was the one sitting in the front row last semester...', nextId: 'recover_start' },
-      { text: "Oh, please don't be mad, Professor. Just write a few casual sentences for me, it's fine.", nextId: 'game_over_rude' },
-    ],
-  },
-  game_over_rude: {
-    text: "💢 A few casual sentences?! Is my academic reputation something to be thrown around casually? Get out! And close the door!<br><span style='color:#e74c3c'>[Game Over: The mentor is thoroughly enraged. You have lost this RL.]</span>",
-    emoji: '🙀',
-    mood: 'angry',
-    hearts: '🖤🖤🖤🖤🖤',
-    choices: [
-      { text: '🔄 Reload Save: Go learn basic email and office etiquette.', nextId: 'start' },
-    ],
-  },
-  recover_start: {
-    text: '😼 Hmph, I have a faint recollection. Speak, which program are you applying for? When is the deadline?',
-    emoji: '😼',
-    mood: 'normal',
-    hearts: '❤️❤️🤍🤍🤍',
-    choices: [
-      { text: "Uhh... The specific academies aren't decided yet. Just write me one as a backup for now.", nextId: 'game_over_vague' },
-      { text: 'I wish to apply for the CS program at XX University; the deadline is at the end of next month. There\'s plenty of time.', nextId: 'good_timing' },
-    ],
-  },
-  good_start: {
-    text: "😸 Oh, it's the little one who got an A on the final. *Purr...* Alright, what program are you applying for? When do you need it?",
-    emoji: '😸',
-    mood: 'happy',
-    hearts: '❤️❤️❤️🤍🤍',
-    choices: [
-      { text: 'The application closes tomorrow night! Please save me, Professor!', nextId: 'game_over_rush' },
-      { text: "It's a program at XX University due at the end of next month. I came a month in advance to ask for your willingness.", nextId: 'good_timing' },
-    ],
-  },
-  game_over_rush: {
-    text: "😾 MEOW!! Due tomorrow and you come to me today?! Do you think I'm an automatic typewriter?! I'm busy, no rush orders!<br><span style='color:#e74c3c'>[Game Over: High-risk maneuver! Never push a professor's DDL to the extreme.]</span>",
-    emoji: '😾',
-    mood: 'angry',
-    hearts: '🖤🖤🖤🖤🖤',
-    choices: [
-      { text: "🔄 Reload Save: Remember to contact professors at least a month in advance.", nextId: 'start' },
-    ],
-  },
-  game_over_vague: {
-    text: "😾 You haven't even set a target, who am I writing this for? Different academies value entirely different traits. Come back when you've figured it out!<br><span style='color:#e74c3c'>[Game Over: Lack of planning. RLs must be tailored to specific programs.]</span>",
-    emoji: '😾',
-    mood: 'angry',
-    hearts: '❤️🤍🤍🤍🤍',
-    choices: [
-      { text: '🔄 Reload Save: Do your homework first.', nextId: 'start' },
-    ],
-  },
-  good_timing: {
-    text: "😼 A month in advance, at least you know the rules. But I'm very busy this term. Do you have any materials to help me quickly recall your shining moments?",
-    emoji: '😼',
-    mood: 'normal',
-    hearts: '❤️❤️❤️🤍🤍',
-    choices: [
-      { text: 'Uhh... Does my final transcript count? For the rest, just freestyle based on your impression.', nextId: 'game_over_lazy' },
-      { text: "Yes! I've prepared an [Application Care Package]: including my latest CV, transcript, target program list, and a highlight summary of my final project in your class.", nextId: 'perfect_ending' },
-    ],
-  },
-  game_over_lazy: {
-    text: "😾 Freestyle based on my impression? Then I'll write 'This student had zero presence other than not snoring in class.' Not even organizing your own materials is a waste of my time!<br><span style='color:#e74c3c'>[Game Over: Professors have no obligation to remember your brilliance. Prepare a material package.]</span>",
-    emoji: '😾',
-    mood: 'angry',
-    hearts: '🤍🤍🤍🤍🤍',
-    choices: [
-      { text: '🔄 Reload Save: Organize your info package before knocking.', nextId: 'start' },
-    ],
-  },
-  perfect_ending: {
-    text: "😻 *Purr, purr...* The materials are this well-organized? Even the highlight summary is listed. Writing this letter will take me ten minutes tops.<br>Alright, leave it to me. May your applications go smoothly!<br><span style='color:#2ecc71'>[Cleared! You successfully smoothed the fur of the Tsundere Wildcat and mastered the perfect template for requesting an RL!]</span>",
-    emoji: '😻',
-    mood: 'happy',
-    hearts: '❤️❤️❤️❤️❤️',
-    choices: [
-      { text: '🎁 Claim Clear Reward (+50 Coins) and Return to Map', nextId: 'exit' },
-    ],
-  },
-}
+const { t, tm } = useAppI18n()
 
 const currentNodeId = ref('start')
-const previousTitle = ref('')
+const previousTitle = ref(typeof document !== 'undefined' ? document.title : '')
+const pageCopy = computed(() => tm('pages.y3_5') || {})
+const storyTree = computed(() => pageCopy.value.tree || {})
 
-const currentNode = computed(() => storyTree[currentNodeId.value] ?? storyTree.start)
+const currentNode = computed(() => storyTree.value[currentNodeId.value] ?? storyTree.value.start ?? {
+  text: '',
+  emoji: '😼',
+  mood: 'normal',
+  hearts: '',
+  choices: [],
+})
 const catMoodClass = computed(() => ({
   'angry-shake': currentNode.value.mood === 'angry',
   'happy-bounce': currentNode.value.mood === 'happy',
@@ -148,7 +60,7 @@ function renderNode(nodeId) {
         payload: { year: 'y3', nodeId: 5, rewardCoins: 50 },
       }, '*')
     }
-    window.alert('Map Guide: Returned to the map interface! (This triggers the unlock code for the next stage in the main system)')
+    window.alert(t('pages.y3_5.alerts.returnToMap'))
     emit('complete', { year: 'y3', nodeId: 5, rewardCoins: 50 })
     return
   }
@@ -157,9 +69,11 @@ function renderNode(nodeId) {
 }
 
 onMounted(() => {
-  previousTitle.value = document.title
-  document.title = 'Y3-5 Tsundere Wildcat Mentor Simulator'
   renderNode('start')
+})
+
+watchEffect(() => {
+  document.title = t('pages.y3_5.documentTitle')
 })
 
 onBeforeUnmount(() => {
