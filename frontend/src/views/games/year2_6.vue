@@ -1,518 +1,872 @@
 <template>
-  <div class="contract-game">
-    <section class="hero-strip">
-      <button class="close-btn" type="button" @click="$emit('close')">{{ t('pages.y2_6.back') }}</button>
-      <div>
-        <p class="eyebrow">{{ t('pages.y2_6.eyebrow') }}</p>
-        <h1>{{ t('pages.y2_6.title') }}</h1>
-        <p class="intro">{{ t('pages.y2_6.intro') }}</p>
-      </div>
-      <div class="progress-pill">
-        {{ t('pages.y2_6.progress', { current: protectedCount, total: clauses.length }) }}
-      </div>
-    </section>
+  <div class="contract-guardian-page">
+    <div class="game-container">
+      <header class="header">
+        <div class="title">
+          <h1><i class="fas fa-shield-alt"></i> {{ t('pages.y2_6.title') }}</h1>
+          <p>{{ t('pages.y2_6.subtitle') }}</p>
+        </div>
+        <div class="progress-badge">{{ t('pages.y2_6.progress', { current: protectedCount, total: totalClauses }) }}</div>
+      </header>
 
-    <main class="workspace">
-      <section class="shield-pool" :aria-label="t('pages.y2_6.shieldsTitle')">
-        <h2>{{ t('pages.y2_6.shieldsTitle') }}</h2>
-        <p class="hint">{{ t('pages.y2_6.shieldsHint') }}</p>
+      <div class="workspace">
+        <section class="shard-pool" :aria-label="t('pages.y2_6.shieldsTitle')">
+          <div class="shard-title">
+            <i class="fas fa-puzzle-piece"></i>
+            {{ t('pages.y2_6.shieldsTitle') }}
+          </div>
 
-        <div class="shield-grid">
-          <button
-            v-for="shield in shields"
-            :key="shield.id"
-            class="shield-card"
-            :class="{ selected: selectedShieldId === shield.id, used: protectedIds.has(shield.id) }"
-            type="button"
-            draggable="true"
-            @click="selectShield(shield.id)"
-            @dragstart="startDrag($event, shield.id)"
-            @dragend="draggedShieldId = ''"
-          >
-            <span class="shield-icon">{{ shield.icon }}</span>
-            <strong>{{ shield.name }}</strong>
-            <small>{{ shield.short }}</small>
+          <div v-if="activeShield" class="selection-console">
+            <div class="selection-label">{{ t('pages.y2_6.selectionLabel') }}</div>
+            <div class="selection-card">
+              <div class="selection-main">
+                <span class="selection-icon">{{ activeShield.icon }}</span>
+                <strong>{{ activeShield.name }}</strong>
+              </div>
+              <button class="selection-clear" type="button" @click="clearSelection">
+                {{ t('pages.y2_6.clearSelection') }}
+              </button>
+            </div>
+          </div>
+
+          <div class="shard-grid">
+            <button
+              v-for="shield in shields"
+              :key="shield.id"
+              class="shard"
+              :class="{
+                dragging: draggingShieldId === shield.id,
+                selected: selectedShieldId === shield.id,
+                used: protectedStatus[shield.id],
+              }"
+              type="button"
+              draggable="true"
+              @click="selectShield(shield.id)"
+              @dragstart="startDrag($event, shield.id)"
+              @dragend="endDrag"
+            >
+              <div class="shard-icon">{{ shield.icon }}</div>
+              <div class="shard-name">{{ shield.name }}</div>
+              <div class="shard-desc">{{ shield.desc }}</div>
+            </button>
+          </div>
+        </section>
+
+        <section class="contract" :aria-label="t('pages.y2_6.contractTitle')">
+          <div class="contract-header">
+            <h2>
+              <i class="fas fa-file-signature"></i>
+              {{ t('pages.y2_6.contractTitle') }}
+            </h2>
+            <i class="fas fa-stamp" aria-hidden="true"></i>
+          </div>
+
+          <div v-if="activeShield" class="contract-toolbar">
+            <div class="active-shield-pill">
+              <span>{{ activeShield.icon }}</span>
+              <strong>{{ activeShield.name }}</strong>
+            </div>
+          </div>
+
+          <div class="clause-list">
+            <article
+              v-for="clause in clauses"
+              :key="clause.id"
+              class="clause"
+              :class="{ protected: protectedStatus[clause.id] }"
+              @click="handleClauseClick(clause.id)"
+            >
+              <div class="clause-title">
+                <span>{{ clause.title }}</span>
+                <span class="clause-status">
+                  {{ protectedStatus[clause.id] ? t('pages.y2_6.protected') : t('pages.y2_6.unprotected') }}
+                </span>
+              </div>
+              <div class="clause-detail">{{ clause.detail }}</div>
+              <div
+                class="drop-zone"
+                :class="{ 'drag-over': dragOverClauseId === clause.id }"
+                @dragover.prevent="setDragOver(clause.id)"
+                @dragleave="clearDragOver(clause.id)"
+                @drop="handleDrop($event, clause.id)"
+              >
+                <template v-if="protectedStatus[clause.id]">
+                  {{ t('pages.y2_6.shieldInstalled') }}
+                </template>
+                <template v-else>
+                  <span v-if="!selectedShieldId" class="drop-placeholder" aria-hidden="true">+</span>
+                  <button
+                    v-if="selectedShieldId"
+                    class="drop-action"
+                    type="button"
+                    @click.stop="handleClauseClick(clause.id)"
+                  >
+                    {{ t('pages.y2_6.installSelected') }}
+                  </button>
+                </template>
+              </div>
+            </article>
+          </div>
+
+          <button class="btn-complete" type="button" :disabled="protectedCount !== totalClauses" @click="completeContract">
+            {{ t('pages.y2_6.complete') }}
           </button>
+          <button class="btn-reset" type="button" @click="resetGame">
+            {{ t('pages.y2_6.reset') }}
+          </button>
+        </section>
+      </div>
+
+      <div v-show="feedbackVisible" class="feedback" :class="feedbackTone" aria-live="polite">
+        <i class="fas fa-info-circle" aria-hidden="true"></i>
+        <span>{{ feedback }}</span>
+      </div>
+    </div>
+
+    <div class="modal" :class="{ show: successModalVisible }" :aria-hidden="(!successModalVisible).toString()">
+      <div class="modal-card">
+        <i class="fas fa-certificate modal-icon" aria-hidden="true"></i>
+        <h2>{{ t('pages.y2_6.modalTitle') }}</h2>
+        <p>{{ t('pages.y2_6.modalIntro') }}</p>
+        <div class="mastery-block">
+          <strong>{{ t('pages.y2_6.modalMasteredLabel') }}</strong>
+          <ul>
+            <li v-for="item in masteredItems" :key="item">{{ item }}</li>
+          </ul>
         </div>
-      </section>
-
-      <section class="contract-scroll" :aria-label="t('pages.y2_6.contractTitle')">
-        <div class="contract-header">
-          <div>
-            <p class="eyebrow dark">{{ t('pages.y2_6.contractEyebrow') }}</p>
-            <h2>{{ t('pages.y2_6.contractTitle') }}</h2>
-          </div>
-          <span class="seal" :class="{ ready: protectedCount === clauses.length }">
-            {{ protectedCount === clauses.length ? t('pages.y2_6.sealReady') : t('pages.y2_6.sealPending') }}
-          </span>
-        </div>
-
-        <article
-          v-for="clause in clauses"
-          :key="clause.id"
-          class="clause"
-          :class="{
-            protected: protectedIds.has(clause.id),
-            armed: selectedShieldId === clause.id,
-            draggingTarget: draggedShieldId === clause.id
-          }"
-          @click="applySelectedTo(clause.id)"
-          @dragover.prevent
-          @drop="dropShield($event, clause.id)"
-        >
-          <div class="clause-topline">
-            <h3>{{ clause.title }}</h3>
-            <span>{{ protectedIds.has(clause.id) ? t('pages.y2_6.protected') : t('pages.y2_6.risky') }}</span>
-          </div>
-          <p class="draft-text">"{{ clause.draft }}"</p>
-          <div class="drop-zone">
-            <template v-if="protectedIds.has(clause.id)">
-              <b>{{ shieldMap[clause.id]?.name }}</b>
-              <small>{{ clause.explanation }}</small>
-            </template>
-            <template v-else-if="selectedShieldId === clause.id">
-              {{ t('pages.y2_6.correctClause') }}
-            </template>
-            <template v-else>
-              {{ t('pages.y2_6.dropHere') }}
-            </template>
-          </div>
-        </article>
-
-        <button class="complete-btn" type="button" :disabled="protectedCount !== clauses.length" @click="finish">
-          {{ t('pages.y2_6.complete') }}
-        </button>
-      </section>
-    </main>
-
-    <div class="feedback-bar" aria-live="polite">
-      {{ feedback }}
+        <button type="button" @click="finishNode">{{ t('pages.y2_6.modalButton') }}</button>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref } from 'vue'
 import { useAppI18n } from '@/composables/useAppI18n'
 
-const emit = defineEmits(['complete', 'close'])
+const emit = defineEmits(['complete'])
 const { t, tm } = useAppI18n()
 
-const shieldMeta = [
-  { id: 'guarantee', icon: '!' },
-  { id: 'email', icon: '@' },
-  { id: 'template', icon: 'PS' },
-  { id: 'consultant', icon: 'ID' },
-  { id: 'research', icon: 'R' },
-  { id: 'timing', icon: '2-8' },
-  { id: 'payment', icon: '$' },
-  { id: 'refund', icon: '%' },
-  { id: 'fees', icon: '+' },
+const clauseIds = [
+  'guarantee',
+  'email',
+  'template',
+  'consultant',
+  'research',
+  'timing',
+  'payment',
+  'refund',
+  'fees',
 ]
 
-const shields = computed(() => {
-  const localizedShields = tm('pages.y2_6.shields') || []
-  return shieldMeta.map((shield, index) => ({
-    ...shield,
-    ...(localizedShields[index] || {}),
-  }))
-})
+const shieldIcons = {
+  guarantee: '⚠️',
+  email: '📧',
+  template: '📄',
+  consultant: '👥',
+  research: '🔍',
+  timing: '📅',
+  payment: '💰',
+  refund: '⚖️',
+  fees: '💸',
+}
 
-const clauses = computed(() => tm('pages.y2_6.clauses') || [])
+const localizedShields = computed(() => tm('pages.y2_6.shields') || {})
+const localizedClauses = computed(() => tm('pages.y2_6.clauses') || {})
+const masteredItems = computed(() => tm('pages.y2_6.mastered') || [])
 
-const protectedIds = reactive(new Set())
-const selectedShieldId = ref('')
-const draggedShieldId = ref('')
-const feedback = ref(t('pages.y2_6.feedback.initial'))
+const shields = computed(() => clauseIds.map((id) => ({
+  id,
+  icon: shieldIcons[id],
+  ...(localizedShields.value[id] || {}),
+})))
+
+const clauses = computed(() => clauseIds.map((id) => ({
+  id,
+  ...(localizedClauses.value[id] || {}),
+})))
 
 const shieldMap = computed(() => Object.fromEntries(shields.value.map((shield) => [shield.id, shield])))
-const protectedCount = computed(() => protectedIds.size)
+const clauseMap = computed(() => Object.fromEntries(clauses.value.map((clause) => [clause.id, clause])))
+const activeShield = computed(() => shieldMap.value[selectedShieldId.value] || null)
 
-function selectShield(id) {
-  if (protectedIds.has(id)) {
-    feedback.value = t('pages.y2_6.feedback.alreadyUsed')
+const protectedStatus = reactive(Object.fromEntries(clauseIds.map((id) => [id, false])))
+const totalClauses = clauseIds.length
+
+const selectedShieldId = ref('')
+const draggingShieldId = ref('')
+const dragOverClauseId = ref('')
+const feedback = ref('')
+const feedbackVisible = ref(false)
+const feedbackTone = ref('info')
+const successModalVisible = ref(false)
+
+const protectedCount = computed(() => clauseIds.filter((id) => protectedStatus[id]).length)
+
+let feedbackTimer = 0
+
+function clearFeedbackTimer() {
+  if (!feedbackTimer) return
+  window.clearTimeout(feedbackTimer)
+  feedbackTimer = 0
+}
+
+function showFeedback(message, durationSec = 2.5, tone = 'info') {
+  feedback.value = message
+  feedbackTone.value = tone
+  feedbackVisible.value = true
+  clearFeedbackTimer()
+
+  if (durationSec <= 0) return
+
+  feedbackTimer = window.setTimeout(() => {
+    feedbackVisible.value = false
+  }, durationSec * 1000)
+}
+
+function selectShield(shieldId) {
+  if (protectedStatus[shieldId]) {
+    showFeedback(t('pages.y2_6.feedback.alreadyUsed'), 2.5, 'error')
     return
   }
 
-  selectedShieldId.value = selectedShieldId.value === id ? '' : id
-  feedback.value = selectedShieldId.value
-    ? t('pages.y2_6.feedback.selected', { name: shieldMap.value[id]?.name || '' })
-    : t('pages.y2_6.feedback.cleared')
+  selectedShieldId.value = selectedShieldId.value === shieldId ? '' : shieldId
 }
 
-function startDrag(event, id) {
-  if (protectedIds.has(id)) {
+function clearSelection() {
+  if (!selectedShieldId.value) return
+  selectedShieldId.value = ''
+}
+
+function startDrag(event, shieldId) {
+  if (protectedStatus[shieldId]) {
     event.preventDefault()
     return
   }
 
-  draggedShieldId.value = id
-  selectedShieldId.value = id
+  selectedShieldId.value = shieldId
+  draggingShieldId.value = shieldId
+
   event.dataTransfer.effectAllowed = 'copy'
-  event.dataTransfer.setData('text/plain', id)
+  event.dataTransfer.setData('text/plain', JSON.stringify({
+    target: shieldId,
+    name: shieldMap.value[shieldId]?.name || '',
+  }))
 }
 
-function dropShield(event, clauseId) {
-  const shieldId = event.dataTransfer.getData('text/plain') || draggedShieldId.value
-  draggedShieldId.value = ''
-  tryApply(shieldId, clauseId)
+function endDrag() {
+  draggingShieldId.value = ''
+  dragOverClauseId.value = ''
 }
 
-function applySelectedTo(clauseId) {
-  if (!selectedShieldId.value || protectedIds.has(clauseId)) return
-  tryApply(selectedShieldId.value, clauseId)
+function readTransfer(event) {
+  const rawData = event.dataTransfer?.getData('text/plain')
+  if (!rawData) return null
+
+  try {
+    return JSON.parse(rawData)
+  } catch (error) {
+    return {
+      target: rawData,
+      name: shieldMap.value[rawData]?.name || '',
+    }
+  }
 }
 
-function tryApply(shieldId, clauseId) {
-  if (!shieldId) return
+function setDragOver(clauseId) {
+  if (protectedStatus[clauseId]) return
+  dragOverClauseId.value = clauseId
+}
 
-  if (protectedIds.has(clauseId)) {
-    feedback.value = t('pages.y2_6.feedback.clauseProtected')
-    return
+function clearDragOver(clauseId) {
+  if (dragOverClauseId.value === clauseId) {
+    dragOverClauseId.value = ''
+  }
+}
+
+function applyShield(clauseId, shieldId) {
+  if (!shieldId) return false
+
+  if (protectedStatus[clauseId]) {
+    showFeedback(t('pages.y2_6.feedback.alreadyProtected'), 2.5, 'error')
+    return false
   }
 
   if (shieldId !== clauseId) {
-    feedback.value = t('pages.y2_6.feedback.mismatch', { name: shieldMap.value[shieldId]?.name || '' })
-    return
+    showFeedback(t('pages.y2_6.feedback.mismatch', {
+      name: shieldMap.value[shieldId]?.name || '',
+    }), 3, 'error')
+    return false
   }
 
-  protectedIds.add(clauseId)
+  protectedStatus[clauseId] = true
   selectedShieldId.value = ''
-  feedback.value = t('pages.y2_6.feedback.attached', {
+  draggingShieldId.value = ''
+  dragOverClauseId.value = ''
+
+  showFeedback(t('pages.y2_6.feedback.attached', {
     name: shieldMap.value[clauseId]?.name || '',
-    explanation: clauses.value.find((clause) => clause.id === clauseId)?.explanation || '',
-  })
+    explanation: clauseMap.value[clauseId]?.explanation || '',
+  }), 4, 'success')
+
+  return true
 }
 
-function finish() {
-  if (protectedCount.value !== clauses.value.length) {
-    feedback.value = t('pages.y2_6.feedback.remaining', { count: clauses.value.length - protectedCount.value })
+function handleDrop(event, clauseId) {
+  event.preventDefault()
+  dragOverClauseId.value = ''
+
+  const data = readTransfer(event)
+  if (!data) return
+
+  applyShield(clauseId, data.target)
+}
+
+function handleClauseClick(clauseId) {
+  if (!selectedShieldId.value) return
+  applyShield(clauseId, selectedShieldId.value)
+}
+
+function resetGame() {
+  clauseIds.forEach((id) => {
+    protectedStatus[id] = false
+  })
+
+  selectedShieldId.value = ''
+  draggingShieldId.value = ''
+  dragOverClauseId.value = ''
+  successModalVisible.value = false
+  feedbackVisible.value = false
+  clearFeedbackTimer()
+}
+
+function completeContract() {
+  if (protectedCount.value !== totalClauses) {
+    showFeedback(t('pages.y2_6.feedback.remaining', {
+      count: totalClauses - protectedCount.value,
+    }), 2.5, 'error')
     return
   }
 
-  emit('complete', { game: 'contract-guardian', protected: clauses.value.length })
+  clearFeedbackTimer()
+  feedbackVisible.value = false
+  successModalVisible.value = true
 }
+
+function finishNode() {
+  successModalVisible.value = false
+  emit('complete', { game: 'contract-guardian', protected: totalClauses })
+}
+
+onBeforeUnmount(() => {
+  clearFeedbackTimer()
+})
 </script>
 
 <style scoped>
-.contract-game {
+.contract-guardian-page {
   min-height: 100%;
-  padding: clamp(18px, 3vw, 44px);
-  color: #eef2ff;
+  padding: 20px;
+  color: #f1f5f9;
   background:
-    radial-gradient(circle at top right, rgba(250, 204, 21, 0.22), transparent 34%),
-    linear-gradient(135deg, #0f172a, #111827 48%, #1f2937);
-}
-
-.hero-strip,
-.workspace {
-  width: min(1280px, 100%);
-  margin: 0 auto;
-}
-
-.hero-strip {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 18px;
+    radial-gradient(circle at 18% 18%, rgba(52, 211, 153, 0.18), transparent 22%),
+    radial-gradient(circle at 82% 14%, rgba(250, 204, 21, 0.16), transparent 20%),
+    radial-gradient(ellipse at 50% 100%, #083344 0%, #101826 58%, #05070c 100%);
+  display: flex;
+  justify-content: center;
   align-items: center;
-  padding: 18px;
-  border: 1px solid rgba(250, 204, 21, 0.32);
-  border-radius: 8px;
-  background: rgba(2, 6, 23, 0.82);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-h1,
-h2,
-h3,
-p {
+.contract-guardian-page,
+.contract-guardian-page * {
+  box-sizing: border-box;
+}
+
+.game-container {
+  width: 100%;
+  max-width: 1320px;
+  background: rgba(8, 14, 26, 0.82);
+  border: 2px solid rgba(250, 204, 21, 0.52);
+  border-radius: 32px;
+  box-shadow: 0 28px 42px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.header {
+  padding: 22px 30px;
+  background: linear-gradient(135deg, rgba(13, 24, 42, 0.96), rgba(7, 10, 18, 0.98));
+  border-bottom: 1px solid rgba(250, 204, 21, 0.32);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.title h1 {
   margin: 0;
+  color: #fde68a;
+  font-size: 2rem;
+  font-family: Georgia, serif;
+  text-shadow: 0 0 14px rgba(250, 204, 21, 0.28);
 }
 
-h1 {
-  margin-top: 6px;
-  font-size: clamp(2rem, 5vw, 5rem);
-  line-height: 0.95;
-  font-family: Georgia, 'Times New Roman', serif;
-}
-
-.intro {
-  max-width: 780px;
-  margin-top: 12px;
+.title p {
+  margin: 7px 0 0;
   color: #cbd5e1;
-  line-height: 1.6;
+  line-height: 1.5;
+  max-width: 820px;
 }
 
-.eyebrow {
+.progress-badge {
+  background: #111827;
+  padding: 9px 20px;
+  border-radius: 999px;
   color: #facc15;
   font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0;
-  font-size: 0.78rem;
-}
-
-.eyebrow.dark {
-  color: #92400e;
-}
-
-.close-btn,
-.progress-pill,
-.complete-btn,
-.shield-card {
-  border-radius: 8px;
-  font: inherit;
-}
-
-.close-btn {
-  align-self: start;
-  padding: 10px 14px;
-  color: #fde68a;
-  background: rgba(15, 23, 42, 0.95);
-  border: 1px solid rgba(250, 204, 21, 0.5);
-  cursor: pointer;
-}
-
-.progress-pill {
-  padding: 12px 16px;
-  color: #111827;
-  background: #facc15;
-  font-weight: 900;
+  border: 1px solid rgba(250, 204, 21, 0.45);
   white-space: nowrap;
 }
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(340px, 1fr) minmax(420px, 1.15fr);
-  gap: 22px;
-  margin-top: 22px;
+  grid-template-columns: minmax(360px, 1.05fr) minmax(430px, 1fr);
+  gap: 24px;
+  padding: 26px 30px 30px;
   align-items: start;
 }
 
-.shield-pool,
-.contract-scroll {
-  border-radius: 8px;
-  padding: clamp(16px, 2.4vw, 30px);
-  box-shadow: 0 22px 46px rgba(0, 0, 0, 0.32);
+.shard-pool {
+  position: sticky;
+  top: 18px;
+  align-self: start;
+  background: rgba(0, 0, 0, 0.32);
+  border: 1px solid rgba(250, 204, 21, 0.2);
+  border-radius: 26px;
+  padding: 20px;
 }
 
-.shield-pool {
-  background: rgba(2, 6, 23, 0.74);
-  border: 1px solid rgba(148, 163, 184, 0.3);
-}
-
-.shield-pool h2,
+.shard-title,
 .contract-header h2 {
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(1.5rem, 3vw, 3rem);
-  line-height: 1;
-}
-
-.hint {
-  margin-top: 10px;
-  color: #cbd5e1;
-}
-
-.shield-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 20px;
-}
-
-.shield-card {
-  min-height: 156px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  justify-content: center;
-  padding: 14px;
-  color: #e5e7eb;
-  text-align: left;
-  cursor: pointer;
-  border: 1px solid rgba(148, 163, 184, 0.36);
-  background: linear-gradient(145deg, #1f2937, #0f172a);
-  transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
-}
-
-.shield-card:hover,
-.shield-card.selected {
-  transform: translateY(-4px);
-  border-color: #facc15;
-  background: linear-gradient(145deg, #374151, #172033);
-}
-
-.shield-card.used {
-  opacity: 0.45;
-  cursor: default;
-  transform: none;
-}
-
-.shield-icon {
-  width: 52px;
-  height: 52px;
-  display: grid;
-  place-items: center;
-  border-radius: 8px;
-  color: #111827;
-  background: #facc15;
-  font-weight: 1000;
+  color: #fde68a;
   font-size: 1.15rem;
-}
-
-.shield-card small,
-.drop-zone small {
-  display: block;
-  color: #cbd5e1;
-  line-height: 1.35;
-}
-
-.contract-scroll {
-  color: #2b2114;
-  background: linear-gradient(180deg, #fff8e7, #f3e8c7);
-}
-
-.contract-header {
+  font-family: Georgia, serif;
   display: flex;
-  gap: 14px;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding-bottom: 18px;
-  border-bottom: 2px solid #b45309;
-}
-
-.seal {
-  padding: 10px 12px;
-  border: 2px solid #92400e;
-  color: #92400e;
-  font-weight: 1000;
-  transform: rotate(-7deg);
-  opacity: 0.45;
-}
-
-.seal.ready {
-  opacity: 1;
-  color: #166534;
-  border-color: #166534;
-}
-
-.clause {
-  margin-top: 16px;
-  padding: 16px;
-  border-radius: 8px;
-  border: 2px dashed rgba(146, 64, 14, 0.42);
-  background: rgba(255, 255, 255, 0.52);
-  transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
-}
-
-.clause.armed,
-.clause.draggingTarget {
-  transform: translateX(-4px);
-  border-color: #eab308;
-  background: #fef3c7;
-}
-
-.clause.protected {
-  border-style: solid;
-  border-color: #15803d;
-  background: #dcfce7;
-}
-
-.clause-topline {
-  display: flex;
-  gap: 12px;
-  justify-content: space-between;
   align-items: center;
+  gap: 9px;
 }
 
-.clause-topline span {
-  padding: 4px 8px;
-  border-radius: 999px;
-  color: #fff;
-  background: #991b1b;
-  font-size: 0.72rem;
+.shard-title {
+  margin-bottom: 8px;
+}
+
+.selection-console {
+  margin-bottom: 16px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(250, 204, 21, 0.18);
+  background: rgba(5, 10, 18, 0.44);
+}
+
+.selection-label {
+  color: #fde68a;
+  font-size: 0.75rem;
   font-weight: 900;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
-.clause.protected .clause-topline span {
-  background: #166534;
+.selection-card {
+  margin-top: 9px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
 }
 
-.draft-text {
-  margin-top: 10px;
-  color: #4b5563;
-  line-height: 1.55;
+.selection-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.drop-zone {
-  min-height: 68px;
-  margin-top: 12px;
-  padding: 12px;
-  border-radius: 8px;
-  color: #78350f;
-  background: rgba(251, 191, 36, 0.22);
-  border: 1px solid rgba(146, 64, 14, 0.32);
-  line-height: 1.4;
-}
-
-.clause.protected .drop-zone {
-  color: #14532d;
-  background: rgba(22, 163, 74, 0.13);
-}
-
-.clause.protected .drop-zone small {
-  margin-top: 5px;
-  color: #166534;
-}
-
-.complete-btn {
-  width: 100%;
-  margin-top: 18px;
-  padding: 16px 18px;
-  border: 0;
-  color: #111827;
+.selection-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
   background: #facc15;
-  font-weight: 1000;
+  color: #111827;
+  font-size: 1.35rem;
+  flex: 0 0 auto;
+}
+
+.selection-card strong {
+  color: #f8fafc;
+}
+
+.selection-clear {
+  flex: 0 0 auto;
+  border: 1px solid rgba(250, 204, 21, 0.55);
+  background: rgba(17, 24, 39, 0.9);
+  color: #fde68a;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-weight: 900;
   cursor: pointer;
 }
 
-.complete-btn:disabled {
-  cursor: not-allowed;
+.shard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+  gap: 13px;
+}
+
+.shard {
+  min-height: 136px;
+  background: linear-gradient(145deg, #24324f, #142033);
+  border: 1px solid #60718f;
+  border-radius: 18px;
+  padding: 13px 10px;
+  cursor: grab;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  color: inherit;
+}
+
+.shard:hover,
+.shard.selected {
+  transform: translateY(-4px);
+  border-color: #facc15;
+  box-shadow: 0 8px 18px rgba(250, 204, 21, 0.2);
+}
+
+.shard.dragging {
+  opacity: 0.55;
+  transform: scale(0.98);
+}
+
+.shard.used {
+  opacity: 0.42;
+  filter: grayscale(0.85);
+  cursor: default;
+  box-shadow: none;
+  transform: none;
+}
+
+.shard-icon {
+  font-size: 2rem;
+}
+
+.shard-name {
+  color: #f8fafc;
+  font-weight: 900;
+  font-size: 0.92rem;
+  line-height: 1.25;
+}
+
+.shard-desc {
+  color: #aebbd0;
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.contract {
+  background: linear-gradient(to bottom, #fff8e7, #f3e8c7);
+  border-radius: 24px;
+  padding: 22px;
+  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.34);
+  color: #2d2a1e;
+}
+
+.contract-header {
+  border-bottom: 2px solid #d4a373;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.contract-header h2 {
+  color: #7f4f24;
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.contract-toolbar {
+  margin-bottom: 14px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.active-shield-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(250, 204, 21, 0.2);
+  color: #6b3b09;
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.clause-list {
+  display: grid;
+  gap: 13px;
+}
+
+.clause {
+  background: rgba(0, 0, 0, 0.055);
+  border-left: 6px solid #b5835a;
+  border-radius: 14px;
+  padding: 12px 14px;
+  transition: background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.clause.protected {
+  border-left-color: #2b9348;
+  background: #e9f5e9;
+  box-shadow: 0 2px 8px rgba(43, 147, 72, 0.22);
+}
+
+.clause-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-weight: 900;
+  line-height: 1.3;
+}
+
+.clause-status {
+  flex: 0 0 auto;
+  background: #d6d3d1;
+  color: #3f3a31;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 0.74rem;
+  font-weight: 900;
+}
+
+.clause.protected .clause-status {
+  background: #2b9348;
+  color: #fff;
+}
+
+.clause-detail {
+  color: #534432;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  margin-top: 7px;
+}
+
+.drop-zone {
+  margin-top: 9px;
+  border: 2px dashed #b5835a;
+  border-radius: 12px;
+  padding: 9px;
+  text-align: center;
+  color: #7a6645;
+  background: rgba(255, 255, 255, 0.4);
+  font-size: 0.76rem;
+  font-weight: 800;
+  transition: border-color 0.1s ease, background 0.1s ease, color 0.1s ease;
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+}
+
+.drop-zone.drag-over {
+  border-color: #f59e0b;
+  background: rgba(250, 204, 21, 0.2);
+  color: #6b3b09;
+}
+
+.drop-placeholder {
+  font-size: 1.2rem;
+  line-height: 1;
   opacity: 0.55;
 }
 
-.feedback-bar {
-  width: min(1280px, 100%);
-  margin: 18px auto 0;
-  padding: 14px 16px;
+.drop-action {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: #7f4f24;
+  color: #fff8e7;
+  font-size: 0.78rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.feedback {
+  margin: 0 30px 30px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.62);
+  border-left: 6px solid #facc15;
+  color: #f8fafc;
+  line-height: 1.55;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.feedback.success {
+  border-left-color: #22c55e;
+}
+
+.feedback.error {
+  border-left-color: #f97316;
+}
+
+.btn-complete,
+.btn-reset,
+.modal-card button {
+  width: 100%;
+  border: none;
+  border-radius: 999px;
+  padding: 13px 18px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 0.18s ease, filter 0.18s ease, opacity 0.18s ease;
+}
+
+.btn-complete {
+  margin-top: 18px;
+  background: linear-gradient(95deg, #facc15, #f97316);
+  color: #1f2937;
+  font-size: 1rem;
+}
+
+.btn-complete:not(:disabled):hover,
+.btn-reset:hover,
+.modal-card button:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+}
+
+.btn-complete:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  filter: grayscale(0.45);
+}
+
+.btn-reset {
+  margin-top: 11px;
+  background: rgba(17, 24, 39, 0.88);
+  border: 1px solid rgba(250, 204, 21, 0.55);
   color: #fde68a;
-  background: rgba(2, 6, 23, 0.86);
-  border-left: 5px solid #facc15;
-  border-radius: 8px;
-  line-height: 1.45;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.84);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  visibility: hidden;
+  opacity: 0;
+  padding: 18px;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.modal.show {
+  visibility: visible;
+  opacity: 1;
+}
+
+.modal-card {
+  width: min(560px, 94vw);
+  max-height: 88vh;
+  overflow: auto;
+  background: #111827;
+  color: #f1f5f9;
+  border: 2px solid #facc15;
+  border-radius: 28px;
+  padding: 28px;
+  text-align: center;
+  box-shadow: 0 24px 44px rgba(0, 0, 0, 0.5);
+}
+
+.modal-icon {
+  font-size: 3rem;
+  color: #facc15;
+}
+
+.modal-card h2 {
+  margin: 16px 0;
+  color: #fde68a;
+  font-family: Georgia, serif;
+}
+
+.modal-card p,
+.mastery-block {
+  color: #dbe4f0;
+  line-height: 1.65;
+  text-align: left;
+}
+
+.mastery-block {
+  margin-top: 14px;
+}
+
+.mastery-block strong {
+  color: #fde68a;
+}
+
+.mastery-block ul {
+  margin: 10px 0 0;
+  padding-left: 20px;
+}
+
+.mastery-block li + li {
+  margin-top: 6px;
+}
+
+.modal-card button {
+  margin-top: 20px;
+  background: #facc15;
+  color: #111827;
 }
 
 @media (max-width: 900px) {
-  .hero-strip,
+  .contract-guardian-page {
+    padding: 12px;
+  }
+
   .workspace {
     grid-template-columns: 1fr;
+    padding: 20px;
   }
 
-  .progress-pill {
-    width: fit-content;
+  .shard-pool {
+    position: static;
   }
 
-  .shield-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 560px) {
-  .shield-grid {
-    grid-template-columns: 1fr;
+  .header {
+    padding: 20px;
   }
 
-  .shield-card {
-    min-height: auto;
+  .title h1 {
+    font-size: 1.55rem;
+  }
+
+  .selection-card {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 </style>
