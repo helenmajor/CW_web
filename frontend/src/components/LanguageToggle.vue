@@ -29,7 +29,7 @@ const { currentLanguage, setLanguage, t } = useAppI18n()
 .language-toggle {
   position: fixed;
   top: 18px;
-  right: 18px;
+  left: 18px;
   z-index: 1200;
   display: inline-flex;
   gap: 6px;

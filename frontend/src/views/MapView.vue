@@ -1,12 +1,30 @@
 ﻿<template>
   <div class="map-page">
+    <div class="help-btn-wrapper">
+      <button 
+        class="help-btn" 
+        @click="showHelpModal = true"
+        @mouseenter="showHelpTooltip($event)"
+        @mouseleave="hideTooltip"
+      >
+        <i class="fas fa-question-circle"></i>
+      </button>
+    </div>
     <div class="app-shell">
       <div class="top-switcher">
         <button class="switch-btn" :class="store.year === 'y2' ? 'primary' : 'secondary'" @click="switchYear('y2')"><i class="fas fa-map"></i> {{ t('nav.year2') }}</button>
         <button class="switch-btn" :class="store.year === 'y3' ? 'primary' : 'secondary'" @click="switchYear('y3')"><i class="fas fa-fire"></i> {{ t('nav.year3') }}</button>
         <button class="switch-btn danger" @click="showResetConfirm = true"><i class="fas fa-rotate-left"></i> {{ t('nav.reset') }}</button>
       </div>
-
+      <div class="global-progress">
+        <div class="progress-label">
+          <span>{{ t('map.progressLabel') }}</span>
+          <span>{{ completedCount }} / {{ totalNodes }}</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" :style="{ width: `${progressPercent}%` }"></div>
+        </div>
+      </div>
       <section class="board y2" :class="{ active: store.year === 'y2' }">
         <div class="header">
           <h1><i class="fas fa-route"></i> {{ t('map.year2Title') }}</h1>
@@ -29,13 +47,21 @@
                   <stop offset="100%" stop-color="#f6d365"></stop>
                 </linearGradient>
               </defs>
-              <g transform="translate(-150, -27) scale(1.07, 1)">
+              <g transform="translate(-230, 3) scale(1.23, 1.11)">
                 <g>
                   <path class="y2-road-underlay" :d="y2Path" />
                   <path class="y2-road-glow" :d="y2Path" />
                   <path class="y2-road-line" :d="y2Path" />
                 </g>
-                <g v-for="node in y2Nodes" :key="node.id" :ref="setNodeRef('y2', node.id)" class="node-group" :class="{ locked: !isAccessible('y2', node.id), completed: isCleared('y2', node.id), final: node.final }" :transform="`translate(${node.x}, ${node.y})`" @click="openLevel('y2', node)">
+                <g v-for="node in y2Nodes" 
+                  :key="node.id" 
+                  :ref="setNodeRef('y2', node.id)" 
+                  class="node-group" 
+                  :class="{ locked: !isAccessible('y2', node.id), completed: isCleared('y2', node.id), final: node.final }" 
+                  :transform="`translate(${node.x}, ${node.y})`" 
+                  @click="openLevel('y2', node)"
+                  @mouseenter="showTooltip($event, node, 'y2')"
+                  @mouseleave="hideTooltip">
                   <circle class="node-circle" :r="node.radius" />
                   <text class="node-icon-svg">{{ node.icon }}</text>
                   <text class="node-text-svg" :y="node.textY">{{ node.label }}</text>
@@ -87,8 +113,16 @@
                 <div class="traveler-arm left"></div><div class="traveler-arm right"></div><div class="traveler-leg left"></div><div class="traveler-leg right"></div>
               </div>
             </div>
-
-            <button v-for="node in y3Nodes" :key="node.id" :ref="setNodeRef('y3', node.id)" type="button" class="node" :class="[node.positionClass, { locked: !isAccessible('y3', node.id), completed: isCleared('y3', node.id), final: node.final }]" @click="openLevel('y3', node)">
+            
+            <button v-for="node in y3Nodes" 
+              :key="node.id" 
+              :ref="setNodeRef('y3', node.id)" 
+              type="button" 
+              class="node" 
+              :class="[node.positionClass, { locked: !isAccessible('y3', node.id), completed: isCleared('y3', node.id), final: node.final }]" 
+              @click="openLevel('y3', node)"
+              @mouseenter="showTooltip($event, node, 'y3')"
+              @mouseleave="hideTooltip">
               <span v-if="node.stacked" class="node-icon-stack"><i :class="[node.iconClass, 'icon-base']"></i><i :class="[node.iconTopClass, 'icon-top']"></i></span>
               <i v-else :class="node.iconClass"></i>
               <span class="node-label">{{ node.label }}</span>
@@ -122,6 +156,22 @@
         </div>
       </div>
     </div>
+    <div v-if="tooltip.visible" class="custom-tooltip" :style="{ left: tooltip.x + 'px', top: tooltip.y + 'px' }">
+      {{ tooltip.text }}
+    </div>
+    <div v-if="showGuide" class="guide-overlay" @click.self="closeGuide">
+      <div class="guide-bubble" :style="guideBubbleStyle">
+        <div class="guide-arrow"></div>
+        <div class="guide-content">
+          <h3>✨ {{ t('guide.title') }} ✨</h3>
+          <p>{{ t('guide.description') }}</p>
+          <p class="guide-action">👉 {{ t('guide.action') }} 👈</p>
+          <button class="guide-close-btn" @click="closeGuide">{{ t('guide.gotIt') }}</button>
+        </div>
+      </div>
+      <div class="hand-pointer" :style="handStyle">👆</div>
+    </div>
+    <HelpGuide v-if="showHelpModal" @close="showHelpModal = false" />
   </div>
 </template>
 
@@ -132,11 +182,24 @@ import PrizeShop from '@/components/PrizeShop.vue'
 import HealingSandbox from '@/components/HealingSandbox.vue'
 import { LEVEL_DEFINITIONS } from '@/config/levels'
 import { useGameStore } from '@/stores/game'
+import HelpGuide from '@/components/HelpGuide.vue'
 
 const store = useGameStore()
 const { t } = useAppI18n()
 store.hydrate()
 const chromeFreeFiles = new Set(['year3_8.vue'])
+
+const totalNodes = computed(() => LEVEL_DEFINITIONS.y2.length + LEVEL_DEFINITIONS.y3.length)
+const completedCount = computed(() => {
+  const y2Completed = store.y2.levels.filter(l => l.completed).length
+  const y3Completed = store.y3.levels.filter(l => l.completed).length
+  return y2Completed + y3Completed
+})
+const progressPercent = computed(() => (completedCount.value / totalNodes.value) * 100)
+const showGuide = ref(false)
+const handStyle = reactive({ left: '0px', top: '0px' })
+const guideBubbleStyle = reactive({ left: 'auto', top: 'auto' })
+const showHelpModal = ref(false)
 
 const y2Path = 'M572.3 368.6C575.8 325.1 579.2 281.6 573.5 243.1 567.7 204.7 558.2 165.2 537.6 137.9 517 110.6 482.5 87.3 449.8 79.3c-32.8-8-78.8-5-108.7 10.7-29.9 15.7-55.7 49.8-70.5 83.7-14.8 33.9-17.9 79.3-18.5 119.5-.6 40.3 4.1 91.5 15.1 122 11 30.5 27.7 45.4 50.9 61 23.2 15.5 56.5 30.6 87.9 32.2 31.4 1.6 75.7-10 100.6-22.7 24.9-12.7 40.5-34.3 48.6-53.8 8.1-19.5 6.2-51.4 0-63.4-6.2-12-28-12.4-37-8.4-9 4-15.6 18.7-17.3 32.3-1.7 13.5-5.8 31.3 6.9 49 12.7 17.7 30.4 36 68.7 50.6 38.3 14.6 100.9 28.7 160.7 29.9 59.7 1.2 155.7-4.8 197.7-22.7 42-17.9 51.4-59.8 54.3-84.9 2.9-25.1-9.4-48.6-37-65.7-27.6-17.1-89.6-23.7-128.3-37.1-38.7-13.4-82.1-22.9-104-43-22-20.1-29.1-51.6-27.8-77.7 1.4-26.1 19.1-58.6 35.9-78.9 16.8-20.3 39.7-36.2 64.8-43 25-6.8 61.5-3.4 85.5 2.4 24 5.7 36.8 10.9 53.6 21.7 16.8 10.8 52.7 56.4 59.7 61.9'
 const y3Path = 'M284 351.5 388.257 259.513 383.437 124.872 526.06 129.423 623.5 31 720.94 129.423 863.563 124.872 858.743 259.513 963 351.5 858.743 443.487 863.563 578.128 720.94 573.577 623.5 672 526.06 573.577 383.437 578.128 388.257 443.487Z'
@@ -178,7 +241,16 @@ const activeLevelTitle = computed(() => activeLevel.value?.i18nKey ? t(`${active
 let openLevelTimer = null
 const travelerTimers = { y2: null, y3: null }
 const setMapAreaRef = (year) => (element) => { mapAreas[year] = element || null }
-const setNodeRef = (year, nodeId) => (element) => { if (element) nodeRefs[year][nodeId] = element; else delete nodeRefs[year][nodeId] }
+const setNodeRef = (year, nodeId) => (element) => {
+  if (element) nodeRefs[year][nodeId] = element;
+  else delete nodeRefs[year][nodeId];
+  if (nodeId === 1 && showGuide.value) {
+    nextTick(() => updateGuidePosition());
+  }
+}
+const tooltip = reactive({ visible: false, text: '', x: 0, y: 0 })
+let tooltipTimer = null
+
 const getLevelState = (year, nodeId) => store.getLevel(year, nodeId)
 const isAccessible = (year, nodeId) => store.isNodeAccessible(year, nodeId)
 const isCleared = (year, nodeId) => Boolean(getLevelState(year, nodeId)?.completed || getLevelState(year, nodeId)?.skipped)
@@ -186,21 +258,269 @@ function getNodeCenter(year, nodeId) { const map = mapAreas[year]; const node = 
 function moveTravelerToNode(year, nodeId) { const center = getNodeCenter(year, nodeId); if (!center) return; traveler[year].left = `${center.left}px`; traveler[year].top = `${center.top}px`; traveler[year].walking = true; traveler[year].reached = false; if (travelerTimers[year]) clearTimeout(travelerTimers[year]); travelerTimers[year] = window.setTimeout(() => { traveler[year].walking = false; traveler[year].reached = true }, 850) }
 function syncTraveler(year, nodeId = store[year].currentNode) { nextTick(() => window.requestAnimationFrame(() => moveTravelerToNode(year, nodeId))) }
 function switchYear(year) { if (store.year === year) { syncTraveler(year); return } store.switchYear(year) }
-function openLevel(year, node) { if (!isAccessible(year, node.id)) { window.alert(t('map.lockedAlert', { previous: node.id - 1, current: node.id })); return } if (openLevelTimer) clearTimeout(openLevelTimer); if (store.year !== year) store.switchYear(year); store.setCurrentNode(year, node.id); moveTravelerToNode(year, node.id); openLevelTimer = window.setTimeout(() => { activeLevel.value = { ...node, year } }, 420) }
+function showTooltipNow(node, year, type = 'locked') {
+  let text = ''
+  if (type === 'locked') {
+    const previous = node.id - 1
+    text = t('map.lockedTooltip', { previous, current: node.id })
+  } else {
+    const i18nKey = meta[year][node.id]?.i18nKey
+    text = t(`${i18nKey}.title`)
+  }
+  tooltip.text = text
+  tooltip.x = window.innerWidth / 2 - 100
+  tooltip.y = window.innerHeight / 2 - 50
+  tooltip.visible = true
+  if (tooltipTimer) clearTimeout(tooltipTimer)
+  tooltipTimer = setTimeout(() => {
+    tooltip.visible = false
+  }, 2000)
+}
+function openLevel(year, node) {
+  if (!isAccessible(year, node.id)) {
+    // 使用自定义 tooltip 代替 alert
+    showTooltipNow(node, year, 'locked');
+    return;
+  }
+  // 如果点击的是第一个节点且引导正在显示，关闭引导
+  if (node.id === 1 && showGuide.value) {
+    closeGuide();
+  }
+  if (openLevelTimer) clearTimeout(openLevelTimer);
+  if (store.year !== year) store.switchYear(year);
+  store.setCurrentNode(year, node.id);
+  moveTravelerToNode(year, node.id);
+  openLevelTimer = window.setTimeout(() => {
+    activeLevel.value = { ...node, year };
+  }, 420);
+}
 function closeGame() { if (openLevelTimer) { clearTimeout(openLevelTimer); openLevelTimer = null } activeLevel.value = null }
 function redeemPrize(prize) { const label = store.year === 'y2' ? t('common.labels.coins') : t('common.labels.gems'); if (!store.redeemCurrentCurrency(prize.cost)) { redeemMessage.value = t('map.redeemNotEnough'); return } redeemMessage.value = `&#x1F389; ${t('map.redeemSuccess', { name: prize.name, cost: prize.cost, currency: label, balance: store.currentCoins })}` }
 function handleNativeComplete(payload = {}) { if (!activeLevel.value) return; const year = activeLevel.value.year; const levelId = activeLevel.value.id; const profile = payload.profile || payload; const rewardCoins = Number(payload.rewardCoins) || 0; store.completeNode(year, levelId, { rewardCoins, profile }); closeGame(); syncTraveler(year, store[year].currentNode) }
 function resetGame() { closeGame(); showPrizeShop.value = false; showHealingSandbox.value = false; showResetConfirm.value = false; redeemMessage.value = ''; store.resetStore(); syncTraveler('y2', 1) }
 function handleEscape(event) { if (event.key !== 'Escape') return; if (showResetConfirm.value) { showResetConfirm.value = false; return } if (activeLevel.value) { closeGame(); return } if (showPrizeShop.value) { showPrizeShop.value = false; return } if (showHealingSandbox.value) showHealingSandbox.value = false }
 const handleResize = () => syncTraveler(store.year)
+
+
+function showTooltip(event, node, year) {
+  if (tooltipTimer) clearTimeout(tooltipTimer)
+  let text = ''
+  const accessible = isAccessible(year, node.id)
+  if (!accessible) {
+    const previous = node.id - 1
+    text = t('map.lockedTooltip', { previous, current: node.id })
+  } else {
+    const i18nKey = meta[year][node.id]?.i18nKey
+    if (i18nKey) {
+      text = t(`${i18nKey}.title`) + (t(`${i18nKey}.mapLabel`) ? ` (${t(`${i18nKey}.mapLabel`)})` : '')
+    } else {
+      text = node.label
+    }
+  }
+  tooltip.text = text
+  tooltip.x = event.clientX + 15
+  tooltip.y = event.clientY - 30
+  tooltip.visible = true
+}
+
+function hideTooltip() {
+  if (tooltipTimer) clearTimeout(tooltipTimer)
+  tooltipTimer = setTimeout(() => {
+    tooltip.visible = false
+  }, 100)
+}
+function updateGuidePosition() {
+  const year = store.year
+  const firstNodeId = 1
+  const nodeElement = nodeRefs[year]?.[firstNodeId]
+  if (!nodeElement) return
+  const rect = nodeElement.getBoundingClientRect()
+  handStyle.left = `${rect.left + rect.width / 2 - 20}px`
+  handStyle.top = `${rect.top - 40}px`
+  guideBubbleStyle.left = `${rect.left - 220}px`
+  guideBubbleStyle.top = `${rect.top - 100}px`
+  if (rect.left < 250) {
+    guideBubbleStyle.left = `${rect.left + rect.width + 20}px`
+  }
+}
+
+function closeGuide() {
+  showGuide.value = false
+  localStorage.setItem('hasSeenMapGuide', 'true')
+}
+
+function initGuide() {
+  const hasSeen = localStorage.getItem('hasSeenMapGuide')
+  if (!hasSeen) {
+    showGuide.value = true
+    setTimeout(() => {
+      updateGuidePosition()
+      setTimeout(() => updateGuidePosition(), 100)
+    }, 200)
+  }
+}
+function showHelpTooltip(event) {
+  if (tooltipTimer) clearTimeout(tooltipTimer)
+  tooltip.text = t('help.tooltip')
+  tooltip.x = event.clientX + 15
+  tooltip.y = event.clientY - 30
+  tooltip.visible = true
+}
 watch(() => store.year, (year) => syncTraveler(year, store[year].currentNode))
 watch(() => store.y2.currentNode, (nodeId) => { if (store.year === 'y2') syncTraveler('y2', nodeId) })
 watch(() => store.y3.currentNode, (nodeId) => { if (store.year === 'y3') syncTraveler('y3', nodeId) })
-onMounted(() => { window.addEventListener('keydown', handleEscape); window.addEventListener('resize', handleResize); syncTraveler(store.year, store[store.year].currentNode) })
+watch(() => store.year, () => {
+  if (showGuide.value) nextTick(() => updateGuidePosition())
+})
+onMounted(() => { window.addEventListener('keydown', handleEscape); window.addEventListener('resize', handleResize); syncTraveler(store.year, store[store.year].currentNode);initGuide() })
 onBeforeUnmount(() => { window.removeEventListener('keydown', handleEscape); window.removeEventListener('resize', handleResize); if (openLevelTimer) clearTimeout(openLevelTimer); Object.values(travelerTimers).forEach((timer) => { if (timer) clearTimeout(timer) }) })
 </script>
 
 <style scoped>
+.help-btn-wrapper {
+  position: fixed;
+  top: 20px;
+  left: 190px;  /* 根据语言切换按钮的实际宽度调整，避免重叠 */
+  z-index: 1201;
+}
+.help-btn {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 40px;
+  padding: 8px 14px;
+  color: #fff;
+  font-family: Georgia, serif;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.help-btn:hover {
+  background: rgba(243, 207, 154, 0.3);
+  transform: scale(1.05);
+}
+.guide-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(2px);
+  pointer-events: auto;
+}
+.guide-bubble {
+  position: fixed;
+  width: 280px;
+  background: #fffcf0;
+  border: 3px solid #f3cf9a;
+  border-radius: 24px;
+  padding: 16px 20px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  color: #2d5a6e;
+  font-family: Georgia, serif;
+  z-index: 201;
+  pointer-events: auto;
+}
+.guide-arrow {
+  position: absolute;
+  left: 20px;
+  bottom: -20px;
+  width: 0;
+  height: 0;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-top: 20px solid #f3cf9a;
+}
+.guide-content h3 {
+  margin: 0 0 8px;
+  font-size: 1.2rem;
+}
+.guide-content p {
+  margin: 8px 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+.guide-action {
+  font-weight: bold;
+  color: #e67e22;
+}
+.guide-close-btn {
+  margin-top: 12px;
+  background: #f3cf9a;
+  border: none;
+  border-radius: 40px;
+  padding: 6px 16px;
+  cursor: pointer;
+  font-weight: bold;
+  color: #2d5a6e;
+}
+.hand-pointer {
+  position: fixed;
+  font-size: 48px;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+  pointer-events: none;
+  z-index: 202;
+  animation: handFloat 1.2s ease-in-out infinite;
+}
+@keyframes handFloat {
+  0% { transform: translateY(0) rotate(-10deg); }
+  50% { transform: translateY(-15px) rotate(-5deg); }
+  100% { transform: translateY(0) rotate(-10deg); }
+}
+.custom-tooltip {
+  position: fixed;
+  background: #fffcf3;           /* 羊皮纸底色 */
+  color: #2d5a6e;                /* 深蓝绿色文字 */
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-family: Georgia, serif;    /* 与地图标题字体一致 */
+  font-size: 0.85rem;
+  font-weight: 600;
+  max-width: 280px;
+  word-wrap: break-word;
+  z-index: 300;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.2);
+  border-left: 5px solid #e2bc7c; /* 金色左边框 */
+  pointer-events: none;
+  white-space: normal;
+  line-height: 1.4;
+}
+.global-progress {
+  margin: 10px 20px 0;
+  padding: 8px 16px;
+  background: rgba(15, 23, 42, 0.7);
+  border-radius: 20px;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(243, 207, 154, 0.3);
+}
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-family: Georgia, serif;   
+  font-weight: 800;              
+  color: #f8fafc;
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+  letter-spacing: 0.02em;
+}
+.progress-label span:last-child {
+  background: rgba(243, 207, 154, 0.2);
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+}
+.progress-bar-bg {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b, #fde68a);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
 .map-page { min-height: 100vh; padding: 20px; overflow: hidden; background: radial-gradient(circle at 14% 16%, rgba(56, 189, 248, 0.18) 0%, transparent 22%), radial-gradient(circle at 82% 14%, rgba(244, 114, 182, 0.16) 0%, transparent 20%), radial-gradient(circle at 74% 78%, rgba(168, 85, 247, 0.16) 0%, transparent 24%), radial-gradient(circle at 24% 82%, rgba(34, 197, 94, 0.12) 0%, transparent 18%), linear-gradient(160deg, #070a14 0%, #110d1e 42%, #070b12 100%); }
 .map-page::before, .map-page::after { content: ''; position: fixed; inset: 0; pointer-events: none; }
 .map-page::before { z-index: 0; opacity: 0.92; background-image: radial-gradient(2.2px 2.2px at 24px 36px, rgba(255, 255, 255, 0.95), transparent 58%), radial-gradient(1.8px 1.8px at 84px 118px, rgba(255, 255, 255, 0.8), transparent 58%), radial-gradient(1.9px 1.9px at 156px 58px, rgba(147, 197, 253, 0.82), transparent 58%), radial-gradient(1.7px 1.7px at 208px 174px, rgba(244, 114, 182, 0.76), transparent 58%), radial-gradient(1.4px 1.4px at 116px 196px, rgba(196, 181, 253, 0.78), transparent 58%), radial-gradient(1.6px 1.6px at 52px 162px, rgba(250, 204, 21, 0.7), transparent 58%); background-size: 220px 220px, 280px 280px, 320px 320px, 360px 360px, 260px 260px, 300px 300px; background-position: 0 0, 42px 58px, 112px 36px, 180px 100px, 74px 146px, 150px 14px; filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.2)); animation: star-twinkle 6.5s ease-in-out infinite alternate; }

@@ -56,7 +56,32 @@ export default {
     rewardShop: 'Reward Exchange',
     sanctuary: 'Reflection Nook',
   },
+  guide: {
+    title: 'Welcome to Journey RPG',
+    description: 'Complete quest nodes on the map to earn experience and rewards, step by step towards your study abroad dream!',
+    action: '👉 Click the glowing node to start your adventure 👈',
+    gotIt: 'Got it',
+  },
+  help: {
+    tooltip: '📖 Open help documentation',
+    title: 'Help & Guide',
+    mapTitle: '🗺️ Map Overview',
+    mapDesc: 'The map shows your progress through Year 2 (exploration) and Year 3 (sprint). Switch between years using the top buttons.',
+    nodesTitle: '⭐ Node Status',
+    unlocked: 'Unlocked node – click to start the challenge',
+    locked: 'Locked node – complete the previous node first',
+    completed: 'Completed node – you can revisit for review',
+    nodesHint: 'Hover over any node to see its task description.',
+    shopTitle: '🎁 Reward Exchange',
+    shopDesc: 'Use coins/gems earned from completing nodes to exchange for small rewards. It’s a milestone feedback, not the main goal.',
+    sanctuaryTitle: '🌿 Reflection Nook',
+    sanctuaryDesc: 'A low‑pressure area to relax and reflect. Drag items into the sand tray for comforting messages.',
+    resetTitle: '⚠️ Reset Progress',
+    resetDesc: 'Resets all nodes, coins, and traveler profile. Use with caution – progress cannot be recovered.',
+  },
   map: {
+    progressLabel: 'Overall Progress',
+    lockedTooltip: '🔒 Need to complete node {previous} first to unlock node {current}.',
     year2Title: 'Year 2 · The Foggy Exploration',
     year3Title: 'Year 3 · The Astral Sprint',
     shop: 'Reward Exchange',
@@ -73,6 +98,7 @@ export default {
       y2: 'Year 2',
       y3: 'Year 3',
     },
+    lockedTooltip: '🔒 Need to complete node {previous} first to unlock node {current}.'
   },
   levels: {
     y2: {
@@ -231,6 +257,7 @@ export default {
       },
     },
     y2_2: {
+      retry: 'Retry Choice',
       title: 'Crossroads of Destiny',
       subtitle: 'The portals are still dormant. Your answers generate the energy that points toward the better route.',
       routes: {

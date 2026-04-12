@@ -56,7 +56,32 @@ export default {
     rewardShop: '奖励兑换',
     sanctuary: '疗愈小站',
   },
+  guide: {
+    title: '欢迎来到 Journey RPG',
+    description: '完成地图上的任务节点，获得经验和奖励，一步步走向你的留学梦想！',
+    action: '👉 点击闪光的节点开始冒险 👈',
+    gotIt: '知道了',
+  },
+  help: {
+    tooltip: '📖 打开帮助文档',
+    title: '帮助指南',
+    mapTitle: '🗺️ 地图概览',
+    mapDesc: '地图展示大二（探索期）和大三（冲刺期）的进度。使用顶部按钮切换学年。',
+    nodesTitle: '⭐ 节点状态',
+    unlocked: '已解锁节点 – 点击开始挑战',
+    locked: '锁定节点 – 需先完成前一个节点',
+    completed: '已完成节点 – 可重新打开复习',
+    nodesHint: '鼠标悬停在节点上可查看任务说明。',
+    shopTitle: '🎁 奖励兑换站',
+    shopDesc: '用完成节点获得的金币/宝石兑换小奖励。这是阶段反馈，不是主线目标。',
+    sanctuaryTitle: '🌿 疗愈小站',
+    sanctuaryDesc: '低压力的放松区域。把物品拖入沙盘会显示鼓励话语。',
+    resetTitle: '⚠️ 重置进度',
+    resetDesc: '重置所有节点、货币和旅者画像。请谨慎操作，进度无法恢复。',
+  },
   map: {
+    progressLabel: '总体进度',
+    lockedTooltip: '🔒 需要先完成节点 {previous} 才能解锁节点 {current}。',
     year2Title: 'Year 2 · 迷雾探索期',
     year3Title: 'Year 3 · 星轨冲刺期',
     shop: '奖励兑换',
@@ -73,6 +98,7 @@ export default {
       y2: '大二',
       y3: '大三',
     },
+    lockedTooltip: '🔒 需要先完成节点 {previous} 才能解锁节点 {current}。'
   },
   levels: {
     y2: {
@@ -231,6 +257,7 @@ export default {
       },
     },
     y2_2: {
+      retry: '重新选择',
       title: '命运岔路口',
       subtitle: '传送门还未完全苏醒。你的选择会累积足够的能量，决定哪条路径更适合你。',
       routes: {

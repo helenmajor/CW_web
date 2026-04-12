@@ -5,11 +5,12 @@
         <h1><i class="fas fa-id-card"></i> {{ t('pages.y2_1.title') }}</h1>
         <p>{{ t('pages.y2_1.subtitle') }}</p>
       </div>
-      <div class="charge">{{ t('pages.y2_1.charge', { current: chargedChoices }) }}</div>
+      
     </div>
 
     <div class="main">
       <section class="preview">
+        <div class="charge-left">{{ t('pages.y2_1.charge', { current: chargedChoices }) }}</div>
         <p class="label">{{ t('pages.y2_1.preview') }}</p>
         <div class="stage">
           <div class="avatar" :style="avatarStyle">
@@ -128,7 +129,6 @@
         </div>
 
         <div class="foot">
-          <span>{{ t('pages.y2_1.footnote') }}</span>
           <button class="primary" :disabled="!sealReady" @click="showSummary = true">{{ t('pages.y2_1.seal') }}</button>
         </div>
       </section>
@@ -138,6 +138,9 @@
       <div class="modalcard">
         <h2><i class="fas fa-wand-sparkles"></i> {{ t('pages.y2_1.modalTitle') }}</h2>
         <p>{{ t('pages.y2_1.modalDesc') }}</p>
+        <div class="reward-badge">
+          🎉 +30 {{ t('common.labels.coins') }}
+        </div>
         <div class="pill"><i class="fas fa-user"></i> {{ forgedProfile.name }}</div>
         <div class="pill"><i class="fas" :class="selectedRoleIcon"></i> {{ forgedProfile.archetype }}</div>
         <div class="pill"><i class="fas fa-wand-sparkles"></i> {{ forgedProfile.familiar }}</div>
@@ -273,12 +276,15 @@ function returnToMap() {
 }
 
 .forge {
+  position: relative;
   width: 100%;
-  min-height: 100%;
+  height: 100%;           /* 关键修改 */
   background: rgba(14, 20, 35, 0.84);
   color: #eef2ff;
   border-radius: 22px;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .topbar {
@@ -289,6 +295,7 @@ function returnToMap() {
   align-items: center;
   border-bottom: 1px solid rgba(148, 163, 184, 0.12);
   background: linear-gradient(to bottom, rgba(148, 163, 184, 0.08), transparent);
+  flex-shrink: 0;  /* 防止被压缩 */
 }
 
 .topbar h1 {
@@ -304,8 +311,10 @@ function returnToMap() {
   color: #a8b4d1;
   line-height: 1.45;
 }
-
-.charge {
+.charge-left {
+  position: absolute;
+  top: 20px;
+  right: 28px;
   padding: 12px 18px;
   border-radius: 999px;
   white-space: nowrap;
@@ -313,21 +322,40 @@ function returnToMap() {
   color: #fde68a;
   background: rgba(30, 41, 59, 0.72);
   border: 1px solid rgba(248, 214, 162, 0.28);
+  z-index: 5;
+}
+
+.reward-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  margin: 10px 0 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
 .main {
   display: grid;
   grid-template-columns: 1fr 1.15fr;
+  flex: 1;          /* 占据剩余高度 */
+  min-height: 0;    /* 允许子元素滚动 */
+  overflow: hidden; /* 防止整体滚动 */
 }
 
 .preview,
 .panel {
   padding: 24px 28px 28px;
+  overflow-y: auto;  /* 独立滚动 */
+  height: 100%;      /* 配合父容器 */
 }
 
 .preview {
   border-right: 1px solid rgba(148, 163, 184, 0.12);
   background: linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(10, 14, 27, 0.98));
+  position: relative; /* 为绝对定位的 charge-left 提供参考 */
 }
 
 .label {
@@ -340,6 +368,7 @@ function returnToMap() {
 }
 
 .stage {
+  margin-top: 35px;        
   min-height: 280px;
   border-radius: 24px;
   display: flex;
@@ -464,7 +493,7 @@ function returnToMap() {
 }
 
 .card {
-  margin-top: 18px;
+  margin-top: 30px;      /* 原来是 18px，增加下移距离 */
   padding: 18px;
   border-radius: 20px;
   background: linear-gradient(145deg, rgba(30, 41, 59, 0.96), rgba(15, 23, 42, 0.98));
@@ -725,6 +754,7 @@ input:focus {
   padding: 20px;
   background: rgba(4, 8, 16, 0.86);
   backdrop-filter: blur(10px);
+  z-index: 100;
 }
 
 .modalcard {

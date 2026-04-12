@@ -39,7 +39,20 @@
         <div class="tarot-title">{{ result.title }}</div>
         <div class="tarot-icon">{{ result.icon }}</div>
         <div class="tarot-desc" v-html="result.desc"></div>
-        <button type="button" class="btn-claim" @click="emit('complete')">{{ t('pages.y2_2.claim') }}</button>
+        
+        <!-- 金币奖励显示 -->
+        <div class="reward-badge">
+          🎉 +30 {{ t('common.labels.coins') }}
+        </div>
+
+        <div class="result-actions">
+          <button type="button" class="btn-claim" @click="completeWithReward">
+            ✅ {{ t('pages.y2_2.claim') }}
+          </button>
+          <button type="button" class="btn-retry" @click="resetGame">
+            🔄 {{ t('pages.y2_2.retry') }}
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -92,9 +105,79 @@ function answerQuestion(type) {
     showResult.value = true
   }
 }
+
+function resetGame() {
+  // 重置所有状态
+  currentQ.value = 0
+  scores.uk = 0
+  scores.hk = 0
+  showResult.value = false
+  winner.value = 'uk'
+}
+
+function completeWithReward() {
+  // 发放 30 金币奖励
+  emit('complete', { rewardCoins: 30 })
+}
 </script>
 
 <style scoped>
+.reward-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  margin: 16px 0 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.result-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.btn-retry {
+  width: 100%;
+  padding: 14px 20px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-weight: 900;
+  cursor: pointer;
+  transition: 0.2s;
+  text-align: center;
+}
+
+.btn-retry:hover {
+  background: rgba(255, 255, 255, 0.35);
+  transform: translateY(-2px);
+}
+
+.btn-claim {
+  width: 100%;
+  padding: 14px 20px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: #000;
+  font-weight: 900;
+  cursor: pointer;
+  transition: 0.2s;
+  text-align: center;
+}
+
+.btn-claim:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
 .crossroads-game {
   min-height: 100%;
   padding: 38px 20px 56px;
