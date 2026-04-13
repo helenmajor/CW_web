@@ -1,9 +1,18 @@
 import { defineStore } from 'pinia'
 import { createInitialLevels } from '@/config/levels'
+import {
+  completeLevel as completeLevelRequest,
+  getApiErrorMessage,
+  getInventory,
+  getProgress,
+  getShopItems,
+  purchaseItem as purchaseItemRequest,
+  resetProgress as resetProgressRequest,
+  skipLevel as skipLevelRequest,
+} from '@/services/backend'
+import { useAuthStore } from '@/stores/auth'
 
-const STORAGE_KEY = 'gradquest-vue-map-store'
-const COIN_ECONOMY_VERSION = 2
-const DEFAULT_LEVEL_REWARD = 30
+const GAME_UI_STORAGE_KEY = 'gradquest-game-ui'
 
 const createYearState = (year, coins) => ({
   coins,
@@ -14,17 +23,22 @@ const createYearState = (year, coins) => ({
 const createDefaultState = () => ({
   year: 'y2',
   hydrated: false,
+  loading: false,
+  loadedUserId: null,
+  loadPromise: null,
   travelerProfile: null,
+  shopItems: [],
+  inventoryItems: [],
   y2: createYearState('y2', 0),
   y3: createYearState('y3', 0),
 })
 
-function mergeLevels(defaultLevels, savedLevels) {
-  if (!Array.isArray(savedLevels)) return defaultLevels
+function mergeLevels(defaultLevels, remoteLevels) {
+  if (!Array.isArray(remoteLevels)) return defaultLevels
 
   return defaultLevels.map((level, index) => {
-    const savedLevel = savedLevels.find((item) => item.id === level.id)
-    if (!savedLevel) {
+    const remoteLevel = remoteLevels.find((item) => item.id === level.id)
+    if (!remoteLevel) {
       return {
         ...level,
         unlocked: index === 0,
@@ -33,11 +47,55 @@ function mergeLevels(defaultLevels, savedLevels) {
 
     return {
       ...level,
-      unlocked: Boolean(savedLevel.unlocked || index === 0),
-      completed: Boolean(savedLevel.completed),
-      skipped: Boolean(savedLevel.skipped),
+      unlocked: Boolean(remoteLevel.unlocked || remoteLevel.completed || remoteLevel.skipped || index === 0),
+      completed: Boolean(remoteLevel.completed),
+      skipped: Boolean(remoteLevel.skipped),
     }
   })
+}
+
+function deriveCurrentNode(levels) {
+  const clearedLevels = levels.filter((level) => level.completed || level.skipped)
+  if (clearedLevels.length > 0) {
+    return clearedLevels.at(-1)?.id ?? 1
+  }
+
+  const firstAvailable = levels.find((level) => level.unlocked)
+  return firstAvailable?.id ?? 1
+}
+
+function mergeTravelerProfile(nextProfile, fallbackProfile) {
+  if (!nextProfile && !fallbackProfile) return null
+
+  const merged = {
+    ...(fallbackProfile || {}),
+    ...(nextProfile || {}),
+  }
+
+  const fallbackAvatar = fallbackProfile?.avatar || {}
+  const nextAvatar = nextProfile?.avatar || {}
+  const presetKey =
+    nextAvatar.presetKey ||
+    nextProfile?.avatarPreset ||
+    fallbackAvatar.presetKey ||
+    fallbackProfile?.avatarPreset ||
+    ''
+
+  const hasAvatarData = Object.keys(fallbackAvatar).length > 0 || Object.keys(nextAvatar).length > 0 || Boolean(presetKey)
+
+  if (hasAvatarData) {
+    merged.avatar = {
+      ...fallbackAvatar,
+      ...nextAvatar,
+    }
+
+    if (presetKey) {
+      merged.avatar.presetKey = merged.avatar.presetKey || presetKey
+      merged.avatarPreset = merged.avatarPreset || presetKey
+    }
+  }
+
+  return merged
 }
 
 export const useGameStore = defineStore('game', {
@@ -51,9 +109,22 @@ export const useGameStore = defineStore('game', {
       return this.y2.coins
     },
     travelerAvatar(state) {
-      return state.travelerProfile?.avatar || {
-        hairColor: '#3a2a25',
-        outfitColor: '#ffd46d',
+      const avatar = state.travelerProfile?.avatar || {}
+      const presetKey = avatar.presetKey || state.travelerProfile?.avatarPreset || ''
+
+      return {
+        ...avatar,
+        ...(presetKey ? { presetKey, avatarPreset: presetKey } : {}),
+        hairColor: avatar.hairColor || '#3a2a25',
+        outfitColor: avatar.outfitColor || '#ffd46d',
+      }
+    },
+    travelerLook(state) {
+      const mapAvatar = state.travelerProfile?.mapAvatar || {}
+
+      return {
+        hairColor: mapAvatar.hairColor || '#3a2a25',
+        outfitColor: mapAvatar.outfitColor || '#ffd46d',
       }
     },
   },
@@ -61,59 +132,102 @@ export const useGameStore = defineStore('game', {
     hydrate() {
       if (this.hydrated) return
 
-      const defaults = createDefaultState()
-
       try {
-        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')
-        if (!saved) {
-          this.hydrated = true
-          return
-        }
-
-        if (saved.year === 'y2' || saved.year === 'y3') {
+        const saved = JSON.parse(localStorage.getItem(GAME_UI_STORAGE_KEY) || 'null')
+        if (saved?.year === 'y2' || saved?.year === 'y3') {
           this.year = saved.year
         }
-
-        this.travelerProfile = saved.travelerProfile || null
-
-        const sharedCoins = saved.coinEconomyVersion === COIN_ECONOMY_VERSION && Number.isFinite(saved.coins)
-          ? saved.coins
-          : defaults.y2.coins
-
-        ;['y2', 'y3'].forEach((year) => {
-          const target = this[year]
-          const fallback = defaults[year]
-          const source = saved[year] || {}
-
-          target.coins = sharedCoins
-          target.currentNode = Number.isFinite(source.currentNode) ? source.currentNode : fallback.currentNode
-          target.levels = mergeLevels(fallback.levels, source.levels)
-        })
       } catch (error) {
-        console.warn('Failed to hydrate GradQuest Vue store.', error)
+        console.warn('Failed to hydrate GradQuest UI state.', error)
       } finally {
         this.hydrated = true
       }
     },
 
-    persist() {
-      if (!this.hydrated) return
-
+    persistUi() {
       try {
-        localStorage.setItem(
-          STORAGE_KEY,
-          JSON.stringify({
-            year: this.year,
-            coinEconomyVersion: COIN_ECONOMY_VERSION,
-            coins: this.currentCoins,
-            travelerProfile: this.travelerProfile,
-            y2: this.y2,
-            y3: this.y3,
-          }),
-        )
+        localStorage.setItem(GAME_UI_STORAGE_KEY, JSON.stringify({ year: this.year }))
       } catch (error) {
-        console.warn('Failed to persist GradQuest Vue store.', error)
+        console.warn('Failed to persist GradQuest UI state.', error)
       }
+    },
+
+    async ensureLoaded() {
+      this.hydrate()
+
+      const authStore = useAuthStore()
+      await authStore.hydrate()
+
+      if (!authStore.isStudent) {
+        this.clearState()
+        return
+      }
+
+      if (this.loadedUserId === authStore.user.id && !this.loading) {
+        return
+      }
+
+      if (this.loadPromise) {
+        return this.loadPromise
+      }
+
+      this.loadPromise = this.loadStudentData(authStore.user.id)
+      return this.loadPromise
+    },
+
+    async loadStudentData(userId) {
+      this.loading = true
+      try {
+        const [progressPayload, shopPayload, inventoryPayload] = await Promise.all([
+          getProgress(),
+          getShopItems(),
+          getInventory(),
+        ])
+
+        this.applyProgress(progressPayload)
+        this.shopItems = shopPayload.items || []
+        this.inventoryItems = inventoryPayload.items || []
+        this.loadedUserId = userId
+      } finally {
+        this.loading = false
+        this.loadPromise = null
+        this.hydrated = true
+      }
+    },
+
+    applyProgress(payload) {
+      const user = payload?.user || {}
+      const sharedCoins = Number(user.coins) || 0
+      const authStore = useAuthStore()
+      const fallbackProfile = this.travelerProfile || authStore.user?.travelerProfile || null
+
+      this.travelerProfile = mergeTravelerProfile(user.travelerProfile || null, fallbackProfile)
+
+      if (authStore.user) {
+        authStore.user = {
+          ...authStore.user,
+          travelerProfile: this.travelerProfile,
+        }
+        authStore.persistSession()
+      }
+
+      ;['y2', 'y3'].forEach((year) => {
+        const remoteYear = payload?.years?.[year] || {}
+        const mergedLevels = mergeLevels(createInitialLevels(year), remoteYear.levels || [])
+        this[year].coins = sharedCoins
+        this[year].levels = mergedLevels
+        this[year].currentNode = deriveCurrentNode(mergedLevels)
+      })
+    },
+
+    async refreshCommerce() {
+      const [shopPayload, inventoryPayload] = await Promise.all([
+        getShopItems(),
+        getInventory(),
+      ])
+
+      this.shopItems = shopPayload.items || []
+      this.inventoryItems = inventoryPayload.items || []
     },
 
     getLevel(year, levelId) {
@@ -128,94 +242,85 @@ export const useGameStore = defineStore('game', {
     switchYear(year) {
       if (year !== 'y2' && year !== 'y3') return
       this.year = year
-      this.persist()
+      this.persistUi()
     },
 
     setCurrentNode(year, levelId) {
       if (!this.getLevel(year, levelId)) return
       this[year].currentNode = levelId
-      this.persist()
+      this.persistUi()
     },
 
-    setTravelerProfile(profile) {
-      this.travelerProfile = profile || null
-      this.persist()
-    },
-
-    completeNode(year, levelId, options = {}) {
-      const level = this.getLevel(year, levelId)
-      if (!level) return
-
-      const wasCompleted = level.completed
-      const providedRewardCoins = Number(options.rewardCoins)
-      const rewardCoins = Number.isFinite(providedRewardCoins) && providedRewardCoins > 0
-        ? providedRewardCoins
-        : DEFAULT_LEVEL_REWARD
-      level.unlocked = true
-      level.completed = true
-      level.skipped = false
-      this[year].currentNode = levelId
-
-      if (!wasCompleted) {
-        this.y2.coins += rewardCoins
+    async completeNode(year, levelId, options = {}) {
+      try {
+        const payload = await completeLevelRequest({
+          year,
+          levelId,
+          rewardCoins: options.rewardCoins,
+          profile: options.profile,
+        })
+        this.applyProgress(payload)
+        return payload
+      } catch (error) {
+        throw new Error(getApiErrorMessage(error, 'Failed to save progress.'))
       }
-      this.y3.coins = this.y2.coins
+    },
 
-      if (year === 'y2' && levelId === 1 && options.profile) {
-        this.travelerProfile = options.profile
+    async skipLevel(levelId) {
+      try {
+        const payload = await skipLevelRequest({
+          year: this.year,
+          levelId,
+        })
+        this.applyProgress(payload)
+        return payload
+      } catch (error) {
+        throw new Error(getApiErrorMessage(error, 'Failed to skip level.'))
       }
+    },
 
-      const nextLevel = this.getLevel(year, levelId + 1)
-      if (nextLevel) {
-        nextLevel.unlocked = true
+    async purchasePrize(prize) {
+      try {
+        const payload = await purchaseItemRequest({ itemId: prize.id })
+        this.y2.coins = payload.coinsRemaining
+        this.y3.coins = payload.coinsRemaining
+        await this.refreshCommerce()
+        return payload
+      } catch (error) {
+        throw new Error(getApiErrorMessage(error, 'Failed to redeem reward.'))
       }
-
-      this.persist()
     },
 
-    completeLevel(levelId, rewardCoins = 50) {
-      this.completeNode(this.year, levelId, { rewardCoins })
-    },
-
-    skipLevel(levelId) {
-      const level = this.getLevel(this.year, levelId)
-      if (!level || level.completed) return
-
-      level.unlocked = true
-      level.skipped = true
-      this[this.year].currentNode = levelId
-
-      const nextLevel = this.getLevel(this.year, levelId + 1)
-      if (nextLevel) {
-        nextLevel.unlocked = true
+    async resetStore() {
+      try {
+        const payload = await resetProgressRequest()
+        this.applyProgress(payload)
+        await this.refreshCommerce()
+        this.year = 'y2'
+        this.persistUi()
+        return payload
+      } catch (error) {
+        throw new Error(getApiErrorMessage(error, 'Failed to reset progress.'))
       }
-
-      this.persist()
     },
 
-    redeemCurrentCurrency(cost) {
-      if (!Number.isFinite(cost) || cost <= 0) return false
-      if (this.currentCoins < cost) return false
-
-      this.y2.coins -= cost
-      this.y3.coins = this.y2.coins
-      this.persist()
-      return true
-    },
-
-    resetStore() {
+    clearState() {
       const defaults = createDefaultState()
-
       this.year = defaults.year
+      this.loading = false
+      this.loadedUserId = null
+      this.loadPromise = null
       this.travelerProfile = defaults.travelerProfile
+      this.shopItems = defaults.shopItems
+      this.inventoryItems = defaults.inventoryItems
       this.y2 = defaults.y2
       this.y3 = defaults.y3
       this.hydrated = true
 
       try {
-        localStorage.removeItem(STORAGE_KEY)
+        localStorage.removeItem(GAME_UI_STORAGE_KEY)
       } catch (error) {
-        console.warn('Failed to clear GradQuest Vue store.', error)
+        console.warn('Failed to clear GradQuest UI state.', error)
       }
     },
   },

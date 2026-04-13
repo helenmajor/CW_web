@@ -15,7 +15,14 @@
         <button class="switch-btn" :class="store.year === 'y2' ? 'primary' : 'secondary'" @click="switchYear('y2')"><i class="fas fa-map"></i> {{ t('nav.year2') }}</button>
         <button class="switch-btn" :class="store.year === 'y3' ? 'primary' : 'secondary'" @click="switchYear('y3')"><i class="fas fa-fire"></i> {{ t('nav.year3') }}</button>
         <button class="switch-btn danger" @click="showResetConfirm = true"><i class="fas fa-rotate-left"></i> {{ t('nav.reset') }}</button>
+        <div class="session-pill">
+          <AvatarBadge :avatar="store.travelerAvatar" size="sm" />
+          <span><i class="fas fa-user-graduate"></i> {{ copy.map.studentPortal }} · {{ authStore.user?.displayName || authStore.user?.email }}</span>
+        </div>
+        <button class="switch-btn secondary" @click="handleLogout">{{ copy.map.logout }}</button>
       </div>
+      <div v-if="store.loading" class="sync-banner">{{ copy.map.syncing }}</div>
+      <div v-if="statusMessage" class="sync-banner error">{{ statusMessage }}</div>
       <div class="global-progress">
         <div class="progress-label">
           <span>{{ t('map.progressLabel') }}</span>
@@ -143,7 +150,7 @@
       </div>
     </div>
 
-    <PrizeShop v-if="showPrizeShop" :active-year="store.year" :balance="store.currentCoins" :redeem-message="redeemMessage" @close="showPrizeShop = false" @redeem="redeemPrize" />
+    <PrizeShop v-if="showPrizeShop" :active-year="store.year" :balance="store.currentCoins" :items="store.shopItems" :redeem-message="redeemMessage" @close="showPrizeShop = false" @redeem="redeemPrize" />
     <HealingSandbox v-if="showHealingSandbox" @close="showHealingSandbox = false" />
 
     <div v-if="showResetConfirm" class="modal-overlay" @click.self="showResetConfirm = false">
@@ -177,17 +184,23 @@
 
 <script setup>
 import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { useAppI18n } from '@/composables/useAppI18n'
+import { useRouter } from 'vue-router'
+import { getPortalText, useAppI18n } from '@/composables/useAppI18n'
+import AvatarBadge from '@/components/AvatarBadge.vue'
 import PrizeShop from '@/components/PrizeShop.vue'
 import HealingSandbox from '@/components/HealingSandbox.vue'
 import { LEVEL_DEFINITIONS } from '@/config/levels'
+import { useAuthStore } from '@/stores/auth'
 import { useGameStore } from '@/stores/game'
 import HelpGuide from '@/components/HelpGuide.vue'
 
+const router = useRouter()
+const authStore = useAuthStore()
 const store = useGameStore()
-const { t } = useAppI18n()
+const { currentLanguage, t } = useAppI18n()
 store.hydrate()
 const chromeFreeFiles = new Set(['year3_8.vue'])
+const copy = computed(() => getPortalText(currentLanguage.value))
 
 const totalNodes = computed(() => LEVEL_DEFINITIONS.y2.length + LEVEL_DEFINITIONS.y3.length)
 const completedCount = computed(() => {
@@ -225,11 +238,12 @@ const showPrizeShop = ref(false)
 const showHealingSandbox = ref(false)
 const showResetConfirm = ref(false)
 const redeemMessage = ref('')
+const statusMessage = ref('')
 const activeLevel = ref(null)
 const mapAreas = reactive({ y2: null, y3: null })
 const nodeRefs = reactive({ y2: {}, y3: {} })
 const traveler = reactive({ y2: { left: '50%', top: '50%', walking: false, reached: false }, y3: { left: '50%', top: '50%', walking: false, reached: false } })
-const travelerStyle = computed(() => ({ '--traveler-hair': store.travelerAvatar.hairColor, '--traveler-outfit': store.travelerAvatar.outfitColor }))
+const travelerStyle = computed(() => ({ '--traveler-hair': store.travelerLook.hairColor, '--traveler-outfit': store.travelerLook.outfitColor }))
 const nativeGameComponent = computed(() => {
   if (!activeLevel.value) return null
   const loader = gameModules[`./games/${activeLevel.value.file}`]
@@ -295,9 +309,10 @@ function openLevel(year, node) {
   }, 420);
 }
 function closeGame() { if (openLevelTimer) { clearTimeout(openLevelTimer); openLevelTimer = null } activeLevel.value = null }
-function redeemPrize(prize) { const label = store.year === 'y2' ? t('common.labels.coins') : t('common.labels.gems'); if (!store.redeemCurrentCurrency(prize.cost)) { redeemMessage.value = t('map.redeemNotEnough'); return } redeemMessage.value = `&#x1F389; ${t('map.redeemSuccess', { name: prize.name, cost: prize.cost, currency: label, balance: store.currentCoins })}` }
-function handleNativeComplete(payload = {}) { if (!activeLevel.value) return; const year = activeLevel.value.year; const levelId = activeLevel.value.id; const profile = payload.profile || payload; const rewardCoins = Number(payload.rewardCoins) || 0; store.completeNode(year, levelId, { rewardCoins, profile }); closeGame(); syncTraveler(year, store[year].currentNode) }
-function resetGame() { closeGame(); showPrizeShop.value = false; showHealingSandbox.value = false; showResetConfirm.value = false; redeemMessage.value = ''; store.resetStore(); syncTraveler('y2', 1) }
+async function redeemPrize(prize) { const label = store.year === 'y2' ? t('common.labels.coins') : t('common.labels.gems'); statusMessage.value = ''; try { await store.purchasePrize(prize); redeemMessage.value = `&#x1F389; ${t('map.redeemSuccess', { name: prize.name, cost: prize.cost, currency: label, balance: store.currentCoins })}` } catch (error) { redeemMessage.value = error.message || t('map.redeemNotEnough') } }
+async function handleNativeComplete(payload = {}) { if (!activeLevel.value) return; const year = activeLevel.value.year; const levelId = activeLevel.value.id; const profile = payload.profile || payload; const rewardCoins = Number(payload.rewardCoins) || 0; statusMessage.value = ''; try { await store.completeNode(year, levelId, { rewardCoins, profile }); closeGame(); syncTraveler(year, store[year].currentNode) } catch (error) { statusMessage.value = error.message || copy.value.map.syncFailed } }
+async function resetGame() { closeGame(); showPrizeShop.value = false; showHealingSandbox.value = false; showResetConfirm.value = false; redeemMessage.value = ''; statusMessage.value = ''; try { await store.resetStore(); syncTraveler('y2', 1) } catch (error) { statusMessage.value = error.message || copy.value.map.syncFailed } }
+async function handleLogout() { await authStore.logout(); store.clearState(); await router.replace({ name: 'login' }) }
 function handleEscape(event) { if (event.key !== 'Escape') return; if (showResetConfirm.value) { showResetConfirm.value = false; return } if (activeLevel.value) { closeGame(); return } if (showPrizeShop.value) { showPrizeShop.value = false; return } if (showHealingSandbox.value) showHealingSandbox.value = false }
 const handleResize = () => syncTraveler(store.year)
 
@@ -372,7 +387,19 @@ watch(() => store.y3.currentNode, (nodeId) => { if (store.year === 'y3') syncTra
 watch(() => store.year, () => {
   if (showGuide.value) nextTick(() => updateGuidePosition())
 })
-onMounted(() => { window.addEventListener('keydown', handleEscape); window.addEventListener('resize', handleResize); syncTraveler(store.year, store[store.year].currentNode);initGuide() })
+onMounted(async () => {
+  window.addEventListener('keydown', handleEscape)
+  window.addEventListener('resize', handleResize)
+
+  try {
+    await store.ensureLoaded()
+    syncTraveler(store.year, store[store.year].currentNode)
+  } catch (error) {
+    statusMessage.value = error.message || copy.value.map.syncFailed
+  }
+
+  initGuide()
+})
 onBeforeUnmount(() => { window.removeEventListener('keydown', handleEscape); window.removeEventListener('resize', handleResize); if (openLevelTimer) clearTimeout(openLevelTimer); Object.values(travelerTimers).forEach((timer) => { if (timer) clearTimeout(timer) }) })
 </script>
 
@@ -526,7 +553,11 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', handleEscape); win
 .map-page::before { z-index: 0; opacity: 0.92; background-image: radial-gradient(2.2px 2.2px at 24px 36px, rgba(255, 255, 255, 0.95), transparent 58%), radial-gradient(1.8px 1.8px at 84px 118px, rgba(255, 255, 255, 0.8), transparent 58%), radial-gradient(1.9px 1.9px at 156px 58px, rgba(147, 197, 253, 0.82), transparent 58%), radial-gradient(1.7px 1.7px at 208px 174px, rgba(244, 114, 182, 0.76), transparent 58%), radial-gradient(1.4px 1.4px at 116px 196px, rgba(196, 181, 253, 0.78), transparent 58%), radial-gradient(1.6px 1.6px at 52px 162px, rgba(250, 204, 21, 0.7), transparent 58%); background-size: 220px 220px, 280px 280px, 320px 320px, 360px 360px, 260px 260px, 300px 300px; background-position: 0 0, 42px 58px, 112px 36px, 180px 100px, 74px 146px, 150px 14px; filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.2)); animation: star-twinkle 6.5s ease-in-out infinite alternate; }
 .map-page::after { z-index: 0; opacity: 0.5; background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.06) 0%, transparent 52%), radial-gradient(circle at 50% -10%, rgba(79, 172, 254, 0.1) 0%, transparent 36%), radial-gradient(circle at 50% 110%, rgba(236, 72, 153, 0.1) 0%, transparent 34%); animation: nebula-shift 14s ease-in-out infinite alternate; }
 .app-shell { width: 100%; max-width: 1380px; position: relative; padding-top: 118px; z-index: 1; margin: 0 auto; }
-.top-switcher { display: flex; gap: 10px; margin-bottom: 16px; position: absolute; top: 62px; right: 0; z-index: 50; }
+.top-switcher { display: flex; gap: 10px; margin-bottom: 16px; position: absolute; top: 62px; right: 0; z-index: 50; flex-wrap: wrap; justify-content: flex-end; max-width: min(100%, 980px); }
+.session-pill { padding: 10px 16px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); border: 2px solid rgba(243, 207, 154, 0.26); color: #f8fafc; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+.session-pill span { display: inline-flex; align-items: center; gap: 8px; }
+.sync-banner { margin: 10px 20px 0; padding: 10px 14px; border-radius: 16px; background: rgba(37, 99, 235, 0.2); border: 1px solid rgba(147, 197, 253, 0.35); color: #dbeafe; font-weight: 700; }
+.sync-banner.error { background: rgba(127, 29, 29, 0.5); border-color: rgba(248, 113, 113, 0.4); color: #fee2e2; }
 .switch-btn { border: none; border-radius: 999px; padding: 10px 25px; min-width: 130px; font-weight: 900; cursor: pointer; box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2); transition: 0.2s; font-size: 1.05rem; }
 .switch-btn.primary { background: #2c5a6e; color: #fff3c0; border: 2px solid #ffcf7a; }
 .switch-btn.secondary { background: #f6e7be; color: #2c5a6e; border: 2px solid #e3be73; }
@@ -658,7 +689,7 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', handleEscape); win
   .top-switcher { position: static; justify-content: flex-end; margin-bottom: 12px; flex-wrap: wrap; }
   .header { padding: 14px 18px; flex-direction: column; align-items: flex-start; gap: 12px; }
   .header-right { width: 100%; flex-wrap: wrap; }
-  .btn-action, .coin-panel, .switch-btn { width: 100%; justify-content: center; }
+  .btn-action, .coin-panel, .switch-btn, .session-pill { width: 100%; justify-content: center; }
   .game-modal-content { padding: 18px; width: calc(100% - 24px); }
   .absolute-close-btn { right: 8px; top: 8px; width: 44px; height: 44px; font-size: 1.2rem; }
   .modal-header { padding-right: 44px; font-size: 1.2rem; }

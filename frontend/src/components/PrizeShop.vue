@@ -20,12 +20,12 @@
 
       <div class="shop-grid">
         <div v-for="item in prizes" :key="item.id" class="prize-card">
-          <div class="prize-emoji">{{ item.emoji }}</div>
+          <div class="prize-emoji">{{ item.icon }}</div>
           <div class="prize-title">{{ item.name }}</div>
           <div class="prize-desc">{{ item.desc }}</div>
           <div class="prize-cost">{{ t('components.shop.cost') }} {{ item.cost }} {{ currencyLabel }}</div>
-          <button class="prize-btn" :disabled="balance < item.cost" @click="$emit('redeem', item)">
-            {{ balance >= item.cost ? t('components.shop.redeem') : t('components.shop.notEnough') }}
+          <button class="prize-btn" :disabled="item.owned || balance < item.cost" @click="$emit('redeem', item)">
+            {{ item.owned ? ownedLabel : balance >= item.cost ? t('components.shop.redeem') : t('components.shop.notEnough') }}
           </button>
         </div>
       </div>
@@ -53,29 +53,48 @@ const props = defineProps({
     type: Number,
     required: true,
   },
+  items: {
+    type: Array,
+    default: () => [],
+  },
   redeemMessage: {
     type: String,
     default: '',
   },
 })
 
-const { t } = useAppI18n()
+const { currentLanguage, t } = useAppI18n()
 
 const prizeDefs = [
-  { id: 'bear', emoji: '\u{1F9F8}', cost: 40 },
-  { id: 'movie', emoji: '\u{1F3AC}', cost: 60 },
-  { id: 'hotpot', emoji: '\u{1F372}', cost: 80 },
-  { id: 'course', emoji: '\u{1F393}', cost: 100 },
-  { id: 'vocab', emoji: '\u{1F4D8}', cost: 30 },
+  { id: 'bear', icon: '\u{1F9F8}', cost: 40 },
+  { id: 'movie', icon: '\u{1F3AC}', cost: 60 },
+  { id: 'hotpot', icon: '\u{1F372}', cost: 80 },
+  { id: 'course', icon: '\u{1F393}', cost: 100 },
+  { id: 'vocab', icon: '\u{1F4D8}', cost: 30 },
 ]
 
-const prizes = computed(() => prizeDefs.map((item) => ({
-  ...item,
-  name: t(`components.shop.prizes.${item.id}.name`),
-  desc: t(`components.shop.prizes.${item.id}.desc`),
-})))
+const translatedPrizeIds = new Set(prizeDefs.map((item) => item.id))
+
+const prizes = computed(() => {
+  if (Array.isArray(props.items) && props.items.length > 0) {
+    return props.items.map((item) => ({
+      ...item,
+      icon: item.icon || '\u2728',
+      name: translatedPrizeIds.has(item.slug) ? t(`components.shop.prizes.${item.slug}.name`) : item.name,
+      desc: translatedPrizeIds.has(item.slug) ? t(`components.shop.prizes.${item.slug}.desc`) : item.description || '',
+    }))
+  }
+
+  return prizeDefs.map((item) => ({
+    ...item,
+    name: t(`components.shop.prizes.${item.id}.name`),
+    desc: t(`components.shop.prizes.${item.id}.desc`),
+    owned: false,
+  }))
+})
 
 const currencyLabel = computed(() => (props.activeYear === 'y2' ? t('common.labels.coins') : t('common.labels.gems')))
+const ownedLabel = computed(() => (currentLanguage.value === 'en' ? 'Owned' : '已兑换'))
 </script>
 
 <style scoped>
