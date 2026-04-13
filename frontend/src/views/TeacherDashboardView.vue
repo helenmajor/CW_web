@@ -58,34 +58,36 @@
           >
         </label>
 
-        <div v-if="loading && !dashboard" class="empty-state">{{ copy.teacher.loading }}</div>
-        <div v-else-if="!dashboard?.students?.length" class="empty-state">{{ copy.teacher.noStudents }}</div>
-        <div v-else-if="studentSearch && !filteredStudents.length" class="empty-state">{{ studentSearchCopy.empty }}</div>
+        <div class="student-list-scroll">
+          <div v-if="loading && !dashboard" class="empty-state">{{ copy.teacher.loading }}</div>
+          <div v-else-if="!dashboard?.students?.length" class="empty-state">{{ copy.teacher.noStudents }}</div>
+          <div v-else-if="studentSearch && !filteredStudents.length" class="empty-state">{{ studentSearchCopy.empty }}</div>
 
-        <button
-          v-for="student in filteredStudents"
-          :key="student.id"
-          type="button"
-          class="student-row"
-          :class="{ active: selectedStudentId === student.id, champion: isStudentChampion(student) }"
-          @click="loadStudentDetail(student.id)"
-        >
-          <div class="student-row-main">
-            <AvatarBadge :avatar="student.travelerProfile?.avatar" size="sm" />
-            <div class="student-row-copy">
-              <div class="student-row-header">
-                <strong>{{ student.displayName }}</strong>
-                <span>{{ formatPercent(student.completionRate) }}</span>
-              </div>
-              <p>{{ student.email }}</p>
-              <div class="student-metrics">
-                <span>{{ copy.teacher.coins }} {{ student.coins }}</span>
-                <span>{{ copy.teacher.completed }} {{ student.completedCount }}</span>
-                <span>{{ copy.teacher.skipped }} {{ student.skippedCount }}</span>
+          <button
+            v-for="student in filteredStudents"
+            :key="student.id"
+            type="button"
+            class="student-row"
+            :class="{ active: selectedStudentId === student.id, champion: isStudentChampion(student) }"
+            @click="loadStudentDetail(student.id)"
+          >
+            <div class="student-row-main">
+              <AvatarBadge :avatar="student.travelerProfile?.avatar" size="sm" />
+              <div class="student-row-copy">
+                <div class="student-row-header">
+                  <strong>{{ student.displayName }}</strong>
+                  <span>{{ formatPercent(student.completionRate) }}</span>
+                </div>
+                <p>{{ student.email }}</p>
+                <div class="student-metrics">
+                  <span>{{ copy.teacher.coins }} {{ student.coins }}</span>
+                  <span>{{ copy.teacher.completed }} {{ student.completedCount }}</span>
+                  <span>{{ copy.teacher.skipped }} {{ student.skippedCount }}</span>
+                </div>
               </div>
             </div>
-          </div>
-        </button>
+          </button>
+        </div>
       </aside>
 
       <main class="detail-card">
@@ -443,11 +445,18 @@ onMounted(async () => {
 
 .dashboard-grid {
   grid-template-columns: 360px minmax(0, 1fr);
+  align-items: start;
 }
 
 .student-list-card,
 .detail-card {
   padding: 18px;
+}
+
+.student-list-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .card-header,
@@ -499,6 +508,27 @@ onMounted(async () => {
 .search-input:focus {
   outline: 2px solid rgba(253, 230, 138, 0.2);
   border-color: rgba(253, 230, 138, 0.35);
+}
+
+.student-list-scroll {
+  min-height: 0;
+  max-height: min(68vh, calc(100vh - 260px));
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.student-list-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.student-list-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 999px;
+}
+
+.student-list-scroll::-webkit-scrollbar-thumb {
+  background: rgba(253, 230, 138, 0.35);
+  border-radius: 999px;
 }
 
 .student-row {
@@ -649,6 +679,12 @@ onMounted(async () => {
 
   .teacher-profile-chip {
     width: 100%;
+  }
+
+  .student-list-scroll {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
   }
 }
 </style>

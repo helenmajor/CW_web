@@ -2,6 +2,16 @@
   <div class="login-page">
     <section class="hero-card">
       <div class="hero-copy">
+        <div class="brand-lockup">
+          <div class="brand-seal">
+            <img src="/xjtlu-shield.png" alt="Xi'an Jiaotong-Liverpool University shield">
+          </div>
+          <div class="brand-meta">
+            <span>XJTLU Portal</span>
+            <strong>Xi'an Jiaotong-Liverpool University</strong>
+          </div>
+        </div>
+
         <p class="eyebrow">{{ copy.login.eyebrow }}</p>
         <h1>{{ copy.login.title }}</h1>
         <p class="subtitle">{{ copy.login.subtitle }}</p>
@@ -344,11 +354,39 @@ async function submitForm() {
   padding: 24px;
   display: grid;
   place-items: center;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
   background:
-    radial-gradient(circle at 15% 20%, rgba(34, 197, 94, 0.16), transparent 18%),
-    radial-gradient(circle at 82% 18%, rgba(249, 115, 22, 0.16), transparent 20%),
-    radial-gradient(circle at 50% 70%, rgba(59, 130, 246, 0.18), transparent 26%),
-    linear-gradient(135deg, #07131f 0%, #10253a 48%, #1f483a 100%);
+    linear-gradient(118deg, rgba(4, 10, 18, 0.84) 0%, rgba(9, 18, 30, 0.76) 32%, rgba(11, 27, 37, 0.68) 58%, rgba(24, 53, 43, 0.58) 100%),
+    radial-gradient(circle at 14% 18%, rgba(164, 198, 223, 0.18), transparent 20%),
+    radial-gradient(circle at 82% 84%, rgba(156, 188, 135, 0.16), transparent 24%),
+    url('/xjtlu-station-building.jpg') center center / cover no-repeat;
+}
+
+.login-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 32%),
+    radial-gradient(circle at 78% 24%, rgba(255, 255, 255, 0.18), transparent 18%),
+    radial-gradient(circle at 18% 76%, rgba(245, 158, 11, 0.12), transparent 20%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.login-page::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0)),
+    repeating-linear-gradient(-7deg, rgba(255, 255, 255, 0.16) 0 2px, transparent 2px 11px);
+  opacity: 0.18;
+  clip-path: polygon(34% 0, 100% 0, 100% 100%, 52% 100%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .hero-card {
@@ -358,10 +396,15 @@ async function submitForm() {
   gap: 24px;
   padding: 28px;
   border-radius: 34px;
-  background: rgba(248, 250, 252, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.25);
-  backdrop-filter: blur(16px);
+  position: relative;
+  z-index: 1;
+  background:
+    linear-gradient(135deg, rgba(8, 15, 24, 0.52), rgba(12, 22, 34, 0.36) 46%, rgba(255, 255, 255, 0.08) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow:
+    0 30px 60px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(18px);
 }
 
 .hero-copy {
@@ -369,6 +412,52 @@ async function submitForm() {
   padding: 18px 10px;
   display: flex;
   flex-direction: column;
+  color: #f8fafc;
+}
+
+.brand-lockup {
+  max-width: 34rem;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.brand-seal {
+  width: 82px;
+  min-width: 82px;
+  aspect-ratio: 1;
+  padding: 8px;
+  border-radius: 24px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(224, 233, 245, 0.88));
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  box-shadow: 0 18px 30px rgba(5, 12, 20, 0.26);
+}
+
+.brand-seal img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.brand-meta {
+  display: grid;
+  gap: 5px;
+}
+
+.brand-meta span {
+  color: #dbeafe;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.brand-meta strong {
+  font-size: 1rem;
+  line-height: 1.35;
   color: #f8fafc;
 }
 
@@ -412,8 +501,8 @@ async function submitForm() {
 .showcase-card {
   border-radius: 24px;
   padding: 18px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(15, 23, 42, 0.22));
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(9, 17, 28, 0.28));
+  border: 1px solid rgba(255, 255, 255, 0.16);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
@@ -504,9 +593,12 @@ async function submitForm() {
 .auth-panel {
   padding: 22px;
   border-radius: 28px;
-  background: linear-gradient(180deg, rgba(255, 250, 245, 0.96), rgba(250, 243, 229, 0.95));
-  border: 1px solid rgba(226, 188, 124, 0.45);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  background: linear-gradient(180deg, rgba(251, 247, 239, 0.92), rgba(244, 236, 222, 0.9));
+  border: 1px solid rgba(226, 188, 124, 0.56);
+  box-shadow:
+    0 20px 40px rgba(7, 14, 22, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(10px);
 }
 
 .mode-toggle,
@@ -643,9 +735,33 @@ async function submitForm() {
 }
 
 @media (max-width: 860px) {
+  .login-page {
+    background:
+      linear-gradient(125deg, rgba(4, 10, 18, 0.88) 0%, rgba(9, 18, 30, 0.8) 44%, rgba(24, 53, 43, 0.64) 100%),
+      radial-gradient(circle at 14% 18%, rgba(164, 198, 223, 0.14), transparent 22%),
+      radial-gradient(circle at 80% 84%, rgba(156, 188, 135, 0.14), transparent 24%),
+      url('/xjtlu-station-building.jpg') 64% center / cover no-repeat;
+  }
+
+  .login-page::after {
+    clip-path: polygon(0 0, 100% 0, 100% 46%, 26% 78%, 0 70%);
+    opacity: 0.12;
+  }
+
   .hero-card {
     grid-template-columns: 1fr;
     padding: 18px;
+  }
+
+  .brand-lockup {
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  .brand-seal {
+    width: 72px;
+    min-width: 72px;
+    border-radius: 22px;
   }
 
   .auth-panel {
@@ -659,6 +775,12 @@ async function submitForm() {
   .showcase-grid,
   .showcase-avatar-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .brand-lockup {
+    align-items: flex-start;
   }
 }
 </style>
