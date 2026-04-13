@@ -5,6 +5,8 @@ import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -13,6 +15,8 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(ApiException.class)
     public Object handleApiException(ApiException exception) {
@@ -48,6 +52,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public Object handleUnexpectedException(Exception exception) {
+        log.error("Unhandled exception", exception);
         return ApiResponses.error(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected server error occurred.");
     }
 }

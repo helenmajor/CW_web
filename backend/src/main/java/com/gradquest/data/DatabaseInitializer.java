@@ -20,12 +20,11 @@ public class DatabaseInitializer {
           password_hash VARCHAR(255) NOT NULL,
           role VARCHAR(32) NOT NULL DEFAULT 'student',
           coins INT NOT NULL DEFAULT 140,
-          traveler_profile_json LONGTEXT NULL,
+          traveler_profile_json TEXT NULL,
           last_login_at DATETIME NULL,
           created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
           updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
-        ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """;
 
     private static final String PROGRESS_TABLE_SQL = """
@@ -43,7 +42,6 @@ public class DatabaseInitializer {
           CONSTRAINT fk_level_progress_user
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
-        ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """;
 
     private static final String SHOP_TABLE_SQL = """
@@ -55,10 +53,9 @@ public class DatabaseInitializer {
           cost INT NOT NULL,
           icon VARCHAR(64) NOT NULL,
           category VARCHAR(64) NOT NULL,
-          is_active TINYINT(1) NOT NULL DEFAULT 1,
+          is_active BOOLEAN NOT NULL DEFAULT TRUE,
           created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
-        ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """;
 
     private static final String USER_ITEMS_TABLE_SQL = """
@@ -75,7 +72,6 @@ public class DatabaseInitializer {
           CONSTRAINT fk_user_items_item
             FOREIGN KEY (item_id) REFERENCES shop_items(id) ON DELETE CASCADE
         )
-        ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """;
 
     private final JdbcTemplate jdbcTemplate;
@@ -95,7 +91,7 @@ public class DatabaseInitializer {
             ensureIndex("user_items", "idx_user_items_user", "user_id");
 
             ensureColumn("users", "role", "role VARCHAR(32) NOT NULL DEFAULT 'student'");
-            ensureColumn("users", "traveler_profile_json", "traveler_profile_json LONGTEXT NULL");
+            ensureColumn("users", "traveler_profile_json", "traveler_profile_json TEXT NULL");
             ensureColumn("users", "last_login_at", "last_login_at DATETIME NULL");
             ensureColumn("level_progress", "reward_coins", "reward_coins INT NOT NULL DEFAULT 30");
 
@@ -139,27 +135,44 @@ public class DatabaseInitializer {
             new ShopItem(0L, "vocab", "Vocabulary Book", "A practical low-threshold study reward.", 30, "\uD83D\uDCD8", "reward", true)
         );
 
-        String upsertSql = """
-            INSERT INTO shop_items (slug, name, description, cost, icon, category, is_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-              name = VALUES(name),
-              description = VALUES(description),
-              cost = VALUES(cost),
-              icon = VALUES(icon),
-              category = VALUES(category),
-              is_active = VALUES(is_active)
-            """;
+        defaults.forEach(item -> {
+            Integer existing = jdbcTemplate.query(
+                "SELECT 1 FROM shop_items WHERE slug = ?",
+                resultSet -> resultSet.next() ? 1 : null,
+                item.slug()
+            );
 
-        defaults.forEach(item -> jdbcTemplate.update(
-            upsertSql,
-            item.slug(),
-            item.name(),
-            item.description(),
-            item.cost(),
-            item.icon(),
-            item.category(),
-            item.active() ? 1 : 0
-        ));
+            if (existing == null) {
+                jdbcTemplate.update(
+                    """
+                        INSERT INTO shop_items (slug, name, description, cost, icon, category, is_active)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        """,
+                    item.slug(),
+                    item.name(),
+                    item.description(),
+                    item.cost(),
+                    item.icon(),
+                    item.category(),
+                    item.active()
+                );
+                return;
+            }
+
+            jdbcTemplate.update(
+                """
+                    UPDATE shop_items
+                    SET name = ?, description = ?, cost = ?, icon = ?, category = ?, is_active = ?
+                    WHERE slug = ?
+                    """,
+                item.name(),
+                item.description(),
+                item.cost(),
+                item.icon(),
+                item.category(),
+                item.active(),
+                item.slug()
+            );
+        });
     }
 }
