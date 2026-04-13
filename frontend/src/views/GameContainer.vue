@@ -98,16 +98,24 @@ function goBack() {
   router.push({ name: 'map' })
 }
 
-function handleChildComplete(payload = {}) {
+async function handleChildComplete(payload = {}) {
   const profile = payload.profile || payload
   const rewardCoins = Number(payload.rewardCoins) || 0
-  store.completeNode(store.year, levelId.value, { rewardCoins, profile })
-  goBack()
+  try {
+    await store.completeNode(store.year, levelId.value, { rewardCoins, profile })
+    goBack()
+  } catch (error) {
+    console.error(error)
+  }
 }
 
-function skipLevel() {
-  store.skipLevel(levelId.value)
-  goBack()
+async function skipLevel() {
+  try {
+    await store.skipLevel(levelId.value)
+    goBack()
+  } catch (error) {
+    console.error(error)
+  }
 }
 </script>
 

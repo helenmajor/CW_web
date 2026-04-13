@@ -6,11 +6,11 @@
 <script setup>
 import { RouterView } from 'vue-router'
 import LanguageToggle from '@/components/LanguageToggle.vue'
-import { useGameStore } from './stores/game'
 import { useLanguageStore } from './stores/language'
+import { useAuthStore } from './stores/auth'
 
-const store = useGameStore()
-store.hydrate()
+const authStore = useAuthStore()
+authStore.hydrate()
 
 const languageStore = useLanguageStore()
 languageStore.hydrate()

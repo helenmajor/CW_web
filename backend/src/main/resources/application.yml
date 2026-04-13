@@ -1,0 +1,25 @@
+server:
+  port: ${PORT:18080}
+
+spring:
+  application:
+    name: gradquest-backend
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:gradquest}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8&createDatabaseIfNotExist=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${DB_USERNAME:gradquest}
+    password: ${DB_PASSWORD:GradQuest123!}
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-test-query: SELECT 1
+  jackson:
+    default-property-inclusion: non_null
+
+app:
+  client-origins: ${CLIENT_ORIGIN:http://localhost:5173}
+  jwt:
+    secret: ${JWT_SECRET:gradquest-dev-secret-change-me}
+    expiration-days: ${JWT_EXPIRES_IN_DAYS:7}
+  gameplay:
+    initial-coins: ${INITIAL_COINS:140}

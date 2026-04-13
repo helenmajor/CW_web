@@ -1,11 +1,38 @@
 # CW_web
 
-`CW_web` is a study-abroad / postgraduate-application planning game app with a Vue 3 frontend and an Express backend.
+`CW_web` is a study-abroad / postgraduate-application planning game app with a Vue 3 frontend and a Spring Boot backend.
 
 ## Structure
 
 - `frontend`: Vue 3 + Vite + Vue Router + Pinia
-- `backend`: Express + SQLite + JWT + bcrypt API backend
+- `backend`: Spring Boot + MySQL + JWT
+
+## Readable SQL Dump
+
+The live backend now uses MySQL at runtime, and you can export the current database into a plain-text `.sql` file whenever you want to inspect it.
+
+```bash
+powershell -ExecutionPolicy Bypass -File backend/scripts/export-db-dump.ps1
+```
+
+That command writes a readable SQL dump to:
+
+```text
+backend/sql/gradquest_mysql_dump.sql
+```
+
+You can also inspect the schema reference directly in:
+
+```text
+backend/sql/mysql_schema.sql
+```
+
+## What Changed
+
+- Added role-based login/logout for `student` and `teacher`
+- Added a teacher monitoring dashboard to inspect student progress data
+- Moved the active backend runtime path to Spring Boot so the backend can run with `mvn spring-boot:run`
+- Synced student progress, rewards, and profile data to MySQL-backed APIs
 
 ## Local Startup
 
@@ -22,50 +49,33 @@ Backend:
 
 ```bash
 cd backend
-npm install
+mvn dependency:resolve
 ```
 
-Optional database initialization:
+### 2. Start MySQL
+
+Make sure a MySQL 8 server is running locally or update the database environment variables below to point at your own server.
+
+### 3. Start the backend
 
 ```bash
 cd backend
-npm run db:init
-```
-
-### 2. Start the backend
-
-```bash
-cd backend
-npm run dev
+mvn spring-boot:run
 ```
 
 Backend default URL:
 
 ```text
-http://localhost:3000
+http://localhost:18080
 ```
 
 Health check:
 
 ```text
-http://localhost:3000/api/health
+http://localhost:18080/api/health
 ```
 
-Optional backend environment variables:
-
-```bash
-PORT=3000
-CLIENT_ORIGIN=http://localhost:5173
-JWT_SECRET=change-this-in-real-use
-JWT_EXPIRES_IN=7d
-DB_PATH=./data/gradquest.sqlite
-BCRYPT_SALT_ROUNDS=10
-INITIAL_COINS=140
-```
-
-You can copy `backend/.env.example` to `backend/.env` and adjust values as needed.
-
-### 3. Start the frontend
+### 4. Start the frontend
 
 ```bash
 cd frontend
@@ -78,29 +88,53 @@ Frontend default URL:
 http://localhost:5173
 ```
 
-The frontend proxies `/api` requests to the backend during local development.
+The frontend proxies `/api` requests to `http://localhost:18080` during local development by default.
 
-## Backend Overview
+You can register student or teacher accounts from the login page.
 
-The backend is organized into:
+## Optional Backend Environment Variables
 
-- `backend/src/config`: environment, CORS, gameplay seed config
-- `backend/src/db`: SQLite connection, schema creation, seeding
-- `backend/src/middleware`: auth and centralized error handling
-- `backend/src/repositories`: database access helpers
-- `backend/src/services`: auth, progress, shop, inventory business logic
-- `backend/src/controllers`: HTTP handlers
-- `backend/src/routes`: modular API routes
+```bash
+PORT=18080
+CLIENT_ORIGIN=http://localhost:5173
+JWT_SECRET=change-this-in-real-use
+JWT_EXPIRES_IN_DAYS=7
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=gradquest
+DB_USERNAME=gradquest
+DB_PASSWORD=GradQuest123!
+INITIAL_COINS=140
+```
 
-Main API groups:
+If a previous backend process still occupies port `18080`, you can stop it with:
+
+```bash
+powershell -ExecutionPolicy Bypass -File backend/scripts/stop-backend.ps1
+```
+
+## Main API Groups
 
 - `POST /api/auth/register`
 - `POST /api/auth/login`
+- `POST /api/auth/logout`
 - `GET /api/auth/me`
 - `GET /api/progress`
 - `POST /api/progress/complete`
 - `POST /api/progress/skip`
+- `POST /api/progress/reset`
 - `GET /api/shop/items`
 - `POST /api/shop/purchase`
 - `GET /api/inventory`
+- `GET /api/teacher/students`
+- `GET /api/teacher/students/{studentId}`
 - `GET /api/health`
+
+## Verification
+
+The current repository state has been verified with:
+
+- `cd backend && mvn -q -DskipTests compile`
+- `cd frontend && npm run build`
+
+The MySQL migration compiles cleanly, but runtime API smoke tests still require valid local MySQL credentials.
