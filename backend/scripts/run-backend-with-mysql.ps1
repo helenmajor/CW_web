@@ -11,6 +11,7 @@ $env:DB_PORT = $DbPort
 $env:DB_NAME = $DbName
 $env:DB_USERNAME = $DbUsername
 $env:DB_PASSWORD = $DbPassword
+$env:SPRING_PROFILES_ACTIVE = "mysql"
 
 $backendRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $pomPath = Join-Path $backendRoot "pom.xml"

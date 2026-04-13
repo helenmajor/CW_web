@@ -2,7 +2,6 @@ package com.gradquest.repository;
 
 import com.gradquest.model.UserAccount;
 import com.gradquest.model.UserRole;
-import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
@@ -67,7 +66,7 @@ public class UserRepository {
             var statement = connection.prepareStatement("""
                 INSERT INTO users (email, username, display_name, password_hash, role, coins, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                """, Statement.RETURN_GENERATED_KEYS);
+                """, new String[] {"id"});
             statement.setString(1, email);
             statement.setString(2, username);
             statement.setString(3, displayName);
@@ -76,7 +75,7 @@ public class UserRepository {
             statement.setInt(6, coins);
             return statement;
         }, keyHolder);
-        Number id = keyHolder.getKey();
+        Number id = extractGeneratedId(keyHolder);
         return findById(id.longValue()).orElseThrow();
     }
 
@@ -152,5 +151,24 @@ public class UserRepository {
             resultSet.getString("updated_at"),
             resultSet.getString("last_login_at")
         );
+    }
+
+    private Number extractGeneratedId(KeyHolder keyHolder) {
+        for (Map<String, Object> keys : keyHolder.getKeyList()) {
+            Object id = keys.get("id");
+            if (!(id instanceof Number)) {
+                id = keys.get("ID");
+            }
+            if (id instanceof Number number) {
+                return number;
+            }
+            if (keys.size() == 1) {
+                Object onlyValue = keys.values().iterator().next();
+                if (onlyValue instanceof Number number) {
+                    return number;
+                }
+            }
+        }
+        throw new IllegalStateException("Failed to retrieve generated user id.");
     }
 }

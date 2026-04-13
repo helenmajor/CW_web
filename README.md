@@ -52,11 +52,9 @@ cd backend
 mvn dependency:resolve
 ```
 
-### 2. Start MySQL
+### 2. Start the backend
 
-Make sure a MySQL 8 server is running locally or update the database environment variables below to point at your own server.
-
-### 3. Start the backend
+The default local backend profile now uses an embedded H2 database, so no separate database setup is required for local registration/login testing.
 
 ```bash
 cd backend
@@ -75,7 +73,13 @@ Health check:
 http://localhost:18080/api/health
 ```
 
-### 4. Start the frontend
+To run against MySQL instead, start MySQL 8 and then run:
+
+```bash
+powershell -ExecutionPolicy Bypass -File backend/scripts/run-backend-with-mysql.ps1
+```
+
+### 3. Start the frontend
 
 ```bash
 cd frontend
