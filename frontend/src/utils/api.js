@@ -9,7 +9,11 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   try {
-    const session = JSON.parse(localStorage.getItem(AUTH_SESSION_STORAGE_KEY) || 'null')
+    const session = JSON.parse(
+      sessionStorage.getItem(AUTH_SESSION_STORAGE_KEY)
+        || localStorage.getItem(AUTH_SESSION_STORAGE_KEY)
+        || 'null'
+    )
     if (session?.token) {
       config.headers = config.headers || {}
       config.headers.Authorization = `Bearer ${session.token}`

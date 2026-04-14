@@ -5,7 +5,7 @@ const AUTH_SESSION_STORAGE_KEY = 'gradquest-auth-session'
 
 function readSession() {
   try {
-    return JSON.parse(localStorage.getItem(AUTH_SESSION_STORAGE_KEY) || 'null')
+    return JSON.parse(sessionStorage.getItem(AUTH_SESSION_STORAGE_KEY) || 'null')
   } catch (error) {
     console.warn('Failed to parse saved auth session.', error)
     return null
@@ -107,10 +107,11 @@ export const useAuthStore = defineStore('auth', {
 
     persistSession() {
       try {
-        localStorage.setItem(AUTH_SESSION_STORAGE_KEY, JSON.stringify({
+        sessionStorage.setItem(AUTH_SESSION_STORAGE_KEY, JSON.stringify({
           token: this.token,
           user: this.user,
         }))
+        localStorage.removeItem(AUTH_SESSION_STORAGE_KEY)
       } catch (error) {
         console.warn('Failed to persist auth session.', error)
       }
@@ -120,6 +121,7 @@ export const useAuthStore = defineStore('auth', {
       this.token = ''
       this.user = null
       try {
+        sessionStorage.removeItem(AUTH_SESSION_STORAGE_KEY)
         localStorage.removeItem(AUTH_SESSION_STORAGE_KEY)
       } catch (error) {
         console.warn('Failed to clear auth session.', error)
