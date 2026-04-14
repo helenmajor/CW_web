@@ -10,8 +10,54 @@
         <i class="fas fa-question-circle"></i>
       </button>
     </div>
+
+    <!-- 小屏幕汉堡菜单按钮 -->
+    <button v-if="windowWidth < 1024" class="mobile-menu-toggle" @click="showMobileMenu = true">
+      <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- 侧开菜单抽屉 -->
+    <div v-if="showMobileMenu" class="mobile-menu-overlay" @click="showMobileMenu = false"></div>
+    <div class="mobile-menu-drawer" :class="{ open: showMobileMenu }">
+      <button class="mobile-menu-close" @click="showMobileMenu = false">
+        <i class="fas fa-times"></i>
+      </button>
+      <div class="mobile-menu-content">
+        <div class="mobile-menu-section">
+          <button class="mobile-menu-item" :class="store.year === 'y2' ? 'active' : ''" @click="switchYearAndClose('y2')">
+            <i class="fas fa-map"></i> {{ t('nav.year2') }}
+          </button>
+          <button class="mobile-menu-item" :class="store.year === 'y3' ? 'active' : ''" @click="switchYearAndClose('y3')">
+            <i class="fas fa-fire"></i> {{ t('nav.year3') }}
+          </button>
+        </div>
+        <div class="mobile-menu-section">
+          <button class="mobile-menu-item" @click="showMobileMenu = false; showPrizeShop = true">
+            <i class="fas fa-gift"></i> {{ t('map.shop') }}
+          </button>
+          <button class="mobile-menu-item" @click="showMobileMenu = false; showHealingSandbox = true">
+            <i class="fas fa-leaf"></i> {{ t('map.sanctuary') }}
+          </button>
+        </div>
+        <div class="mobile-menu-section">
+          <div class="mobile-menu-coins">
+            <i class="fas fa-coins"></i>
+            <span>{{ store.currentCoins }} {{ t('common.labels.coins') }}</span>
+          </div>
+        </div>
+        <div class="mobile-menu-section">
+          <button class="mobile-menu-item danger" @click="showMobileMenu = false; showResetConfirm = true">
+            <i class="fas fa-rotate-left"></i> {{ t('nav.reset') }}
+          </button>
+          <button class="mobile-menu-item" @click="showMobileMenu = false; handleLogout()">
+            <i class="fas fa-sign-out-alt"></i> {{ copy.map.logout }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div class="app-shell">
-      <div class="top-switcher">
+      <div class="top-switcher" v-if="windowWidth >= 1024">
         <button class="switch-btn" :class="store.year === 'y2' ? 'primary' : 'secondary'" @click="switchYear('y2')"><i class="fas fa-map"></i> {{ t('nav.year2') }}</button>
         <button class="switch-btn" :class="store.year === 'y3' ? 'primary' : 'secondary'" @click="switchYear('y3')"><i class="fas fa-fire"></i> {{ t('nav.year3') }}</button>
         <button class="switch-btn danger" @click="showResetConfirm = true"><i class="fas fa-rotate-left"></i> {{ t('nav.reset') }}</button>
@@ -35,10 +81,10 @@
       <section class="board y2" :class="{ active: store.year === 'y2' }">
         <div class="header">
           <h1><i class="fas fa-route"></i> {{ t('map.year2Title') }}</h1>
-          <div class="header-right">
+          <div class="header-right" v-if="windowWidth >= 1024">
             <button class="btn-action" @click="showPrizeShop = true"><i class="fas fa-gift"></i> {{ t('map.shop') }}</button>
             <button class="btn-action" @click="showHealingSandbox = true"><i class="fas fa-leaf"></i> {{ t('map.sanctuary') }}</button>
-            <div class="coin-panel"><i class="fas fa-coins"></i><span>{{ store.currentCoins }}</span><small>{{ t('common.labels.coins') }}</small></div>
+            <div class="coin-panel" @mouseenter="showCoinTooltip" @mouseleave="hideTooltip"><i class="fas fa-coins"></i><span>{{ store.currentCoins }}</span><small>{{ t('common.labels.coins') }}</small></div>
           </div>
         </div>
 
@@ -94,7 +140,7 @@
           <div class="header-right">
             <button class="btn-action" @click="showPrizeShop = true"><i class="fas fa-gift"></i> {{ t('map.shop') }}</button>
             <button class="btn-action" @click="showHealingSandbox = true"><i class="fas fa-leaf"></i> {{ t('map.sanctuary') }}</button>
-            <div class="coin-panel"><i class="fas fa-coins"></i><span>{{ store.currentCoins }}</span><small>{{ t('common.labels.gems') }}</small></div>
+            <div class="coin-panel" @mouseenter="showCoinTooltip" @mouseleave="hideTooltip"><i class="fas fa-coins"></i><span>{{ store.currentCoins }}</span><small>{{ t('common.labels.gems') }}</small></div>
           </div>
         </div>
 
@@ -160,6 +206,16 @@
         <div class="confirm-actions">
           <button class="confirm-btn cancel" @click="showResetConfirm = false">{{ t('common.actions.cancel') }}</button>
           <button class="confirm-btn reset" @click="resetGame">{{ t('map.resetConfirm') }}</button>
+        </div>
+      </div>
+    </div>
+    <div v-if="showYear3Unlock" class="modal-overlay" @click.self="showYear3Unlock = false">
+      <div class="confirm-modal-content unlock-modal-content">
+        <h2>{{ t('map.year3UnlockedTitle') }}</h2>
+        <p>{{ t('map.year3UnlockedBody') }}</p>
+        <div class="confirm-actions">
+          <button class="confirm-btn" @click="showYear3Unlock = false">{{ t('common.actions.close') }}</button>
+          <button class="confirm-btn primary" @click="handleYear3Unlock">{{ t('map.year3UnlockedButton') }}</button>
         </div>
       </div>
     </div>
@@ -237,8 +293,12 @@ const y3Nodes = computed(() => y3NodeLayout.map((node) => ({
 const showPrizeShop = ref(false)
 const showHealingSandbox = ref(false)
 const showResetConfirm = ref(false)
+const showYear3Unlock = ref(false)
+const hasSeenYear2Unlock = ref(false)
 const redeemMessage = ref('')
 const statusMessage = ref('')
+const showMobileMenu = ref(false)
+const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1024)
 const activeLevel = ref(null)
 const mapAreas = reactive({ y2: null, y3: null })
 const nodeRefs = reactive({ y2: {}, y3: {} })
@@ -250,6 +310,8 @@ const nativeGameComponent = computed(() => {
   if (!loader) return null
   return defineAsyncComponent(loader)
 })
+
+const year2Complete = computed(() => store.y2.levels.length > 0 && store.y2.levels.every((level) => level.completed))
 const isChromeFreeLevel = computed(() => Boolean(activeLevel.value && chromeFreeFiles.has(activeLevel.value.file)))
 const activeLevelTitle = computed(() => activeLevel.value?.i18nKey ? t(`${activeLevel.value.i18nKey}.title`) : '')
 let openLevelTimer = null
@@ -272,6 +334,7 @@ function getNodeCenter(year, nodeId) { const map = mapAreas[year]; const node = 
 function moveTravelerToNode(year, nodeId) { const center = getNodeCenter(year, nodeId); if (!center) return; traveler[year].left = `${center.left}px`; traveler[year].top = `${center.top}px`; traveler[year].walking = true; traveler[year].reached = false; if (travelerTimers[year]) clearTimeout(travelerTimers[year]); travelerTimers[year] = window.setTimeout(() => { traveler[year].walking = false; traveler[year].reached = true }, 850) }
 function syncTraveler(year, nodeId = store[year].currentNode) { nextTick(() => window.requestAnimationFrame(() => moveTravelerToNode(year, nodeId))) }
 function switchYear(year) { if (store.year === year) { syncTraveler(year); return } store.switchYear(year) }
+function switchYearAndClose(year) { switchYear(year); showMobileMenu.value = false }
 function showTooltipNow(node, year, type = 'locked') {
   let text = ''
   if (type === 'locked') {
@@ -313,10 +376,22 @@ async function redeemPrize(prize) { const label = store.year === 'y2' ? t('commo
 async function handleNativeComplete(payload = {}) { if (!activeLevel.value) return; const year = activeLevel.value.year; const levelId = activeLevel.value.id; const profile = payload.profile || payload; const rewardCoins = Number(payload.rewardCoins) || 0; statusMessage.value = ''; try { await store.completeNode(year, levelId, { rewardCoins, profile }); closeGame(); syncTraveler(year, store[year].currentNode) } catch (error) { statusMessage.value = error.message || copy.value.map.syncFailed } }
 async function resetGame() { closeGame(); showPrizeShop.value = false; showHealingSandbox.value = false; showResetConfirm.value = false; redeemMessage.value = ''; statusMessage.value = ''; try { await store.resetStore(); syncTraveler('y2', 1) } catch (error) { statusMessage.value = error.message || copy.value.map.syncFailed } }
 async function handleLogout() { await authStore.logout(); store.clearState(); await router.replace({ name: 'login' }) }
-function handleEscape(event) { if (event.key !== 'Escape') return; if (showResetConfirm.value) { showResetConfirm.value = false; return } if (activeLevel.value) { closeGame(); return } if (showPrizeShop.value) { showPrizeShop.value = false; return } if (showHealingSandbox.value) showHealingSandbox.value = false }
+function handleYear3Unlock() {
+  showYear3Unlock.value = false
+  hasSeenYear2Unlock.value = true
+  if (typeof window !== 'undefined') localStorage.setItem('year2UnlockSeen', 'true')
+  switchYear('y3')
+}
+function handleEscape(event) { if (event.key !== 'Escape') return; if (showResetConfirm.value) { showResetConfirm.value = false; return } if (activeLevel.value) { closeGame(); return } if (showYear3Unlock.value) { showYear3Unlock.value = false; return } if (showPrizeShop.value) { showPrizeShop.value = false; return } if (showHealingSandbox.value) showHealingSandbox.value = false }
 const handleResize = () => syncTraveler(store.year)
 
-
+function showCoinTooltip(event) {
+  tooltip.text = t('map.coinTooltip')
+  tooltip.x = event.clientX + 15
+  tooltip.y = event.clientY - 30
+  tooltip.visible = true
+  if (tooltipTimer) clearTimeout(tooltipTimer)
+}
 function showTooltip(event, node, year) {
   if (tooltipTimer) clearTimeout(tooltipTimer)
   let text = ''
@@ -381,6 +456,22 @@ function showHelpTooltip(event) {
   tooltip.y = event.clientY - 30
   tooltip.visible = true
 }
+
+watch(year2Complete, (current, previous) => {
+  if (current && !previous && !hasSeenYear2Unlock.value) {
+    showYear3Unlock.value = true
+  }
+})
+
+onMounted(() => {
+  if (typeof window !== 'undefined') {
+    hasSeenYear2Unlock.value = localStorage.getItem('year2UnlockSeen') === 'true'
+  }
+  if (year2Complete.value && !hasSeenYear2Unlock.value) {
+    showYear3Unlock.value = true
+  }
+})
+
 watch(() => store.year, (year) => syncTraveler(year, store[year].currentNode))
 watch(() => store.y2.currentNode, (nodeId) => { if (store.year === 'y2') syncTraveler('y2', nodeId) })
 watch(() => store.y3.currentNode, (nodeId) => { if (store.year === 'y3') syncTraveler('y3', nodeId) })
@@ -390,6 +481,9 @@ watch(() => store.year, () => {
 onMounted(async () => {
   window.addEventListener('keydown', handleEscape)
   window.addEventListener('resize', handleResize)
+  window.addEventListener('resize', () => {
+    windowWidth.value = window.innerWidth
+  })
 
   try {
     await store.ensureLoaded()
@@ -410,6 +504,151 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', handleEscape); win
   left: 190px;  /* 根据语言切换按钮的实际宽度调整，避免重叠 */
   z-index: 1201;
 }
+
+/* Mobile Menu */
+.mobile-menu-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1210;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  font-size: 1.4rem;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  transition: 0.2s;
+  backdrop-filter: blur(8px);
+}
+
+.mobile-menu-toggle:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.mobile-menu-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1200;
+  animation: fade-in 0.3s ease;
+}
+
+.mobile-menu-drawer {
+  position: fixed;
+  top: 0;
+  right: -400px;
+  width: 380px;
+  height: 100vh;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(7, 11, 20, 0.98) 100%);
+  backdrop-filter: blur(16px);
+  border-left: 2px solid rgba(243, 207, 154, 0.2);
+  z-index: 1205;
+  padding: 20px 0;
+  overflow-y: auto;
+  box-shadow: -8px 0 28px rgba(0, 0, 0, 0.6);
+  transition: right 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.mobile-menu-drawer.open {
+  right: 0;
+}
+
+.mobile-menu-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 1.4rem;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.mobile-menu-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: rotate(90deg);
+}
+
+.mobile-menu-content {
+  padding: 60px 20px 20px;
+}
+
+.mobile-menu-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(243, 207, 154, 0.15);
+}
+
+.mobile-menu-section:last-child {
+  border-bottom: none;
+}
+
+.mobile-menu-item {
+  padding: 16px 18px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #e8edf9;
+  font-weight: 800;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: 0.2s;
+  border: 1px solid rgba(243, 207, 154, 0.2);
+  text-align: left;
+}
+
+.mobile-menu-item:hover {
+  background: rgba(243, 207, 154, 0.1);
+  border-color: rgba(243, 207, 154, 0.4);
+  transform: translateX(4px);
+}
+
+.mobile-menu-item.active {
+  background: rgba(243, 207, 154, 0.2);
+  border-color: #f3cf9a;
+  color: #f3cf9a;
+}
+
+.mobile-menu-item.danger {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #fecaca;
+}
+
+.mobile-menu-item.danger:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+.mobile-menu-coins {
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: rgba(26, 42, 108, 0.5);
+  color: #ffdf99;
+  border: 2px solid #f3cf9a;
+  font-weight: 800;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .help-btn {
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(8px);
@@ -683,6 +922,21 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', handleEscape); win
 @keyframes bob-walk { 0% { transform: translate(-50%, -92%) scale(var(--traveler-scale)) rotate(-1deg); } 50% { transform: translate(-50%, -96%) scale(var(--traveler-scale)) rotate(1deg); } 100% { transform: translate(-50%, -92%) scale(var(--traveler-scale)) rotate(-1deg); } }
 @keyframes sparkle-pop { 0% { opacity: 0; transform: scale(0.4) translateY(8px); } 60% { opacity: 1; transform: scale(1.15) translateY(-2px); } 100% { opacity: 0; transform: scale(1) translateY(-10px); } }
 @keyframes pulse-star { 0% { transform: scale(1); opacity: 0.92; } 50% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); opacity: 0.92; } }
+
+@media (max-width: 1023px) {
+  .mobile-menu-toggle {
+    display: flex;
+  }
+  
+  .top-switcher {
+    display: none !important;
+  }
+  
+  .mobile-menu-drawer {
+    width: min(280px, 90vw);
+  }
+}
+
 @media (max-width: 960px) {
   .app-shell { padding-top: 0; }
   .board { height: clamp(640px, 78vh, 760px); }

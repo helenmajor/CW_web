@@ -1,7 +1,15 @@
 <template>
   <div class="ultimate-trial-page">
+    <KnowledgeGuidePanel
+      class="guide-panel"
+      :title="t('pages.y2_7.guide.title')"
+      :body="t('pages.y2_7.guide.body')"
+      :items="guideItems"
+    />
     <div class="room">
       <h2 class="header-title"><i class="fas fa-star"></i> {{ t('pages.y2_7.title') }}</h2>
+
+      
 
       <div v-if="!quizPassed" class="question-box">
         <p class="question-desc">{{ t('pages.y2_7.question') }}</p>
@@ -63,9 +71,10 @@
 <script setup>
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { useAppI18n } from '@/composables/useAppI18n'
+import KnowledgeGuidePanel from '@/components/KnowledgeGuidePanel.vue'
 
 const emit = defineEmits(['complete', 'close'])
-const { t } = useAppI18n()
+const { t, tm } = useAppI18n()
 
 const quizPassed = ref(false)
 const machineVisible = ref(false)
@@ -76,6 +85,8 @@ const ticketOpen = ref(false)
 
 let machineRevealTimer = 0
 let spinTimer = 0
+
+const guideItems = computed(() => tm('pages.y2_7.guide.items') || [])
 
 const answers = computed(() => ([
   { key: 'a', label: t('pages.y2_7.answers.a'), correct: false },
@@ -405,6 +416,12 @@ onBeforeUnmount(() => {
 
   .reward-content {
     font-size: 1.1rem;
+  }
+  .guide-panel {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 10;
   }
 }
 </style>

@@ -80,6 +80,7 @@ export default {
     resetDesc: 'Resets all nodes, coins, and traveler profile. Use with caution – progress cannot be recovered.',
   },
   map: {
+    coinTooltip: 'Complete levels to earn coins. Coins can be used in the Reward Exchange.',
     progressLabel: 'Overall Progress',
     lockedTooltip: '🔒 Need to complete node {previous} first to unlock node {current}.',
     year2Title: 'Year 2 · The Foggy Exploration',
@@ -94,6 +95,9 @@ export default {
     missingLevel: 'This level is still being wired into Vue.',
     redeemNotEnough: 'Not enough coins. Clear more nodes to earn rewards.',
     redeemSuccess: 'Redemption successful! You obtained {name}, spent {cost} {currency}, and now have {balance} {currency} left.',
+    year3UnlockedTitle: 'Year 3 Unlocked!',
+    year3UnlockedBody: 'You completed all Year 2 nodes and now the Year 3 exploration path is ready to open. Head over to continue your application adventure.',
+    year3UnlockedButton: 'Open Year 3',
     yearChip: {
       y2: 'Year 2',
       y3: 'Year 3',
@@ -235,6 +239,18 @@ export default {
       modalTitle: 'Identity Sealed',
       modalDesc: 'Your traveler is ready. Returning will unlock Y2-2 and apply this appearance to the little character on the main map.',
       awaitingChoice: 'Awaiting choice',
+      guide: {
+        title: 'Identity Forge Guide',
+        body: 'Customize your traveler avatar and student identity card. Your choices will be saved to your profile and shown on the map.',
+        item1: {
+          title: '🎭 Identity & Appearance',
+          text: 'Choose a codename, archetype, hair color, outfit, and familiar tool. These define your visual style and in‑game persona.'
+        },
+        item2: {
+          title: '📝 Save & Proceed',
+          text: 'Once all four sigils are charged, seal your identity. You will earn 30 coins and unlock the next node on the map.'
+        }
+      },
       roles: {
         analyst: { name: 'Quiet Analyst', copy: 'Plans with structure and evidence.' },
         storyweaver: { name: 'Story Weaver', copy: 'Turns ideas into memorable stories.' },
@@ -262,40 +278,133 @@ export default {
       subtitle: 'The portals are still dormant. Your answers generate the energy that points toward the better route.',
       routes: {
         uk: 'Path of Albion (UK)',
+        us: 'Path of the New World (USA)',
+        eu: 'Path of Continental Europe',
+        sg: 'Path of the Lion City (Singapore)',
         hk: 'Path of the Orient (Hong Kong)',
       },
+      routeKeywords: {
+        uk: ['Classic campus', 'Academic tradition'],
+        us: ['Fast-track', 'Career ambition'],
+        eu: ['Cultural depth', 'Research focus'],
+        sg: ['Practical edge', 'Asia gateway'],
+        hk: ['City pulse', 'Finance link'],
+      },
       claim: 'Accept Route Suggestion and Proceed',
+      questionCount: 'Question {current} / {total}',
+      guide: {
+        button: 'Knowledge Guide',
+        body: 'This mini-game helps you see which destination type fits your current priorities. Answer honestly to uncover the best route.',
+        items: [
+          'Think about study rhythm, cost, language comfort, and long-term career fit.',
+          'There is no “perfect” path—each region has different strengths.',
+          'After finishing, compare the suggested route with your own goals before continuing.',
+        ],
+      },
+      regionsTitle: 'Destination Overview',
+      regionsCopy: 'Scroll the region cards on the left to compare each destination, then answer questions on the right.',
       questions: [
         {
-          q: 'When facing an unknown study journey, where are you more eager to go?',
+          q: 'Which study rhythm feels more natural for you?',
           choices: [
-            'Cross the ocean and immerse yourself in a more classic western campus and living culture.',
-            'Stay in a more familiar Asian environment where culture and lifestyle feel easier to connect with.',
+            'A faster, more practical path with clear milestones and early work opportunities.',
+            'A more measured, campus-centered route with academic tradition and ritual.',
           ],
         },
         {
-          q: 'After graduation, in which environment do you want to unfold your abilities?',
+          q: 'What matters most when you imagine the next two years?',
           choices: [
-            'Pursue global prestige and a broader international platform.',
-            'Value denser internships, faster finance-tech rhythm, and stronger Asian employment conversion.',
+            'A compact, cost-aware plan that moves quickly toward outcomes.',
+            'A richer campus experience with broader academic exploration.',
           ],
         },
         {
-          q: 'Which resource is currently more abundant for you?',
+          q: 'How do you feel about the local language environment?',
           choices: [
-            'My budget is more flexible, and I am willing to spend more time on a fuller overseas experience.',
-            'My time and budget are tactical, so I want stronger cost-effectiveness and quicker landing.',
+            'I prefer a place with stronger Asian cultural familiarity and some English support.',
+            'I am ready to use English fully and adapt to western academic expression.',
+          ],
+        },
+        {
+          q: 'Your strongest advantage today is:',
+          choices: [
+            'Practical application experience and clear goal orientation.',
+            'Academic preparation and interest in deep discipline research.',
+          ],
+        },
+        {
+          q: 'If you compare living costs, you choose:',
+          choices: [
+            'A more efficient, city-based lifestyle with lower study overhead.',
+            'A classic campus lifestyle that may cost more but feels fuller.',
+          ],
+        },
+        {
+          q: 'For career fit after graduation, you prefer:',
+          choices: [
+            'Regional networks, finance/tech hubs, and quick landing in Asia/US markets.',
+            'Traditional academic credibility and long-term research or cross-border options.',
+          ],
+        },
+        {
+          q: 'A safe planning principle for you is:',
+          choices: [
+            'Lean into what is familiar and reduces uncertainty in the first year.',
+            'Choose the path that maximizes long-term prestige and global signal.',
+          ],
+        },
+        {
+          q: 'When thinking about application support, you want:',
+          choices: [
+            'Clear service and efficiency with a predictable process.',
+            'More time for personal essay polish and selection of deep-fit programs.',
+          ],
+        },
+        {
+          q: 'What is your tolerance for visa and border complexity?',
+          choices: [
+            'I want a relatively stable route with good regional support.',
+            'I am okay with a longer planning cycle if the academic reward is higher.',
+          ],
+        },
+        {
+          q: 'Which sentence fits your current mindset best?',
+          choices: [
+            'I want to land confidently, then gradually expand my reach.',
+            'I want to aim for the most respected academic signal now.',
           ],
         },
       ],
       results: {
         uk: {
           title: 'Route Result: Explorer of Albion',
-          desc: '<b>Your direction resonates more with: the UK</b><br><br>You care more about prestige, academic tradition, and a fuller overseas campus experience. The next step is to verify requirements carefully and prepare for the timeline and costs.',
+          icon: '🏰',
+          desc: '<b>Your selection points to the UK.</b><br><br>You prefer an experience rooted in classic campus culture, academic tradition, and stable research depth. Prepare for careful program matching and a longer academic planning journey.',
+          analysis: 'The UK is best for learners who value immersive campus life and respected global academic credentials. Focus on polished essays and program-fit research next.',
+        },
+        us: {
+          title: 'Route Result: Pioneer of the New World',
+          icon: '🗽',
+          desc: '<b>Your selection points to the USA.</b><br><br>You value fast-track career ambition, diverse internships, and a dynamic academic ecosystem. The next step is to align your application with practical outcomes and strong extracurricular evidence.',
+          analysis: 'The US is ideal for students who want broad opportunity, flexibility, and early career momentum. Keep building real evidence and a compelling personal story.',
+        },
+        eu: {
+          title: 'Route Result: Scholar of Continental Europe',
+          icon: '🏛️',
+          desc: '<b>Your selection points to Continental Europe.</b><br><br>You are drawn to cultural depth, research focus, and programs that reward academic preparation. Be prepared for more structured deadlines and program-specific requirements.',
+          analysis: 'Europe suits those who want strong academic signal with a meaningful cross-border experience. Continue with targeted program research and language planning.',
+        },
+        sg: {
+          title: 'Route Result: Strategist of the Lion City',
+          icon: '🌏',
+          desc: '<b>Your selection points to Singapore.</b><br><br>You prefer a practical, Asia-connected path that blends international quality with regional efficiency. Next, sharpen your career narrative and local application strategy.',
+          analysis: 'Singapore is a strong fit for pragmatic students who seek fast decision cycles and a regional hub. Keep the plan focused on academic strength and industry relevance.',
         },
         hk: {
-          title: 'Route Result: Pragmatist of the Orient',
-          desc: '<b>Your direction resonates more with: Hong Kong</b><br><br>You care more about pace, cost efficiency, and stronger links to Asian finance / tech ecosystems. A tighter and faster-reacting school list fits you better.',
+          title: 'Route Result: Navigator of the Orient',
+          icon: '🏙️',
+          desc: '<b>Your selection points to Hong Kong.</b><br><br>You value city vibrancy, finance-tech connections, and a strong Asian ecosystem. Plan for a compact timeline and clear evidence that matches the market demand.',
+          analysis: 'Hong Kong works well for students who want a busy urban experience with strong regional networks. Build your personal story around speed, relevance, and adaptability.',
         },
       },
     },
@@ -307,6 +416,32 @@ export default {
       feedbackTitle: 'Tiering Prophecy',
       seal: 'Seal This Tier Plan and Return',
       alertCompleteDeck: 'The Seer warns: place every school card before divination.',
+      guide: {
+        button: 'Knowledge Guide',
+        body: 'A balanced school list includes Reach, Match, and Safety tiers. Drag each school into the right tier, then click "Divinate the Scales" to get feedback.',
+        items: [
+          {
+            title: '🎯 Reach (Dream) Schools',
+            content: 'Schools where your profile is below the average admitted student. Acceptance rate <20%. Apply to 2-3 as high-risk bets.'
+          },
+          {
+            title: '⚔️ Match (Core) Schools',
+            content: 'Schools where your GPA, test scores, and background align with the average admitted student. Apply to 3-5 as your main targets.'
+          },
+          {
+            title: '🛡️ Safety (Backup) Schools',
+            content: 'Schools where your profile is well above the average. Acceptance should be very likely ( >70% ). Apply to 2-3 to ensure admission.'
+          },
+          {
+            title: '📊 Realistic GPA Context',
+            content: 'For STEM/CS applicants with GPA 82/100 and one ordinary internship: IC and UCL are extreme reaches; KCL/Southampton are match tier; Cardiff is safety.'
+          },
+          {
+            title: '⚠️ Common Mistakes',
+            content: 'Placing IC or UCL in Match/Safety is over-optimistic. Placing Cardiff in Reach is over-conservative. A missing safety layer destroys your list.'
+          }
+        ]
+      },
       tiers: {
         reach: 'Reach / Miracle',
         match: 'Match / Battleground',
@@ -357,6 +492,30 @@ export default {
     y2_4: {
       title: 'Senior Case Archives',
       intro: 'Predict each predecessor’s outcome first, then reveal what the profile actually teaches about GPA, internships, research, and projects.',
+      guide: {
+        button: 'Case Lessons',
+        body: 'Learn from senior cases: GPA is not the only factor. Evidence like internships, projects, and research can change the outcome.',
+        items: [
+          {
+            title: '🔍 Low GPA + Strong Evidence = Miracle',
+            content: 'A GPA 80/100 with a serious R&D internship and high-quality project can still reach Top 50 programs, especially for applied CS/software tracks.'
+          },
+          {
+            title: '⚠️ High GPA + Empty Resume = Risk',
+            content: 'Top grades alone are not enough. Programs look for relevant experience, projects, research, and motivation. The "hollow scholar" often faces rejection.'
+          },
+          {
+            title: '📌 Evidence Matters',
+            content: 'Internships, projects, research, competitions – these tangible outputs create a moat. They prove your skills and fit better than just grades.'
+          },
+          {
+            title: '🎯 Match Your Story to the Program',
+            content: 'Your CV, PS, and RL should align with what the program values. Show how your evidence meets their requirements.'
+          }
+        ]
+      },
+      completionCopy: 'You earned a reward for finishing the case archive. Choose to retry the exercise or claim your coins and return.',
+      wrongAnswer: 'Incorrect Prediction',
       labels: {
         senior: 'Profile',
         gpa: 'GPA',
@@ -370,6 +529,7 @@ export default {
           gpa: '80/100 (Perilous)',
           evidence: 'SAP R&D internship + high-quality GitHub project',
           choices: ['A. The Abyss of Rejection', 'B. Miracle Ascension (Top 50)'],
+          correctIndex: 1,
           truthTitle: 'Truth: Miracle Ascension to Top 50.',
           truth: 'For applied CS / software tracks, a strong enterprise R&D internship and a serious project can build a visible moat. A low GPA is still dangerous, but strong technical evidence can change the story.',
         },
@@ -379,8 +539,39 @@ export default {
           gpa: '91/100 (Supreme)',
           evidence: 'Zero internship, zero research, zero serious project',
           choices: ['A. Slaughter the Top 30 Realms', 'B. Severe Crushing Defeat'],
+          correctIndex: 1,
           truthTitle: 'Truth: Severe Crushing Defeat.',
           truth: 'This is the hollow-scholar trap. In STEM and business-related programs, top grades are not the whole application. Programs also look for relevant experience, projects, research, internships, motivation, and fit.',
+        },
+        {
+          label: 'Senior C',
+          track: 'Business / Finance track',
+          gpa: '85/100 (Decent)',
+          evidence: 'Banking internship + case competition win',
+          choices: ['A. Solid Mid-tier Success', 'B. Elite Program Breakthrough'],
+          correctIndex: 1,
+          truthTitle: 'Truth: Elite Program Breakthrough.',
+          truth: 'In business tracks, relevant internships and competition results can elevate a decent GPA to elite levels. Practical experience demonstrates real-world application.',
+        },
+        {
+          label: 'Senior D',
+          track: 'Engineering track',
+          gpa: '88/100 (Good)',
+          evidence: 'Research paper publication + startup project',
+          choices: ['A. Top 20 Achievement', 'B. Unexpected Rejection'],
+          correctIndex: 0,
+          truthTitle: 'Truth: Top 20 Achievement.',
+          truth: 'Engineering programs value innovation. Publications and entrepreneurial projects can compensate for a non-perfect GPA.',
+        },
+        {
+          label: 'Senior E',
+          track: 'Arts / Humanities track',
+          gpa: '92/100 (Excellent)',
+          evidence: 'Published poetry + community leadership',
+          choices: ['A. Ivy League Admission', 'B. Prestigious but Not Elite'],
+          correctIndex: 0,
+          truthTitle: 'Truth: Ivy League Admission.',
+          truth: 'In humanities, exceptional creative work and leadership can lead to top admissions, even with strong competition.',
         },
       ],
     },
@@ -394,6 +585,15 @@ export default {
       pact: 'Seasonal Pact: screen agencies around <b>February-April</b> and decide before <b>July-August</b>. Finish a target language score by the <b>end of summer</b>. Reserve <b>September-October</b> for retakes, essays, forms, and official requirement checks. A consultant may assist, but email access, portal ownership, and final approval must stay with you.',
       complete: 'Commit This Allocation and Return',
       alertUnspent: 'Your astrolabe still holds {count} unallocated Stardust.',
+      guide: {
+        title: 'Astrolabe Guide',
+        body: 'Allocate your limited Stardust wisely. Focus on actions that create tangible evidence for your application.',
+        items: [
+          'Prioritize GPA, projects, and internships over vague networking.',
+          'Language scores are hard requirements—don\'t neglect them.',
+          'Research and competitions can differentiate you in competitive fields.',
+        ],
+      },
       tasks: {
         gpa: { name: 'Study Grimoires', desc: 'Boost GPA' },
         lang: { name: "Siren's Song", desc: 'Ace IELTS / TOEFL' },
@@ -429,6 +629,18 @@ export default {
       modalIntro: 'You sealed the risky agency contract and kept control of your application.',
       modalMasteredLabel: 'Mastered:',
       modalButton: 'Return to Map',
+      guide: {
+        button: 'Guardian Guide',
+        title: 'Guardian Guide',
+        body: 'Match each shield to the clause it protects. The right shield is the one that fixes the specific application risk.',
+        items: [
+          'Guarantee promises are always dangerous.',
+          'Keep the portal access and email under your control.',
+          'Use staged payment and agree clear refund rules.',
+        ],
+      },
+      shuffle: 'Shuffle shields',
+      shuffleNote: 'The shield order changes each attempt to keep your strategy fresh.',
       feedback: {
         alreadyUsed: 'This shield is already installed.',
         alreadyProtected: 'This clause already has a shield.',
@@ -549,6 +761,31 @@ export default {
       rewardBox: '1-on-1 Prophecy Consultation with an Elite Archmage',
       ticketCopy: 'Pack your inventory and bear this honor and wisdom.<br>Prepare to enter the Crucible of the Year 3 Application Season!',
       claim: 'Claim the Golden Ticket & Advance',
+    },
+    y2_7: {
+      title: 'Ultimate Trial of Wisdom',
+      question: 'What is the most important principle for successful applications?',
+      answers: {
+        a: 'Perfect grades and test scores',
+        b: 'Authentic evidence and clear strategy',
+        c: 'Expensive consultants and templates',
+      },
+      successTitle: 'Wisdom Unlocked',
+      successPrompt: 'You have passed the ultimate trial. Spin the wheel of destiny for your reward.',
+      ticketTitle: 'Golden Ticket to Year 3',
+      ticketSubtitle: 'Year 2 Perfect Clear Voucher',
+      rewardBox: '1-on-1 Prophecy Consultation with an Elite Archmage',
+      ticketCopy: 'Pack your inventory and bear this honor and wisdom.<br>Prepare to enter the Crucible of the Year 3 Application Season!',
+      claim: 'Claim the Golden Ticket & Advance',
+      guide: {
+        title: 'Trial Guide',
+        body: 'Answer the question to prove your wisdom and unlock the path to Year 3.',
+        items: [
+          'Grades are important but not the only factor.',
+          'Focus on building genuine evidence and a clear plan.',
+          'Consultants can help but you must own the process.',
+        ],
+      },
     },
     y3_1: {
       back: 'Back to Map',
@@ -693,6 +930,15 @@ export default {
           note: 'Soft traits need third-party observation and concrete context.',
         },
       ],
+    },
+
+    y3_2: {
+      title: 'Magic Ministry Archives',
+      guide: {
+        title: 'Archives Guide',
+        body: 'Explore the archives to understand application materials.',
+        items: ['Item 1', 'Item 2'],
+      },
     },
 
     y3_3: {
@@ -853,6 +1099,15 @@ export default {
         close: 'Close Guide',
       },
     },
+    y3_4: {
+      title: 'Memory Star Map',
+      guide: {
+        title: 'Star Map Guide',
+        body: 'Navigate the stars to craft your personal statement.',
+        items: ['Item 1', 'Item 2'],
+      },
+    },
+
     y3_5: {
       documentTitle: 'Y3-5 Tsundere Wildcat Mentor Simulator',
       statusLabel: "Mentor's Favorability",
@@ -1068,6 +1323,11 @@ export default {
         { name: 'Cold Email Shield', cssLabel: 'Buff · Defense', log: 'sent a <b>Cold Email</b>! Defense sharply increased!' },
         { name: 'Iced Americano', cssLabel: 'Heal', log: 'chugged an <b>Iced Americano</b>! Vitality restored!' },
       ],
+      guide: {
+        title: 'Citadel Guide',
+        body: 'Battle through the application season months.',
+        items: ['Item 1', 'Item 2'],
+      },
     },
     y3_7: {
       back: 'Back to Map',
@@ -1180,6 +1440,11 @@ export default {
           desc: 'It won\'t trigger an instant rejection, but when an admissions officer downloads a messy pile of encrypted gibberish, your professionalism score will plummet.',
         },
       ],
+      guide: {
+        title: 'Bog Guide',
+        body: 'Sweep away application traps.',
+        items: ['Item 1', 'Item 2'],
+      },
     },
     y3_8: {
       back: 'Back to Map',
@@ -1199,6 +1464,11 @@ export default {
         "Archmage's Handwritten Recommendation",
         'Ticket to the Artifact Forging Workshop',
       ],
+      guide: {
+        title: 'Coronation Guide',
+        body: 'Complete your application journey.',
+        items: ['Item 1', 'Item 2'],
+      },
     },
   },
 }

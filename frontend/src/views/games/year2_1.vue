@@ -1,5 +1,11 @@
 <template>
   <div class="forge">
+    <KnowledgeGuidePanel
+      class="guide-floating"
+      :title="t('pages.y2_1.guide.title')"
+      :body="t('pages.y2_1.guide.body')"
+      :items="guideItems"
+    />
     <div class="topbar">
       <div>
         <h1><i class="fas fa-id-card"></i> {{ t('pages.y2_1.title') }}</h1>
@@ -7,6 +13,8 @@
       </div>
       
     </div>
+
+    
 
     <div class="main">
       <section class="preview">
@@ -16,6 +24,7 @@
           <div class="avatar" :style="avatarStyle">
             <div class="halo"></div>
             <div class="sigil"><i class="fas" :class="selectedRoleIcon"></i></div>
+            <div class="tool-hand" v-if="selectedTool"><i class="fas" :class="selectedTool.icon"></i></div>
             <div class="hair"></div>
             <div class="face"></div>
             <div class="outfit"></div>
@@ -156,6 +165,7 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
 import { useAppI18n } from '@/composables/useAppI18n'
+import KnowledgeGuidePanel from '@/components/KnowledgeGuidePanel.vue'
 
 const emit = defineEmits(['complete', 'close'])
 const { t } = useAppI18n()
@@ -220,6 +230,11 @@ const selectedRole = computed(() => roles.value.find((item) => item.id === state
 const selectedHair = computed(() => hairs.value.find((item) => item.id === state.hairId) ?? null)
 const selectedOutfit = computed(() => outfits.value.find((item) => item.id === state.outfitId) ?? null)
 const selectedTool = computed(() => tools.value.find((item) => item.id === state.toolId) ?? null)
+
+const guideItems = computed(() => [
+  { title: t('pages.y2_1.guide.item1.title'), text: t('pages.y2_1.guide.item1.text') },
+  { title: t('pages.y2_1.guide.item2.title'), text: t('pages.y2_1.guide.item2.text') },
+])
 
 const displayName = computed(() => state.name || t('common.unnamedTraveler'))
 const selectedRoleIcon = computed(() => selectedRole.value?.icon || 'fa-star')
@@ -288,6 +303,7 @@ function returnToMap() {
 }
 
 .topbar {
+  margin-bottom: 28px;
   padding: 24px 28px;
   display: flex;
   justify-content: space-between;
@@ -338,6 +354,7 @@ function returnToMap() {
 }
 
 .main {
+  margin-top: 18px; 
   display: grid;
   grid-template-columns: 1fr 1.15fr;
   flex: 1;          /* 占据剩余高度 */
@@ -407,6 +424,19 @@ function returnToMap() {
   color: #fde68a;
   font-size: 1.45rem;
   filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.5));
+}
+
+.tool-hand {
+  position: absolute;
+  right: -20px;
+  top: 120px;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  color: #1f2937;
+  font-size: 1.2rem;
+  transform: rotate(15deg);
 }
 
 .shadow {
@@ -838,6 +868,12 @@ input:focus {
 
   .grid3 {
     grid-template-columns: 1fr;
+  }
+  .guide-floating {
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    z-index: 20;
   }
 }
 </style>
