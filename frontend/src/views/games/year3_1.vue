@@ -117,6 +117,12 @@
       </section>
     </div>
 
+    <KnowledgeGuidePanel
+      :title="t('pages.y3_1.recipeBook')"
+      :body="t('pages.y3_1.hintMeta')"
+      :items="guideItems"
+    />
+
     <Transition name="toast-pop">
       <div
         v-if="toast.visible"
@@ -164,6 +170,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useAppI18n } from '@/composables/useAppI18n'
+import KnowledgeGuidePanel from '@/components/KnowledgeGuidePanel.vue'
 
 const emit = defineEmits(['complete', 'close'])
 const { t } = useAppI18n()
@@ -212,6 +219,12 @@ const toast = reactive({
   type: 'success',
   message: '',
 })
+
+const guideItems = computed(() => hintIds.map((id) => ({
+  label: t(`pages.y3_1.hints.${id}.label`),
+  title: t(`pages.y3_1.hints.${id}.title`),
+  text: t(`pages.y3_1.hints.${id}.body`),
+})))
 
 const timers = new Set()
 let toastTimer = null
@@ -369,7 +382,7 @@ function mixElements() {
 
 function completeNode() {
   showVictoryModal.value = false
-  emit('complete', { game: 'application-alchemy' })
+  emit('complete', { game: 'application-alchemy', rewardCoins: 20 })
 }
 
 onMounted(() => {

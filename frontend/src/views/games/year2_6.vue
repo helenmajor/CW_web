@@ -10,6 +10,11 @@
       </header>
 
       <div class="workspace">
+        <KnowledgeGuidePanel
+          :title="t('pages.y2_6.guide.button')"
+          :body="t('pages.y2_6.guide.body')"
+          :items="guideItems"
+        />
         <section class="shard-pool" :aria-label="t('pages.y2_6.shieldsTitle')">
           <div class="shard-title">
             <i class="fas fa-puzzle-piece"></i>
@@ -29,26 +34,55 @@
             </div>
           </div>
 
-          <div class="shard-grid">
-            <button
-              v-for="shield in shields"
-              :key="shield.id"
-              class="shard"
-              :class="{
-                dragging: draggingShieldId === shield.id,
-                selected: selectedShieldId === shield.id,
-                used: protectedStatus[shield.id],
-              }"
-              type="button"
-              draggable="true"
-              @click="selectShield(shield.id)"
-              @dragstart="startDrag($event, shield.id)"
-              @dragend="endDrag"
-            >
-              <div class="shard-icon">{{ shield.icon }}</div>
-              <div class="shard-name">{{ shield.name }}</div>
-              <div class="shard-desc">{{ shield.desc }}</div>
-            </button>
+          
+
+          <div class="shard-columns">
+            <div class="shard-column">
+              <div class="shard-grid">
+                <button
+                  v-for="(shield, index) in leftShields"
+                  :key="shield.id"
+                  class="shard"
+                  :class="{
+                    dragging: draggingShieldId === shield.id,
+                    selected: selectedShieldId === shield.id,
+                    used: protectedStatus[shield.id],
+                  }"
+                  type="button"
+                  draggable="true"
+                  @click="selectShield(shield.id)"
+                  @dragstart="startDrag($event, shield.id)"
+                  @dragend="endDrag"
+                >
+                  <div class="shard-icon">{{ shield.icon }}</div>
+                  <div class="shard-name">{{ shield.name }}</div>
+                  <div class="shard-desc">{{ shield.desc }}</div>
+                </button>
+              </div>
+            </div>
+            <div class="shard-column">
+              <div class="shard-grid">
+                <button
+                  v-for="(shield, index) in rightShields"
+                  :key="shield.id"
+                  class="shard"
+                  :class="{
+                    dragging: draggingShieldId === shield.id,
+                    selected: selectedShieldId === shield.id,
+                    used: protectedStatus[shield.id],
+                  }"
+                  type="button"
+                  draggable="true"
+                  @click="selectShield(shield.id)"
+                  @dragstart="startDrag($event, shield.id)"
+                  @dragend="endDrag"
+                >
+                  <div class="shard-icon">{{ shield.icon }}</div>
+                  <div class="shard-name">{{ shield.name }}</div>
+                  <div class="shard-desc">{{ shield.desc }}</div>
+                </button>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -141,8 +175,9 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useAppI18n } from '@/composables/useAppI18n'
+import KnowledgeGuidePanel from '@/components/KnowledgeGuidePanel.vue'
 
 const emit = defineEmits(['complete'])
 const { t, tm } = useAppI18n()
@@ -180,6 +215,12 @@ const shields = computed(() => clauseIds.map((id) => ({
   icon: shieldIcons[id],
   ...(localizedShields.value[id] || {}),
 })))
+
+const shuffledShields = ref([])
+const guideItems = computed(() => tm('pages.y2_6.guide.items') || [])
+
+const leftShields = computed(() => shuffledShields.value.slice(0, Math.ceil(shuffledShields.value.length / 2)))
+const rightShields = computed(() => shuffledShields.value.slice(Math.ceil(shuffledShields.value.length / 2)))
 
 const clauses = computed(() => clauseIds.map((id) => ({
   id,
@@ -338,6 +379,7 @@ function resetGame() {
   successModalVisible.value = false
   feedbackVisible.value = false
   clearFeedbackTimer()
+  shuffleShields()
 }
 
 function completeContract() {
@@ -355,8 +397,12 @@ function completeContract() {
 
 function finishNode() {
   successModalVisible.value = false
-  emit('complete', { game: 'contract-guardian', protected: totalClauses })
+  emit('complete', { game: 'contract-guardian', protected: totalClauses, rewardCoins: 30 })
 }
+
+onMounted(() => {
+  shuffledShields.value = [...shields.value]
+})
 
 onBeforeUnmount(() => {
   clearFeedbackTimer()
@@ -434,7 +480,7 @@ onBeforeUnmount(() => {
   grid-template-columns: minmax(360px, 1.05fr) minmax(430px, 1fr);
   gap: 24px;
   padding: 26px 30px 30px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .shard-pool {
@@ -445,6 +491,9 @@ onBeforeUnmount(() => {
   border: 1px solid rgba(250, 204, 21, 0.2);
   border-radius: 26px;
   padding: 20px;
+  overflow-x: auto;
+  overflow-y: auto;     
+  max-height: 580px;
 }
 
 .shard-title,
@@ -491,18 +540,29 @@ onBeforeUnmount(() => {
   gap: 12px;
 }
 
-.selection-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  display: grid;
-  place-items: center;
-  background: #facc15;
-  color: #111827;
-  font-size: 1.35rem;
-  flex: 0 0 auto;
-}
+  .shuffle-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+    color: #f8f9fa;
+    cursor: pointer;
+  }
 
+  .shuffle-action {
+    font-weight: 900;
+    color: #facc15;
+  }
+
+  .shuffle-note {
+    color: #d1d5db;
+    font-size: 0.92rem;
+    line-height: 1.4;
+  }
+
+  .shuffle-row:hover .shuffle-action {
+    text-decoration: underline;
+  }
 .selection-card strong {
   color: #f8fafc;
 }
@@ -518,9 +578,31 @@ onBeforeUnmount(() => {
   cursor: pointer;
 }
 
+.shard-columns {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+}
+
+.shard-column {
+  flex: 1;
+  min-width: 200px;
+  padding-right: 6px;
+}
+
+.shard-column::-webkit-scrollbar {
+  width: 8px;
+}
+
+.shard-column::-webkit-scrollbar-thumb {
+  background: rgba(250, 204, 21, 0.2);
+  border-radius: 999px;
+}
+
 .shard-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+  grid-template-columns: 1fr;
   gap: 13px;
 }
 
@@ -622,6 +704,9 @@ onBeforeUnmount(() => {
 .clause-list {
   display: grid;
   gap: 13px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 6px;
 }
 
 .clause {

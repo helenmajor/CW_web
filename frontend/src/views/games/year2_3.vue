@@ -9,6 +9,12 @@
         </div>
       </div>
 
+      <KnowledgeGuidePanel
+        :title="t('pages.y2_3.guide.button')"
+        :body="t('pages.y2_3.guide.body')"
+        :items="guideItems"
+      />
+
       <div class="card-deck" :class="{ selecting: selectedCardId }" @dragover.prevent @drop="dropOn('deck')">
         <SchoolCard
           v-for="card in cardsIn('deck')"
@@ -74,11 +80,12 @@
 </template>
 
 <script setup>
-import { computed, defineComponent, h, reactive, ref } from 'vue'
+import { computed, defineComponent, h, nextTick, reactive, ref } from 'vue'
 import { useAppI18n } from '@/composables/useAppI18n'
+import KnowledgeGuidePanel from '@/components/KnowledgeGuidePanel.vue'
 
 const emit = defineEmits(['complete', 'close'])
-const { t } = useAppI18n()
+const { t, tm } = useAppI18n()
 
 const SchoolCard = defineComponent({
   props: {
@@ -127,6 +134,8 @@ const selectedCardId = ref('')
 const draggingCardId = ref('')
 const feedback = ref([])
 const score = ref(50)
+
+const guideItems = computed(() => tm('pages.y2_3.guide.items') || [])
 
 const cardById = computed(() => Object.fromEntries(schoolCards.value.map((card) => [card.id, card])))
 
@@ -212,6 +221,13 @@ function evaluateTiers() {
   }
 
   score.value = Math.max(10, score.value)
+
+  nextTick(() => {
+    const feedbackPanel = document.querySelector('.feedback-panel')
+    if (feedbackPanel) {
+      feedbackPanel.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  })
 }
 </script>
 

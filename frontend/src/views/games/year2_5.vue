@@ -6,6 +6,12 @@
         <p v-html="t('pages.y2_5.subtitle')"></p>
       </div>
 
+      <KnowledgeGuidePanel
+        :title="t('pages.y2_5.guide.title')"
+        :body="t('pages.y2_5.guide.body')"
+        :items="guideItems"
+      />
+
       <div class="energy-panel">
         <i class="fas fa-star energy-icon"></i>
         <span>{{ t('pages.y2_5.available') }}</span>
@@ -51,11 +57,12 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, nextTick, reactive, ref } from 'vue'
 import { useAppI18n } from '@/composables/useAppI18n'
+import KnowledgeGuidePanel from '@/components/KnowledgeGuidePanel.vue'
 
 const emit = defineEmits(['complete', 'close'])
-const { t } = useAppI18n()
+const { t, tm } = useAppI18n()
 
 const maxAP = 10
 const maxTaskAP = 5
@@ -78,6 +85,7 @@ const tasks = computed(() => taskDefs.map((task) => ({
 
 const points = reactive(Object.fromEntries(taskDefs.map((task) => [task.id, 0])))
 const prophecy = ref('')
+const guideItems = computed(() => tm('pages.y2_5.guide.items') || [])
 
 const spentAP = computed(() => Object.values(points).reduce((sum, value) => sum + value, 0))
 const availableAP = computed(() => maxAP - spentAP.value)
@@ -101,20 +109,21 @@ function generateProphecy() {
   const softInfo = points.info + points.net
   if (softInfo >= 4) {
     prophecy.value = t('pages.y2_5.prophecy.softInfo')
-    return
-  }
-
-  if (points.int >= 3 && points.proj >= 2 && points.gpa >= 2) {
+  } else if (points.int >= 3 && points.proj >= 2 && points.gpa >= 2) {
     prophecy.value = t('pages.y2_5.prophecy.techPath')
-    return
-  }
-
-  if (points.res >= 4 && points.lang === 0) {
+  } else if (points.res >= 4 && points.lang === 0) {
     prophecy.value = t('pages.y2_5.prophecy.researchNoLang')
-    return
+  } else {
+    prophecy.value = t('pages.y2_5.prophecy.steady')
   }
 
-  prophecy.value = t('pages.y2_5.prophecy.steady')
+  // 自动滚动到预言面板
+  nextTick(() => {
+    const panel = document.querySelector('.prophecy-panel')
+    if (panel) {
+      panel.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  })
 }
 </script>
 
