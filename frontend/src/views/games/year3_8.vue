@@ -113,6 +113,8 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .astral-coronation-root {
+  overflow-y: auto;
+  height: 100vh;
   min-height: 100vh;
   display: flex;
   justify-content: center;
