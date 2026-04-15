@@ -2,6 +2,8 @@ node_modules/
 data/*.sqlite
 data/*.sqlite-shm
 data/*.sqlite-wal
+data/*.db
+data/*.mv.db
 .env
 target/
 spring-*.log
