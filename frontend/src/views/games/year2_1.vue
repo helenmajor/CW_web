@@ -428,15 +428,15 @@ function returnToMap() {
 
 .tool-hand {
   position: absolute;
-  right: -20px;
-  top: 120px;
+  right: 15px;
+  top: 90px;
   width: 40px;
   height: 40px;
   display: grid;
   place-items: center;
-  color: #1f2937;
+  color: #fde68a;
   font-size: 1.2rem;
-  transform: rotate(15deg);
+  transform: rotate(20deg);
 }
 
 .shadow {

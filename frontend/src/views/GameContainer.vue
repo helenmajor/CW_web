@@ -1,7 +1,7 @@
 <template>
   <div class="game-shell">
     <div class="game-modal-content" :class="{ 'chrome-free-modal': isChromeFreeLevel }">
-      <button v-if="!isChromeFreeLevel" class="modal-close-btn" type="button" @click="goBack">×</button>
+      <button class="modal-close-btn" type="button" @click="goBack" :aria-label="t('common.actions.close')">×</button>
 
       <div v-if="!isChromeFreeLevel" class="modal-header">
         <button class="back-btn" @click="goBack">
@@ -108,7 +108,6 @@ async function handleChildComplete(payload = {}) {
     console.error(error)
   }
 }
-
 async function skipLevel() {
   try {
     await store.skipLevel(levelId.value)
