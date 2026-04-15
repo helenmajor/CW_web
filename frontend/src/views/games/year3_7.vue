@@ -9,7 +9,7 @@
       />
     </div>
     <div class="damage-overlay" :class="{ active: overlayActive }"></div>
-
+    
     <div class="game-container">
       <header class="header">
         <div class="title-box">
