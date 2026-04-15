@@ -76,6 +76,8 @@ function toggleOpen() {
   color: #f8fafc;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
+  max-height: 70vh;       
+  overflow-y: auto;
 }
 
 .guide-header h3 {

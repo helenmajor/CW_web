@@ -155,6 +155,12 @@
         <i class="fas fa-info-circle" aria-hidden="true"></i>
         <span>{{ feedback }}</span>
       </div>
+      <Transition name="toast-fade">
+        <div v-if="errorToastVisible" class="error-toast">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>{{ errorToastMessage }}</span>
+        </div>
+      </Transition>
     </div>
 
     <div class="modal" :class="{ show: successModalVisible }" :aria-hidden="(!successModalVisible).toString()">
@@ -181,6 +187,9 @@ import KnowledgeGuidePanel from '@/components/KnowledgeGuidePanel.vue'
 
 const emit = defineEmits(['complete'])
 const { t, tm } = useAppI18n()
+const errorToastVisible = ref(false)
+const errorToastMessage = ref('')
+let errorToastTimer = 0
 
 const clauseIds = [
   'guarantee',
@@ -250,6 +259,15 @@ function clearFeedbackTimer() {
   if (!feedbackTimer) return
   window.clearTimeout(feedbackTimer)
   feedbackTimer = 0
+}
+
+function showErrorToast(message) {
+  if (errorToastTimer) clearTimeout(errorToastTimer)
+  errorToastMessage.value = message
+  errorToastVisible.value = true
+  errorToastTimer = setTimeout(() => {
+    errorToastVisible.value = false
+  }, 1000)
 }
 
 function showFeedback(message, durationSec = 2.5, tone = 'info') {
@@ -334,9 +352,15 @@ function applyShield(clauseId, shieldId) {
   }
 
   if (shieldId !== clauseId) {
-    showFeedback(t('pages.y2_6.feedback.mismatch', {
-      name: shieldMap.value[shieldId]?.name || '',
-    }), 3, 'error')
+    const shieldName = shieldMap.value[shieldId]?.name || ''
+    const currentClauseName = clauseMap.value[clauseId]?.title || ''
+    const expectedClauseName = clauseMap.value[shieldId]?.title || ''
+    const errorMsg = t('pages.y2_6.feedback.mismatchDetail', {
+      shield: shieldName,
+      currentClause: currentClauseName,
+      expectedClause: expectedClauseName,
+    })
+    showErrorToast(errorMsg)
     return false
   }
 
@@ -400,12 +424,21 @@ function finishNode() {
   emit('complete', { game: 'contract-guardian', protected: totalClauses, rewardCoins: 30 })
 }
 
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 onMounted(() => {
-  shuffledShields.value = [...shields.value]
+  shuffledShields.value = shuffleArray([...shields.value])
 })
 
 onBeforeUnmount(() => {
   clearFeedbackTimer()
+  if (errorToastTimer) clearTimeout(errorToastTimer)
 })
 </script>
 
@@ -952,6 +985,61 @@ onBeforeUnmount(() => {
   .selection-card {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  /* 错误 Toast 弹窗 - 居中显示 */
+  .error-toast {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(231, 76, 60, 0.96);
+    backdrop-filter: blur(10px);
+    color: white;
+    padding: 16px 28px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 20px 35px rgba(0, 0, 0, 0.4);
+    z-index: 2000;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    max-width: 85vw;
+    text-align: center;
+    white-space: pre-wrap;
+    word-break: break-word;
+    pointer-events: none;
+    animation: toast-pop 0.2s ease-out;
+  }
+
+  .error-toast i {
+    font-size: 1.5rem;
+  }
+
+  @keyframes toast-pop {
+    0% {
+      transform: translate(-50%, -50%) scale(0.8);
+      opacity: 0;
+    }
+    80% {
+      transform: translate(-50%, -50%) scale(1.02);
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+    }
+  }
+
+  .toast-fade-enter-active,
+  .toast-fade-leave-active {
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  .toast-fade-enter-from,
+  .toast-fade-leave-to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
   }
 }
 </style>

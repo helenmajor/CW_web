@@ -514,6 +514,9 @@ export default {
           }
         ]
       },
+      completionTitle: "🏆 Archive Challenge Completed",
+      correctLabel: "correct",
+      claimAndContinue: "🎁 Claim {coins} coins & continue",
       completionCopy: 'You earned a reward for finishing the case archive. Choose to retry the exercise or claim your coins and return.',
       wrongAnswer: 'Incorrect Prediction',
       labels: {
@@ -630,14 +633,21 @@ export default {
       modalMasteredLabel: 'Mastered:',
       modalButton: 'Return to Map',
       guide: {
-        button: 'Guardian Guide',
-        title: 'Guardian Guide',
-        body: 'Match each shield to the clause it protects. The right shield is the one that fixes the specific application risk.',
-        items: [
-          'Guarantee promises are always dangerous.',
-          'Keep the portal access and email under your control.',
-          'Use staged payment and agree clear refund rules.',
-        ],
+        "button": "Guardian Guide",
+        "title": "Guardian Guide",
+        "body": "Master these key points before signing with an agent to avoid pitfalls.",
+        "items": [
+          "Beware of exaggerated promises: any 'guaranteed Top 10 admission' or 'cooperation with admissions officers' is unreliable.",
+          "Transparency: refuse agents who cannot provide the email and password for your application accounts. You must have final review and submission rights.",
+          "Essay quality: ask to see samples and avoid templated, generic essays.",
+          "Staff stability: confirm the consultant's years of experience and include their name in the contract to prevent frequent changes.",
+          "Reputation check: search online reviews and contact past students for real feedback.",
+          "Timing: start contacting agents between February and April (after Spring Festival) and finalize before July-August.",
+          "Service details: clarify which schools/majors are included, account sharing, essay revision limits, interview coaching, etc.",
+          "Payment plan: use milestone payments (e.g., 30% on signing, 40% after essay finalization, 30% upon first offer). Avoid full upfront payment.",
+          "Refund policy: specify the refund rate for 'all rejections' and terms for not applying to the agreed number of schools.",
+          "Extra fees: confirm whether application fees, postage, transcript translation/certification fees are included to avoid hidden costs."
+        ]
       },
       shuffle: 'Shuffle shields',
       shuffleNote: 'The shield order changes each attempt to keep your strategy fresh.',
@@ -647,6 +657,7 @@ export default {
         mismatch: '{name} does not repair this clause. Match the shield to the specific risk.',
         attached: '{name} installed. {explanation}',
         remaining: '{count} clause(s) still need protection.',
+        mismatchDetail: "❌ 「{shield}」 not matches 「{currentClause}」. Please try the correct match.",
       },
       shields: {
         guarantee: {
