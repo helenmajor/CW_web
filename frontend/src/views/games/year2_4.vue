@@ -6,7 +6,7 @@
       <div class="progress-bar">
         <div class="progress-fill" :style="{ width: `${progressPercent}%` }"></div>
       </div>
-      <div class="progress-text">{{ currentCaseIndex + 1 }} / {{ cases.length }}</div>
+      <div class="progress-text">{{ Math.min(currentCaseIndex + 1, cases.length) }} / {{ cases.length }}</div>
     </div>
 
     <section class="case-arena">
@@ -73,8 +73,8 @@
           <button type="button" class="btn-retry" @click="retryGame">
             {{ t('common.actions.retry') }}
           </button>
-          <button type="button" class="btn-claim" @click="emit('complete', { rewardCoins: 30 })">
-            {{ t('common.actions.continue') }}
+          <button type="button" class="btn-claim" @click="emit('complete', { rewardCoins })">
+            {{ t('pages.y2_4.claimAndContinue', { coins: rewardCoins }) }}
           </button>
         </div>
       </div>
@@ -87,6 +87,7 @@ import { computed, nextTick, ref } from 'vue'
 import { useAppI18n } from '@/composables/useAppI18n'
 import KnowledgeGuidePanel from '@/components/KnowledgeGuidePanel.vue'
 
+const rewardCoins = 30
 const emit = defineEmits(['complete', 'close'])
 const { tm, t } = useAppI18n()
 
@@ -120,7 +121,8 @@ const currentCase = computed(() => {
 
 const progressPercent = computed(() => {
   if (cases.value.length === 0) return 0
-  return ((currentCaseIndex.value + 1) / cases.value.length) * 100
+  const current = Math.min(currentCaseIndex.value + 1, cases.value.length)
+  return (current / cases.value.length) * 100
 })
 
 function judgeCase(choiceIndex) {
